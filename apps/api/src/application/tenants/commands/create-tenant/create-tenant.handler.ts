@@ -8,6 +8,8 @@ import {
   Injectable,
   ConflictException,
   BadRequestException,
+  InternalServerErrorException,
+  Inject,
 } from '@nestjs/common';
 import { CreateTenantCommand } from './create-tenant.command';
 import { ITenantRepository } from '../../../../domain/repositories/tenant.repository.interface';
@@ -15,10 +17,15 @@ import { Tenant } from '../../../../domain/tenants/tenant.entity';
 import { TenantStatus } from '../../../../domain/tenants/value-objects/tenant-status.vo';
 import { SubscriptionTier } from '../../../../domain/tenants/value-objects/subscription-tier.vo';
 import { DatabaseConfig } from '../../../../domain/tenants/value-objects/database-config.vo';
+import { TenantProvisioningService } from '../../../../infrastructure/services/tenant-provisioning.service';
 
 @Injectable()
 export class CreateTenantHandler {
-  constructor(private readonly tenantRepository: ITenantRepository) {}
+  constructor(
+    @Inject('ITenantRepository')
+    private readonly tenantRepository: ITenantRepository,
+    private readonly provisioningService: TenantProvisioningService,
+  ) {}
 
   async execute(command: CreateTenantCommand): Promise<Tenant> {
     // Validate uniqueness
@@ -62,11 +69,48 @@ export class CreateTenantHandler {
       createdBy: command.createdBy,
     });
 
-    // Persist tenant
-    const createdTenant = await this.tenantRepository.create(tenant);
+    // Provision tenant database BEFORE persisting tenant record
+    // This ensures database exists before tenant is marked as active
+    const provisioningResult =
+      await this.provisioningService.provisionTenantDatabase(tenant);
 
-    // TODO: Trigger database provisioning (async job)
-    // This will create the actual tenant database and apply schema
+    if (!provisioningResult.success) {
+      throw new InternalServerErrorException(
+        `Failed to provision tenant database: ${provisioningResult.error}`,
+      );
+    }
+
+    // Update tenant's database configuration with actual provisioned URL
+    // (In case there were any adjustments during provisioning)
+    const updatedDatabaseConfig = DatabaseConfig.create({
+      type: command.databaseType.toUpperCase() as never,
+      url: provisioningResult.databaseUrl,
+      name: provisioningResult.databaseName,
+      host: process.env.POSTGRES_HOST || 'localhost',
+      port: parseInt(process.env.POSTGRES_PORT || '5432', 10),
+    });
+
+    // Create new tenant instance with updated database config
+    const provisionedTenant = Tenant.create({
+      slug: tenant.slug,
+      subdomain: tenant.subdomain,
+      name: tenant.name,
+      databaseConfig: updatedDatabaseConfig,
+      subscriptionTier: tenant.subscriptionTier,
+      status: tenant.status,
+      maxWells: tenant.maxWells,
+      maxUsers: tenant.maxUsers,
+      storageQuotaGb: tenant.storageQuotaGb,
+      trialEndsAt: tenant.trialEndsAt,
+      contactEmail: tenant.contactEmail,
+      contactPhone: tenant.contactPhone,
+      billingEmail: tenant.billingEmail,
+      featureFlags: tenant.featureFlags,
+      createdBy: tenant.createdBy,
+    });
+
+    // Persist tenant (database now exists and is ready)
+    const createdTenant = await this.tenantRepository.create(provisionedTenant);
 
     return createdTenant;
   }

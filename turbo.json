@@ -12,18 +12,24 @@
     },
     "lint": {
       "cache": true,
-      "outputs": [".cache/eslint/**"]
+      "outputs": []
     },
     "format": {
       "cache": true,
-      "outputs": [".cache/prettier/**"]
+      "outputs": []
     },
     "type-check": {
       "cache": true,
-      "outputs": [".tsbuildinfo", "tsconfig.tsbuildinfo"]
+      "outputs": []
     },
     "test": {
       "cache": false,
+      "outputs": ["coverage/**"],
+      "dependsOn": []
+    },
+    "test:cov": {
+      "cache": false,
+      "outputs": ["coverage/**"],
       "dependsOn": []
     }
   },
