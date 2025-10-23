@@ -1,13 +1,18 @@
 #!/bin/bash
 
-# Kill all processes using development ports
+# Kill WellPulse application processes (API, Web, Admin, ML)
+# Infrastructure services (PostgreSQL, Redis, Mailpit, Azurite) remain running in Docker
+#
 # Usage: ./kill-dev-ports.sh
+#
+# To stop infrastructure services: docker compose down
 
 echo "🔍 Checking for processes using development ports..."
 
-# Ports used by WellPulse
-PORTS=(3000 3001 3003 5432)
-PORT_NAMES=("Web (Next.js)" "API (NestJS)" "Mailpit" "PostgreSQL")
+# Only kill application ports (4000-4003)
+# Infrastructure services (PostgreSQL, Redis, Mailpit, Azurite) run in Docker and should stay running
+PORTS=(4000 4001 4002 4003)
+PORT_NAMES=("API (NestJS)" "Web (Next.js)" "Admin (Next.js)" "ML Service (Python)")
 
 for i in "${!PORTS[@]}"; do
   PORT="${PORTS[$i]}"
@@ -61,6 +66,9 @@ else
 fi
 
 echo ""
-echo "🎉 All development ports should now be free!"
+echo "🎉 All application ports should now be free!"
+echo ""
+echo "Infrastructure services (PostgreSQL, Redis, Mailpit, Azurite) remain running in Docker."
+echo "To stop infrastructure: docker compose down"
 echo ""
 echo "You can now run: pnpm dev"

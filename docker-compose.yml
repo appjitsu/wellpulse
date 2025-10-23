@@ -37,7 +37,7 @@ services:
     restart: unless-stopped
     ports:
       - '1025:1025' # SMTP
-      - '3003:8025' # Web UI
+      - '8025:8025' # Web UI (changed from 3003 to avoid conflicts)
     environment:
       MP_MAX_MESSAGES: 5000
       MP_DATA_FILE: /data/mailpit.db
@@ -46,40 +46,25 @@ services:
     volumes:
       - mailpit_data:/data
 
-  minio:
-    image: minio/minio:latest
-    container_name: wellpulse-minio
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite:latest
+    container_name: wellpulse-azurite
     restart: unless-stopped
-    command: server /data --console-address ":9001"
+    command: azurite-blob --blobHost 0.0.0.0 --blobPort 10000
+    ports:
+      - '10000:10000' # Blob service
+    volumes:
+      - azurite_data:/data
     environment:
-      MINIO_ROOT_USER: wellpulse
-      MINIO_ROOT_PASSWORD: wellpulse123
-    ports:
-      - '9000:9000' # API
-      - '9001:9001' # Console
-    volumes:
-      - minio_data:/data
+      AZURITE_ACCOUNTS: devstoreaccount1:Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
-      interval: 30s
-      timeout: 20s
-      retries: 3
-
-  otel-collector:
-    image: otel/opentelemetry-collector-contrib:latest
-    container_name: wellpulse-otel
-    restart: unless-stopped
-    command: ['--config=/etc/otel-collector-config.yml']
-    ports:
-      - '4317:4317' # OTLP gRPC
-      - '4318:4318' # OTLP HTTP
-      - '8888:8888' # Prometheus metrics
-      - '13133:13133' # Health check
-    volumes:
-      - ./otel-collector-config.yml:/etc/otel-collector-config.yml
+      test: ['CMD', 'nc', '-z', 'localhost', '10000']
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:
   redis_data:
   mailpit_data:
-  minio_data:
+  azurite_data:
