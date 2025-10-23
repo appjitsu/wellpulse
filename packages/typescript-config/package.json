@@ -1,0 +1,13 @@
+{
+  "name": "@wellpulse/typescript-config",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Shared TypeScript configurations for WellPulse monorepo",
+  "main": "index.js",
+  "files": [
+    "base.json",
+    "nextjs.json",
+    "nestjs.json",
+    "react.json"
+  ]
+}

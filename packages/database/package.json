@@ -1,0 +1,18 @@
+{
+  "name": "@wellpulse/database",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Shared database types and utilities for WellPulse monorepo",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.30.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}
