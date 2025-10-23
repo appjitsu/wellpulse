@@ -1,0 +1,86 @@
+name: Lighthouse Performance
+
+on:
+  pull_request:
+    branches: [master, main]
+    paths:
+      - 'apps/web/**'
+  schedule:
+    # Run weekly on Sunday at 00:00 UTC
+    - cron: '0 0 * * 0'
+
+jobs:
+  lighthouse:
+    name: Lighthouse Audit
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build web app
+        run: pnpm --filter=web run build
+
+      - name: Start web server
+        run: pnpm --filter=web run start &
+        env:
+          PORT: 3000
+
+      - name: Wait for server
+        run: |
+          timeout 60 bash -c 'until curl -f http://localhost:3000; do sleep 2; done'
+
+      - name: Run Lighthouse CI
+        id: lighthouse
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          urls: |
+            http://localhost:3000
+          budgetPath: ./apps/web/lighthouse-budget.json
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+
+      - name: Comment Lighthouse results
+        uses: actions/github-script@v8
+        if: github.event_name == 'pull_request'
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const results = JSON.parse('${{ steps.lighthouse.outputs.manifest }}');
+            const scores = results[0].summary;
+
+            const body = `## 🚦 Lighthouse Performance Report
+
+            | Category | Score |
+            | -------- | ----- |
+            | 🎭 Performance | ${Math.round(scores.performance * 100)} |
+            | ♿ Accessibility | ${Math.round(scores.accessibility * 100)} |
+            | ✅ Best Practices | ${Math.round(scores['best-practices'] * 100)} |
+            | 🔍 SEO | ${Math.round(scores.seo * 100)} |
+
+            [View full report](${results[0].url})
+
+            ---
+            _Generated at ${new Date().toUTCString()}_`;
+
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body
+            });

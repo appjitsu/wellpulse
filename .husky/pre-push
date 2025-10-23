@@ -1,0 +1,13 @@
+echo "🚀 Running pre-push checks..."
+
+# Run fast local checks instead of full act (which is too slow)
+pnpm lint && pnpm type-check && pnpm test
+
+if [ $? -ne 0 ]; then
+  echo "❌ Pre-push checks failed. Fix issues before pushing."
+  echo "💡 To bypass: git push --no-verify"
+  echo "💡 To run full CI locally: pnpm ci:act"
+  exit 1
+fi
+
+echo "✅ All pre-push checks passed!"

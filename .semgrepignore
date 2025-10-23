@@ -1,0 +1,2 @@
+# Test files with intentional TLS bypass for local development
+apps/api/src/infrastructure/email/email.service.spec.ts

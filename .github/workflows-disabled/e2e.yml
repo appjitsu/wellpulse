@@ -1,0 +1,109 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+jobs:
+  e2e:
+    name: End-to-End Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: wellpulse
+          POSTGRES_PASSWORD: wellpulse
+          POSTGRES_DB: wellpulse_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Setup database
+        run: |
+          pnpm --filter=api run db:push
+          pnpm --filter=api run db:seed
+        env:
+          DATABASE_URL: postgresql://wellpulse:wellpulse@localhost:5432/wellpulse_test
+
+      - name: Build applications
+        run: pnpm build
+
+      - name: Start API server
+        run: pnpm --filter=api run start:prod &
+        env:
+          DATABASE_URL: postgresql://wellpulse:wellpulse@localhost:5432/wellpulse_test
+          REDIS_URL: redis://localhost:6379
+          NODE_ENV: test
+
+      - name: Wait for API to be ready
+        run: |
+          timeout 60 bash -c 'until curl -f http://localhost:4000/health; do sleep 2; done'
+
+      - name: Start Web server
+        run: pnpm --filter=web run start &
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:4000
+
+      - name: Wait for Web to be ready
+        run: |
+          timeout 60 bash -c 'until curl -f http://localhost:3000; do sleep 2; done'
+
+      - name: Run Playwright tests
+        run: pnpm --filter=web run test:e2e
+        env:
+          BASE_URL: http://localhost:3000
+          API_URL: http://localhost:4000
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report/
+          retention-days: 30
+
+      - name: Upload test videos
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-videos
+          path: apps/web/test-results/
+          retention-days: 7

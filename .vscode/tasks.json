@@ -1,0 +1,66 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start Docker Services",
+      "type": "shell",
+      "command": "docker compose up -d",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      }
+    },
+    {
+      "label": "Stop Docker Services",
+      "type": "shell",
+      "command": "docker compose down",
+      "problemMatcher": []
+    },
+    {
+      "label": "Drizzle: Generate Migrations",
+      "type": "shell",
+      "command": "pnpm --filter=api run db:generate",
+      "problemMatcher": []
+    },
+    {
+      "label": "Drizzle: Push Schema",
+      "type": "shell",
+      "command": "pnpm --filter=api run db:push",
+      "problemMatcher": []
+    },
+    {
+      "label": "Drizzle: Studio",
+      "type": "shell",
+      "command": "pnpm --filter=api run db:studio",
+      "problemMatcher": [],
+      "isBackground": true
+    },
+    {
+      "label": "Drizzle: Seed Database",
+      "type": "shell",
+      "command": "pnpm --filter=api run db:seed",
+      "problemMatcher": []
+    },
+    {
+      "label": "Run All Tests",
+      "type": "shell",
+      "command": "pnpm test",
+      "problemMatcher": [],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "Build All",
+      "type": "shell",
+      "command": "pnpm build",
+      "problemMatcher": ["$tsc"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    }
+  ]
+}

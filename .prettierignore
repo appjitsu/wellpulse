@@ -1,0 +1,25 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Build outputs
+dist
+build
+.next
+out
+.turbo
+
+# Generated files
+*.log
+*.tsbuildinfo
+
+# Prisma
+prisma/migrations
+
+# Coverage
+coverage
+
+# Misc
+.DS_Store
+*.pem

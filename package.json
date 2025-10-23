@@ -1,0 +1,57 @@
+{
+  "name": "wellpulse",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo build --parallel",
+    "dev": "turbo dev",
+    "dev:clean": "./kill-dev-ports.sh && turbo dev",
+    "kill-ports": "./kill-dev-ports.sh",
+    "lint": "turbo lint --parallel --continue",
+    "lint:fix": "turbo lint --parallel",
+    "type-check": "turbo type-check --parallel",
+    "test": "turbo test --parallel",
+    "test:watch": "pnpm --filter=api test:watch",
+    "prepare": "husky || true",
+    "clean": "turbo clean && rm -rf node_modules",
+    "quality": "./scripts/quality-fast.sh",
+    "format": "turbo format --parallel",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "security:audit": "pnpm audit --audit-level=moderate",
+    "security:check": "pnpm outdated",
+    "ci:local": "./scripts/local-ci.sh",
+    "ci:act": "act pull_request --container-architecture linux/amd64",
+    "docker:test": "docker build -f apps/api/Dockerfile -t wellpulse-api:test . && docker build -f apps/web/Dockerfile -t wellpulse-web:test .",
+    "load-test": "tsx load-test.ts",
+    "load-test:registration": "tsx load-test.ts registration",
+    "load-test:login": "tsx load-test.ts login",
+    "load-test:clients": "tsx load-test.ts clients",
+    "load-test:invoices": "tsx load-test.ts invoices",
+    "load-test:mixed": "tsx load-test.ts mixed",
+    "load-test:stress": "tsx load-test.ts stress",
+    "load-test:quick": "tsx load-test.ts registration login clients"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=10.0.0"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.1.0",
+    "@commitlint/config-conventional": "^20.0.0",
+    "@swc/core": "^1.13.5",
+    "@swc/jest": "^0.2.39",
+    "@types/node": "^24.7.1",
+    "artillery": "^2.0.20",
+    "artillery-plugin-metrics-by-endpoint": "^1.20.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.3",
+    "tsx": "^4.20.6",
+    "turbo": "latest"
+  },
+  "packageManager": "pnpm@10.18.0"
+}

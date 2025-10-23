@@ -1,0 +1,252 @@
+name: Bundle Size Check
+
+on:
+  pull_request:
+    branches: [master, main]
+    paths:
+      - 'apps/web/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+
+jobs:
+  bundle-size:
+    name: Check Bundle Size
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout base branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.base_ref }}
+
+      - name: Check pnpm version in base branch
+        id: check-pnpm
+        run: |
+          PNPM_VERSION=$(grep -o '"packageManager": "pnpm@[^"]*"' package.json | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+' || echo "0.0.0")
+          echo "Base branch pnpm version: $PNPM_VERSION"
+          echo "pnpm_version=$PNPM_VERSION" >> $GITHUB_OUTPUT
+
+          # Check if version is >= 10.0.0
+          MAJOR_VERSION=$(echo $PNPM_VERSION | cut -d. -f1)
+          if [ "$MAJOR_VERSION" -lt 10 ]; then
+            echo "pnpm_compatible=false" >> $GITHUB_OUTPUT
+            echo "⚠️ Base branch has pnpm $PNPM_VERSION which is incompatible with Node.js 20"
+            echo "Skipping bundle size check. Please update base branch to pnpm >= 10.0.0"
+          else
+            echo "pnpm_compatible=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup pnpm
+        if: steps.check-pnpm.outputs.pnpm_compatible == 'true'
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        if: steps.check-pnpm.outputs.pnpm_compatible == 'true'
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies (base)
+        if: steps.check-pnpm.outputs.pnpm_compatible == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Build web app (base)
+        if: steps.check-pnpm.outputs.pnpm_compatible == 'true'
+        run: pnpm --filter=web run build
+        env:
+          NODE_ENV: production
+
+      - name: Get base bundle stats
+        if: steps.check-pnpm.outputs.pnpm_compatible == 'true'
+        id: base-stats
+        run: |
+          TOTAL_SIZE=$(du -sb apps/web/.next | cut -f1)
+          JS_SIZE=$(find apps/web/.next/static/chunks -name "*.js" -type f -exec du -cb {} + | grep total | cut -f1)
+          echo "total_size=$TOTAL_SIZE" >> $GITHUB_OUTPUT
+          echo "js_size=$JS_SIZE" >> $GITHUB_OUTPUT
+
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          clean: false
+
+      - name: Setup pnpm (PR)
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js (PR)
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies (PR)
+        run: pnpm install --frozen-lockfile
+
+      - name: Build web app (PR)
+        run: pnpm --filter=web run build
+        env:
+          NODE_ENV: production
+
+      - name: Get PR bundle stats
+        id: pr-stats
+        run: |
+          TOTAL_SIZE=$(du -sb apps/web/.next | cut -f1)
+          JS_SIZE=$(find apps/web/.next/static/chunks -name "*.js" -type f -exec du -cb {} + | grep total | cut -f1)
+          echo "total_size=$TOTAL_SIZE" >> $GITHUB_OUTPUT
+          echo "js_size=$JS_SIZE" >> $GITHUB_OUTPUT
+
+      - name: Post incompatible version comment
+        if: steps.check-pnpm.outputs.pnpm_compatible == 'false'
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('Bundle Size Check Skipped')
+            );
+
+            const body = `## ⚠️ Bundle Size Check Skipped
+
+            The base branch (\`${{ github.base_ref }}\`) uses pnpm ${{ steps.check-pnpm.outputs.pnpm_version }}, which is incompatible with Node.js 20.
+
+            **To enable bundle size checks:**
+            1. Update the base branch to use pnpm >= 10.0.0
+            2. Update \`packageManager\` in package.json: \`"packageManager": "pnpm@10.18.0"\`
+
+            Bundle size comparison requires both branches to use compatible pnpm versions.
+
+            ---
+            _This check passes without comparison when base branch is incompatible._`;
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body
+              });
+            }
+
+      - name: Calculate diff
+        if: steps.check-pnpm.outputs.pnpm_compatible == 'true'
+        id: diff
+        run: |
+          BASE_TOTAL=${{ steps.base-stats.outputs.total_size }}
+          PR_TOTAL=${{ steps.pr-stats.outputs.total_size }}
+          BASE_JS=${{ steps.base-stats.outputs.js_size }}
+          PR_JS=${{ steps.pr-stats.outputs.js_size }}
+
+          TOTAL_DIFF=$((PR_TOTAL - BASE_TOTAL))
+          JS_DIFF=$((PR_JS - BASE_JS))
+
+          # Convert to human readable
+          BASE_TOTAL_MB=$(echo "scale=2; $BASE_TOTAL/1024/1024" | bc)
+          PR_TOTAL_MB=$(echo "scale=2; $PR_TOTAL/1024/1024" | bc)
+          BASE_JS_KB=$(echo "scale=2; $BASE_JS/1024" | bc)
+          PR_JS_KB=$(echo "scale=2; $PR_JS/1024" | bc)
+          TOTAL_DIFF_MB=$(echo "scale=2; $TOTAL_DIFF/1024/1024" | bc)
+          JS_DIFF_KB=$(echo "scale=2; $JS_DIFF/1024" | bc)
+
+          echo "base_total_mb=$BASE_TOTAL_MB" >> $GITHUB_OUTPUT
+          echo "pr_total_mb=$PR_TOTAL_MB" >> $GITHUB_OUTPUT
+          echo "base_js_kb=$BASE_JS_KB" >> $GITHUB_OUTPUT
+          echo "pr_js_kb=$PR_JS_KB" >> $GITHUB_OUTPUT
+          echo "total_diff_mb=$TOTAL_DIFF_MB" >> $GITHUB_OUTPUT
+          echo "js_diff_kb=$JS_DIFF_KB" >> $GITHUB_OUTPUT
+
+          # Determine status emoji
+          if [ $TOTAL_DIFF -gt 0 ]; then
+            echo "status_emoji=📈" >> $GITHUB_OUTPUT
+          elif [ $TOTAL_DIFF -lt 0 ]; then
+            echo "status_emoji=📉" >> $GITHUB_OUTPUT
+          else
+            echo "status_emoji=➡️" >> $GITHUB_OUTPUT
+          fi
+
+          # Check if increase is significant (>5%)
+          PERCENT_INCREASE=$(echo "scale=2; ($TOTAL_DIFF / $BASE_TOTAL) * 100" | bc)
+          if [ $(echo "$PERCENT_INCREASE > 5" | bc) -eq 1 ]; then
+            echo "significant=true" >> $GITHUB_OUTPUT
+            echo "percent=$PERCENT_INCREASE" >> $GITHUB_OUTPUT
+          else
+            echo "significant=false" >> $GITHUB_OUTPUT
+            echo "percent=$PERCENT_INCREASE" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Comment PR with bundle size
+        if: steps.check-pnpm.outputs.pnpm_compatible == 'true'
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('📦 Bundle Size Report')
+            );
+
+            const significant = '${{ steps.diff.outputs.significant }}' === 'true';
+            const warningMsg = significant
+              ? `\n\n⚠️ **Warning:** Bundle size increased by ${{ steps.diff.outputs.percent }}% - Please review!`
+              : '';
+
+            const body = `## 📦 Bundle Size Report
+
+            ${{ steps.diff.outputs.status_emoji }} Bundle size comparison:
+
+            | Metric | Base | PR | Diff |
+            | ------ | ---- | -- | ---- |
+            | **Total Build** | ${{ steps.diff.outputs.base_total_mb }} MB | ${{ steps.diff.outputs.pr_total_mb }} MB | ${{ steps.diff.outputs.total_diff_mb }} MB |
+            | **JavaScript** | ${{ steps.diff.outputs.base_js_kb }} KB | ${{ steps.diff.outputs.pr_js_kb }} KB | ${{ steps.diff.outputs.js_diff_kb }} KB |
+
+            ${warningMsg}
+
+            ---
+            _Updated at ${new Date().toUTCString()}_`;
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body
+              });
+            }
+
+      - name: Fail if bundle size increased significantly
+        if: steps.check-pnpm.outputs.pnpm_compatible == 'true' && steps.diff.outputs.significant == 'true'
+        run: |
+          echo "Bundle size increased by ${{ steps.diff.outputs.percent }}%"
+          echo "This exceeds the 5% threshold."
+          echo "Please review and optimize the bundle size before merging."
+          exit 1

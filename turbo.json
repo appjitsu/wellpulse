@@ -1,0 +1,32 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"],
+      "cache": true
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {
+      "cache": true,
+      "outputs": [".cache/eslint/**"]
+    },
+    "format": {
+      "cache": true,
+      "outputs": [".cache/prettier/**"]
+    },
+    "type-check": {
+      "cache": true,
+      "outputs": [".tsbuildinfo", "tsconfig.tsbuildinfo"]
+    },
+    "test": {
+      "cache": false,
+      "dependsOn": []
+    }
+  },
+  "globalEnv": ["CI"],
+  "globalDependencies": ["tsconfig.json", ".eslintrc*", ".prettierrc*"]
+}

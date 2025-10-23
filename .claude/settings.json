@@ -1,0 +1,65 @@
+{
+  "outputStyle": "Explanatory",
+  "permissions": {
+    "allow": [
+      "Bash(pnpm:*)",
+      "Bash(git:*)",
+      "Bash(gh:*)",
+      "Bash(node:*)",
+      "Bash(npx:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(wc:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(awk:*)",
+      "Bash(sort:*)",
+      "Bash(timeout:*)",
+      "Bash(gtimeout:*)",
+      "Bash(chmod:*)",
+      "Bash(mkdir:*)",
+      "Bash(rm:*)",
+      "Bash(mv:*)",
+      "Bash(cp:*)",
+      "Bash(curl:*)",
+      "Bash(wget:*)",
+      "Bash(docker:*)",
+      "Bash(docker-compose:*)",
+      "Bash(psql:*)",
+      "Bash(redis-cli:*)",
+      "Bash(for *)",
+      "Bash(while *)",
+      "Bash(do *)",
+      "Bash(done)",
+      "Bash(xargs:*)",
+      "Bash(tee:*)",
+      "Bash(pkill:*)",
+      "Bash(kill:*)",
+      "Bash(lsof:*)",
+      "Bash(ps:*)",
+      "Read(//tmp/**)",
+      "Read(//private/tmp/**)",
+      "Read(///**)",
+      "mcp__chrome-devtools__*"
+    ],
+    "deny": [],
+    "ask": []
+  },
+  "userPromptSubmitHook": {
+    "command": "echo '✓ Ready to assist'",
+    "blocking": false
+  },
+  "preferences": {
+    "maxConcurrentToolCalls": 10,
+    "preferParallelExecution": true,
+    "cacheFileReads": true,
+    "agentConfig": {
+      "exploreAgent": {
+        "thoroughness": "medium",
+        "maxFileReads": 50
+      }
+    }
+  }
+}

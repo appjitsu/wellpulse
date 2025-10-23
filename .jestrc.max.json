@@ -1,0 +1,10 @@
+{
+  "comment": "Maximum Performance Jest Configuration",
+  "maxWorkers": "100%",
+  "bail": false,
+  "cache": true,
+  "cacheDirectory": "/tmp/jest-cache",
+  "testTimeout": 10000,
+  "detectOpenHandles": false,
+  "forceExit": true
+}

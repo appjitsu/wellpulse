@@ -1,0 +1,65 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Turbo
+.turbo
+
+# Build outputs
+dist
+.next
+out
+build
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Misc
+.DS_Store
+*.pem
+
+# Local env files (exclude actual secrets, include example templates)
+.env
+.env*.local
+!.env.example
+!**/.env.example
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Database
+# Drizzle migrations (commit these, but SQLite DBs should be ignored)
+*.db
+*.sqlite
+*.sqlite3
+
+# Testing
+test-results/
+playwright-report/
+playwright/.cache/
+coverage/
+*.lcov
+
+# Tool Caches (for speed optimization)
+.cache/
+.eslintcache
+.prettiercache
+**/.cache/eslint/
+**/.cache/prettier/
+/tmp/jest-cache
+
+# Lighthouse
+lhci_reports/
+.lighthouseci/
+
+# Load Testing
+load-test-results/
+*.artillery.json
+.claude/settings.local.json

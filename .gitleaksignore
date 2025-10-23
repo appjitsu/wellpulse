@@ -1,0 +1,6 @@
+# Example JWT token in documentation
+9a8cdd584ba4dc3d30ecdc05c0f029e9c5723145:docs/sprints/sprint-01-implementation-summary.md:generic-api-key:225
+
+# Test environment variables (not real secrets)
+ff21b80af07b0ef61d39ee73c8bfe808216b7d5f:apps/api/.env.test:generic-api-key:16
+ff21b80af07b0ef61d39ee73c8bfe808216b7d5f:apps/api/.env.test:generic-api-key:18

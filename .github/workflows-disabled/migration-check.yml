@@ -1,0 +1,126 @@
+name: Database Migration Check
+
+on:
+  pull_request:
+    branches: [master, main]
+    paths:
+      - 'apps/api/src/infrastructure/database/schema/**'
+      - 'apps/api/drizzle/**'
+
+jobs:
+  migration-check:
+    name: Check Database Migrations
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: rook
+          POSTGRES_PASSWORD: rook
+          POSTGRES_DB: rook_migration_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate migration files
+        run: pnpm --filter=api run db:generate
+        env:
+          DATABASE_URL: postgresql://rook:rook@localhost:5432/rook_migration_test
+
+      - name: Check for destructive migrations
+        id: destructive-check
+        run: |
+          # Check for potentially destructive SQL operations
+          if find apps/api/drizzle -type f -name "*.sql" -exec grep -l -E "DROP TABLE|DROP COLUMN|ALTER.*DROP|TRUNCATE" {} + 2>/dev/null; then
+            echo "destructive=true" >> $GITHUB_OUTPUT
+            echo "⚠️ Destructive migration operations detected!"
+          else
+            echo "destructive=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Comment on destructive migrations
+        if: steps.destructive-check.outputs.destructive == 'true'
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## ⚠️ Destructive Database Migration Detected
+
+              This PR contains potentially destructive database operations:
+              - DROP TABLE
+              - DROP COLUMN
+              - TRUNCATE
+              - ALTER ... DROP
+
+              **Before merging:**
+              1. ✅ Backup production database
+              2. ✅ Test migration on staging environment
+              3. ✅ Verify data migration/backfill if needed
+              4. ✅ Review rollback plan
+              5. ✅ Coordinate deployment timing
+
+              **Checklist:**
+              - [ ] Database backup confirmed
+              - [ ] Tested on staging
+              - [ ] Rollback plan documented
+              - [ ] Team notified of deployment window
+
+              _Automatically detected by migration-check workflow_`
+            });
+
+      - name: Test migration on fresh database
+        run: |
+          # Use --force to skip interactive prompts in CI
+          cd apps/api && pnpm exec drizzle-kit push --force
+        env:
+          DATABASE_URL: postgresql://rook:rook@localhost:5432/rook_migration_test
+
+      - name: Verify schema integrity
+        run: |
+          # Check if database is accessible and schema is valid
+          PGPASSWORD=rook psql -h localhost -U rook -d rook_migration_test -c "\dt"
+        env:
+          PGPASSWORD: rook
+
+      - name: Check for migration conflicts
+        run: |
+          # List all migration files
+          echo "Migration files:"
+          ls -la apps/api/drizzle/*.sql || echo "No migration files found"
+
+      - name: Upload migration files as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: migration-files
+          path: apps/api/drizzle/
+          retention-days: 30

@@ -1,0 +1,1 @@
+< Set-Cookie: refreshToken=9f83862f61b76b8c26f7f10c74386229b2f34b583220ec600220946b9476b1d0358dcc474b5bd30ec939321626c243d71409a871dbd3e6bc40bddda4dcb7fe59; Max-Age=604800; Domain=localhost; Path=/; Expires=Tue, 21 Oct 2025 20:43:35 GMT; HttpOnly; SameSite=Lax

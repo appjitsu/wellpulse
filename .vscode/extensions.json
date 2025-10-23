@@ -1,0 +1,14 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "editorconfig.editorconfig",
+    "prisma.prisma",
+    "bradlc.vscode-tailwindcss",
+    "firsttris.vscode-jest-runner",
+    "orta.vscode-jest",
+    "redhat.vscode-yaml",
+    "ms-azuretools.vscode-docker",
+    "ms-vscode.vscode-typescript-next"
+  ]
+}

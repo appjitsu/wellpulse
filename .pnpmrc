@@ -1,0 +1,17 @@
+# Faster installs
+prefer-frozen-lockfile=true
+resolution-mode=highest
+auto-install-peers=true
+
+# Use shared lockfile
+shared-workspace-lockfile=true
+
+# Parallel downloads
+fetch-retries=3
+fetch-timeout=60000
+
+# Package installation method
+package-import-method=copy
+
+# Strict peer dependencies
+strict-peer-dependencies=false
