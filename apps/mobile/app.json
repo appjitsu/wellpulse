@@ -1,0 +1,54 @@
+{
+  "expo": {
+    "name": "WellPulse Field",
+    "slug": "wellpulse-field",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "scheme": "wellpulse",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#667eea"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.wellpulse.field",
+      "infoPlist": {
+        "NSCameraUsageDescription": "WellPulse needs camera access to capture equipment photos",
+        "NSLocationWhenInUseUsageDescription": "WellPulse needs location access to tag field data entries with GPS coordinates"
+      }
+    },
+    "android": {
+      "package": "com.wellpulse.field",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#667eea"
+      },
+      "permissions": ["CAMERA", "ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"],
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow WellPulse to access your camera to take photos of equipment."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow WellPulse to use your location to tag field data with GPS coordinates."
+        }
+      ]
+    ]
+  }
+}
