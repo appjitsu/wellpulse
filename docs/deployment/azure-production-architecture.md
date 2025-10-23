@@ -16,12 +16,12 @@ WellPulse production infrastructure is hosted entirely on **Microsoft Azure** fo
 
 ## Deployment Strategy
 
-| Environment | Platform | Purpose | Lifecycle |
-|-------------|----------|---------|-----------|
-| **Production** | Azure | Customer-facing platform | Persistent |
-| **Staging** | Railway | Pre-production testing | Persistent |
-| **PR Previews** | Railway | Feature testing, code review | Ephemeral (auto-deleted after merge) |
-| **Local Dev** | Docker Compose | Development | Developer machines |
+| Environment     | Platform       | Purpose                      | Lifecycle                            |
+| --------------- | -------------- | ---------------------------- | ------------------------------------ |
+| **Production**  | Azure          | Customer-facing platform     | Persistent                           |
+| **Staging**     | Railway        | Pre-production testing       | Persistent                           |
+| **PR Previews** | Railway        | Feature testing, code review | Ephemeral (auto-deleted after merge) |
+| **Local Dev**   | Docker Compose | Development                  | Developer machines                   |
 
 ---
 
@@ -72,6 +72,7 @@ wellpulse-prod (Resource Group - Primary Region: East US 2)
 ## Compute: Azure Container Apps
 
 **Why Container Apps over App Service?**
+
 - Automatic scaling to zero (cost savings for low-traffic periods)
 - Built-in ingress with automatic HTTPS
 - Easier to deploy containers from GitHub Actions
@@ -247,8 +248,7 @@ Connection Method:
   - Azure VPN Gateway (Site-to-Site VPN)
   - Azure ExpressRoute (for large clients with dedicated circuits)
 
-Stored in Master DB:
-  tenants.databaseUrl = "postgresql://user:pass@192.168.x.x:5432/{client-db}"
+Stored in Master DB: tenants.databaseUrl = "postgresql://user:pass@192.168.x.x:5432/{client-db}"
   tenants.connectionType = "ON_PREMISES_VPN"
   tenants.vpnGatewayId = "wellpulse-vpn-gateway"
 ```
@@ -361,8 +361,7 @@ Configuration:
     - VNet-integrated (private endpoint)
     - TLS 1.2+ only
 
-Connection String (stored in Key Vault):
-  rediss://:{password}@wellpulse-redis.redis.cache.windows.net:6380
+Connection String (stored in Key Vault): rediss://:{password}@wellpulse-redis.redis.cache.windows.net:6380
 ```
 
 ### Azure Service Bus (Optional, for production-grade queuing)
@@ -520,26 +519,27 @@ jobs:
 
 **Solution**: Ultra-lean deployment for bootstrapping, upgrade as revenue grows.
 
-| Resource | Bootstrap Config (0-10 tenants) | Cost | Production Config (50+ tenants) | Cost |
-|----------|--------------------------------|------|--------------------------------|------|
-| **Container Apps Environment** | Consumption plan | $0 (pay per use) | Consumption plan | $0 |
-| - API (NestJS - 0.5 vCPU, 1 GB) | Min: 0, Max: 3 | ~$25 | Min: 1, Max: 10 (1 vCPU, 2 GB) | ~$100 |
-| - Web (Next.js - 0.25 vCPU, 0.5 GB) | Min: 0, Max: 2 | ~$10 | Min: 1, Max: 5 (0.5 vCPU, 1 GB) | ~$50 |
-| - Admin (Next.js - 0.25 vCPU, 0.5 GB) | Min: 0, Max: 1 | ~$3 | Min: 0, Max: 2 (0.5 vCPU, 1 GB) | ~$10 |
-| - ML (Python - 1 vCPU, 2 GB) | Min: 0, Max: 1 (on-demand only) | ~$5 | Min: 0, Max: 3 (2 vCPU, 4 GB) | ~$30 |
-| **PostgreSQL** | **Azure DB for PostgreSQL - Single Server** | $12 | Flexible Server B2s | $50 |
-|  | Burstable B1 (1 vCore, 2 GB, 32 GB storage) | | (2 vCore, 4 GB, 64 GB) | |
-| **Redis** | **Skip - use in-memory cache** | $0 | Azure Cache for Redis - Basic C0 | $16 |
-| **Blob Storage** | Standard LRS, Hot tier (~10 GB) | $1 | Standard LRS, Hot tier (~100 GB) | $5 |
-| **VPN Gateway** | **Skip - clients use public SSL endpoints** | $0 | VpnGw1 (for on-prem clients) | $150 |
-| **Front Door** | **Skip - use Azure DNS + Container Apps ingress** | $0 | Front Door Standard + CDN | $35 |
-| **Key Vault** | Standard (1,000 operations/month) | $1 | Standard (10,000 operations/month) | $5 |
-| **Application Insights** | 1 GB logs/month (free tier) | $0 | 5 GB logs/month | $10 |
-| **TOTAL** | | **~$57/month** | | **~$461/month** |
+| Resource                              | Bootstrap Config (0-10 tenants)                   | Cost             | Production Config (50+ tenants)    | Cost            |
+| ------------------------------------- | ------------------------------------------------- | ---------------- | ---------------------------------- | --------------- |
+| **Container Apps Environment**        | Consumption plan                                  | $0 (pay per use) | Consumption plan                   | $0              |
+| - API (NestJS - 0.5 vCPU, 1 GB)       | Min: 0, Max: 3                                    | ~$25             | Min: 1, Max: 10 (1 vCPU, 2 GB)     | ~$100           |
+| - Web (Next.js - 0.25 vCPU, 0.5 GB)   | Min: 0, Max: 2                                    | ~$10             | Min: 1, Max: 5 (0.5 vCPU, 1 GB)    | ~$50            |
+| - Admin (Next.js - 0.25 vCPU, 0.5 GB) | Min: 0, Max: 1                                    | ~$3              | Min: 0, Max: 2 (0.5 vCPU, 1 GB)    | ~$10            |
+| - ML (Python - 1 vCPU, 2 GB)          | Min: 0, Max: 1 (on-demand only)                   | ~$5              | Min: 0, Max: 3 (2 vCPU, 4 GB)      | ~$30            |
+| **PostgreSQL**                        | **Azure DB for PostgreSQL - Single Server**       | $12              | Flexible Server B2s                | $50             |
+|                                       | Burstable B1 (1 vCore, 2 GB, 32 GB storage)       |                  | (2 vCore, 4 GB, 64 GB)             |                 |
+| **Redis**                             | **Skip - use in-memory cache**                    | $0               | Azure Cache for Redis - Basic C0   | $16             |
+| **Blob Storage**                      | Standard LRS, Hot tier (~10 GB)                   | $1               | Standard LRS, Hot tier (~100 GB)   | $5              |
+| **VPN Gateway**                       | **Skip - clients use public SSL endpoints**       | $0               | VpnGw1 (for on-prem clients)       | $150            |
+| **Front Door**                        | **Skip - use Azure DNS + Container Apps ingress** | $0               | Front Door Standard + CDN          | $35             |
+| **Key Vault**                         | Standard (1,000 operations/month)                 | $1               | Standard (10,000 operations/month) | $5              |
+| **Application Insights**              | 1 GB logs/month (free tier)                       | $0               | 5 GB logs/month                    | $10             |
+| **TOTAL**                             |                                                   | **~$57/month**   |                                    | **~$461/month** |
 
 ### Cost Optimization Strategies by Phase
 
 **Phase 1: Bootstrap (0-10 tenants, $57/month)**
+
 - ✅ Skip VPN Gateway - clients connect via **public SSL endpoints with IP whitelisting**
 - ✅ Skip Front Door - use **Azure DNS + Container Apps built-in ingress** (supports wildcard SSL)
 - ✅ Skip Redis - use **in-memory cache in NestJS** (switch to Redis at 20+ tenants)
@@ -548,11 +548,13 @@ jobs:
 - ✅ ML Service only runs on-demand (0 replicas when idle)
 
 **Phase 2: Growth (10-50 tenants, $150-300/month)**
+
 - Add Azure Cache for Redis (session management, job queues)
 - Upgrade PostgreSQL to Flexible Server B2s
 - Increase Container App min replicas to 1 for faster response times
 
 **Phase 3: Scale (50+ tenants, $460+/month)**
+
 - Add VPN Gateway for enterprise clients with on-prem databases
 - Add Front Door for global CDN + WAF
 - Implement Reserved Instances (1-year commit for 30-40% savings)
@@ -560,12 +562,12 @@ jobs:
 ### Revenue vs. Cost Targets
 
 | Tenants | Wells (avg) | Monthly Revenue (@$10/well) | Infrastructure Cost | Gross Margin |
-|---------|-------------|----------------------------|-------------------|--------------|
-| 1-5 | 100 | $1,000 | $57 | 94% |
-| 10 | 200 | $2,000 | $75 | 96% |
-| 25 | 500 | $5,000 | $150 | 97% |
-| 50 | 1,000 | $10,000 | $300 | 97% |
-| 100 | 2,000 | $20,000 | $600 | 97% |
+| ------- | ----------- | --------------------------- | ------------------- | ------------ |
+| 1-5     | 100         | $1,000                      | $57                 | 94%          |
+| 10      | 200         | $2,000                      | $75                 | 96%          |
+| 25      | 500         | $5,000                      | $150                | 97%          |
+| 50      | 1,000       | $10,000                     | $300                | 97%          |
+| 100     | 2,000       | $20,000                     | $600                | 97%          |
 
 **Key Insight**: Even at minimal scale (5 tenants, 100 wells = $1,000/month), you're profitable with 94% margin.
 
@@ -712,18 +714,21 @@ VALUES (
 ### Step 2: Client Provisions Database (Their Choice)
 
 **Option A: Client uses Azure (Recommended)**
+
 1. Client creates Azure PostgreSQL Flexible Server in their subscription
 2. Client shares connection string with WellPulse (stored in Key Vault)
 3. WellPulse establishes VNet peering or Private Link
 4. WellPulse runs migrations: `pnpm --filter=api db:migrate --tenant=acmeoil`
 
 **Option B: Client uses AWS RDS**
+
 1. Client creates AWS RDS PostgreSQL instance
 2. Client configures VPN or public endpoint with SSL
 3. Client shares connection string
 4. WellPulse runs migrations
 
 **Option C: Client uses on-premises PostgreSQL**
+
 1. Client provisions on-prem PostgreSQL
 2. WellPulse configures Site-to-Site VPN via Azure VPN Gateway
 3. Client whitelists WellPulse VPN IP ranges
@@ -771,6 +776,7 @@ VALUES (
 ## Security Checklist
 
 ### Network Security
+
 - [ ] All databases on private endpoints (no public access)
 - [ ] VNet integration for Container Apps
 - [ ] VPN Gateway for on-premises connections
@@ -778,18 +784,21 @@ VALUES (
 - [ ] DDoS protection enabled
 
 ### Identity & Access
+
 - [ ] Managed Identities for all Container Apps
 - [ ] Secrets stored in Key Vault (never in code)
 - [ ] Role-Based Access Control (RBAC) on all resources
 - [ ] Multi-factor authentication for Azure portal access
 
 ### Data Protection
+
 - [ ] SSL/TLS for all database connections
 - [ ] Encryption at rest for Blob Storage
 - [ ] SAS tokens with expiration for blob access
 - [ ] Soft delete enabled (30-day retention)
 
 ### Compliance & Auditing
+
 - [ ] Audit logging enabled (Azure Monitor)
 - [ ] Log retention: 30+ days
 - [ ] Compliance certifications: SOC 2, ISO 27001 (Azure built-in)

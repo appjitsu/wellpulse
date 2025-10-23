@@ -89,6 +89,7 @@ npx @nestjs/cli new api --package-manager pnpm --skip-git
 ```
 
 **Structure:**
+
 ```
 apps/api/
 ├── src/
@@ -111,6 +112,7 @@ apps/api/
 ```
 
 **Dependencies to install:**
+
 ```json
 {
   "dependencies": {
@@ -146,6 +148,7 @@ pnpx create-next-app@latest web \
 ```
 
 **Structure:**
+
 ```
 apps/web/
 ├── app/
@@ -169,6 +172,7 @@ apps/web/
 ```
 
 **Additional dependencies:**
+
 ```bash
 cd apps/web
 pnpm add @tanstack/react-query zustand axios
@@ -190,6 +194,7 @@ pnpx create-next-app@latest admin \
 ```
 
 **Key pages:**
+
 ```
 apps/admin/
 ├── app/
@@ -212,6 +217,7 @@ pnpm init
 ```
 
 **Install Electron + React:**
+
 ```bash
 pnpm add electron electron-builder react react-dom
 pnpm add -D @types/react @types/react-dom @types/node \
@@ -219,6 +225,7 @@ pnpm add -D @types/react @types/react-dom @types/node \
 ```
 
 **Structure:**
+
 ```
 apps/electron/
 ├── src/
@@ -245,12 +252,14 @@ cd mobile
 ```
 
 **Install dependencies:**
+
 ```bash
 pnpm add expo-router expo-sqlite expo-location expo-camera
 pnpm add @tanstack/react-query zustand axios
 ```
 
 **Structure:**
+
 ```
 apps/mobile/
 ├── app/
@@ -277,6 +286,7 @@ source venv/bin/activate  # Windows: venv\Scripts\activate
 ```
 
 **Create requirements.txt:**
+
 ```txt
 fastapi==0.104.0
 uvicorn[standard]==0.24.0
@@ -288,11 +298,13 @@ python-dotenv==1.0.0
 ```
 
 **Install:**
+
 ```bash
 pip install -r requirements.txt
 ```
 
 **Structure:**
+
 ```
 apps/ml/
 ├── src/
@@ -308,6 +320,7 @@ apps/ml/
 ```
 
 **main.py:**
+
 ```python
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -344,6 +357,7 @@ pnpm init
 ```
 
 **tsconfig.base.json:**
+
 ```json
 {
   "$schema": "https://json.schemastore.org/tsconfig",
@@ -375,6 +389,7 @@ pnpm init
 ```
 
 **package.json:**
+
 ```json
 {
   "name": "@wellpulse/eslint-config",
@@ -400,6 +415,7 @@ pnpm init
 ```
 
 **package.json:**
+
 ```json
 {
   "name": "@wellpulse/database",
@@ -419,6 +435,7 @@ pnpm init
 ```
 
 **src/types.ts:**
+
 ```typescript
 export interface Tenant {
   id: string;
@@ -466,12 +483,12 @@ export const tenants = pgTable('tenants', {
 
   // Billing
   subscriptionTier: varchar('subscription_tier', { length: 50 }).notNull().default('STARTER'),
-    // "STARTER" | "PROFESSIONAL" | "ENTERPRISE" | "ENTERPRISE_PLUS"
+  // "STARTER" | "PROFESSIONAL" | "ENTERPRISE" | "ENTERPRISE_PLUS"
   maxWells: integer('max_wells').default(100), // Enforce well limits
 
   // Status
   status: varchar('status', { length: 50 }).notNull().default('ACTIVE'),
-    // "ACTIVE" | "SUSPENDED" | "TRIAL" | "DELETED"
+  // "ACTIVE" | "SUSPENDED" | "TRIAL" | "DELETED"
 
   // ETL configuration (for Tier 3 clients)
   etlConfig: jsonb('etl_config'), // Schema mapping, sync interval, etc.
@@ -495,7 +512,7 @@ export const adminUsers = pgTable('admin_users', {
   passwordHash: text('password_hash').notNull(),
   name: varchar('name', { length: 255 }).notNull(),
   role: varchar('role', { length: 50 }).notNull().default('ADMIN'),
-    // "SUPER_ADMIN" | "ADMIN" | "SUPPORT"
+  // "SUPER_ADMIN" | "ADMIN" | "SUPPORT"
 
   // Timestamps
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -505,13 +522,15 @@ export const adminUsers = pgTable('admin_users', {
 
 export const billingSubscriptions = pgTable('billing_subscriptions', {
   id: uuid('id').defaultRandom().primaryKey(),
-  tenantId: uuid('tenant_id').notNull().references(() => tenants.id),
+  tenantId: uuid('tenant_id')
+    .notNull()
+    .references(() => tenants.id),
 
   tier: varchar('tier', { length: 50 }).notNull(), // "STARTER", "PROFESSIONAL", etc.
   pricePerMonth: integer('price_per_month').notNull(), // Cents (9900 = $99)
 
   status: varchar('status', { length: 50 }).notNull().default('ACTIVE'),
-    // "ACTIVE" | "PAST_DUE" | "CANCELED" | "TRIALING"
+  // "ACTIVE" | "PAST_DUE" | "CANCELED" | "TRIALING"
 
   currentPeriodStart: timestamp('current_period_start').notNull(),
   currentPeriodEnd: timestamp('current_period_end').notNull(),
@@ -525,7 +544,9 @@ export const billingSubscriptions = pgTable('billing_subscriptions', {
 
 export const usageMetrics = pgTable('usage_metrics', {
   id: uuid('id').defaultRandom().primaryKey(),
-  tenantId: uuid('tenant_id').notNull().references(() => tenants.id),
+  tenantId: uuid('tenant_id')
+    .notNull()
+    .references(() => tenants.id),
 
   date: date('date').notNull(), // Daily metrics
 
@@ -878,8 +899,8 @@ services:
     image: axllent/mailpit:latest
     container_name: wellpulse-mailpit
     ports:
-      - '1025:1025'  # SMTP
-      - '8025:8025'  # Web UI
+      - '1025:1025' # SMTP
+      - '8025:8025' # Web UI
     environment:
       MP_MAX_MESSAGES: 5000
       MP_SMTP_AUTH_ACCEPT_ANY: 1
@@ -891,13 +912,13 @@ services:
     container_name: wellpulse-azurite
     command: azurite-blob --blobHost 0.0.0.0 --blobPort 10000
     ports:
-      - '10000:10000'  # Blob service
+      - '10000:10000' # Blob service
     volumes:
       - azurite_data:/data
     environment:
       AZURITE_ACCOUNTS: devstoreaccount1:Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==
     healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "10000"]
+      test: ['CMD', 'nc', '-z', 'localhost', '10000']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -909,6 +930,7 @@ volumes:
 ```
 
 **Start services:**
+
 ```bash
 docker compose up -d
 ```
@@ -1183,12 +1205,12 @@ Sprint 1 is complete when:
 
 ## Blockers & Risks
 
-| Risk | Mitigation |
-|------|-----------|
+| Risk                                          | Mitigation                                            |
+| --------------------------------------------- | ----------------------------------------------------- |
 | PostgreSQL permissions for creating databases | Use admin connection string with superuser privileges |
-| Subdomain routing in local dev | Use `/etc/hosts` entries: `127.0.0.1 acme.localhost` |
-| Monorepo complexity | Keep turbo.json simple, add tasks incrementally |
-| Missing Python dependencies for ML service | Docker container will handle Python environment |
+| Subdomain routing in local dev                | Use `/etc/hosts` entries: `127.0.0.1 acme.localhost`  |
+| Monorepo complexity                           | Keep turbo.json simple, add tasks incrementally       |
+| Missing Python dependencies for ML service    | Docker container will handle Python environment       |
 
 ---
 

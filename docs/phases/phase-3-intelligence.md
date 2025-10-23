@@ -1751,7 +1751,7 @@ export class CreateTenantCommand {
     public readonly name: string,
     public readonly subdomain: string,
     public readonly adminEmail: string,
-    public readonly plan: 'starter' | 'professional' | 'enterprise'
+    public readonly plan: 'starter' | 'professional' | 'enterprise',
   ) {}
 }
 
@@ -1761,7 +1761,7 @@ export class CreateTenantHandler implements ICommandHandler<CreateTenantCommand>
   constructor(
     private readonly tenantRepo: TenantRepository,
     private readonly databaseRepo: DatabaseRepository,
-    private readonly dataSource: DataSource
+    private readonly dataSource: DataSource,
   ) {}
 
   async execute(command: CreateTenantCommand): Promise<Tenant> {
@@ -1770,7 +1770,7 @@ export class CreateTenantHandler implements ICommandHandler<CreateTenantCommand>
       name: command.name,
       subdomain: command.subdomain,
       plan: command.plan,
-      status: 'provisioning'
+      status: 'provisioning',
     });
 
     try {
@@ -1979,36 +1979,32 @@ export class StripeService {
   private stripe: Stripe;
 
   constructor(private configService: ConfigService) {
-    this.stripe = new Stripe(
-      this.configService.get<string>('STRIPE_SECRET_KEY'),
-      { apiVersion: '2023-10-16' }
-    );
+    this.stripe = new Stripe(this.configService.get<string>('STRIPE_SECRET_KEY'), {
+      apiVersion: '2023-10-16',
+    });
   }
 
   async createCustomer(email: string, name: string, tenantId: string): Promise<Stripe.Customer> {
     return this.stripe.customers.create({
       email,
       name,
-      metadata: { tenantId }
+      metadata: { tenantId },
     });
   }
 
-  async createSubscription(
-    customerId: string,
-    priceId: string
-  ): Promise<Stripe.Subscription> {
+  async createSubscription(customerId: string, priceId: string): Promise<Stripe.Subscription> {
     return this.stripe.subscriptions.create({
       customer: customerId,
       items: [{ price: priceId }],
       payment_behavior: 'default_incomplete',
-      expand: ['latest_invoice.payment_intent']
+      expand: ['latest_invoice.payment_intent'],
     });
   }
 
   async createCheckoutSession(
     customerId: string,
     priceId: string,
-    tenantId: string
+    tenantId: string,
   ): Promise<Stripe.Checkout.Session> {
     return this.stripe.checkout.sessions.create({
       customer: customerId,
@@ -2016,28 +2012,25 @@ export class StripeService {
       line_items: [
         {
           price: priceId,
-          quantity: 1
-        }
+          quantity: 1,
+        },
       ],
       success_url: `${this.configService.get('APP_URL')}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${this.configService.get('APP_URL')}/billing/cancel`,
-      metadata: { tenantId }
+      metadata: { tenantId },
     });
   }
 
   async createUsageRecord(
     subscriptionItemId: string,
     quantity: number,
-    timestamp?: number
+    timestamp?: number,
   ): Promise<Stripe.UsageRecord> {
-    return this.stripe.subscriptionItems.createUsageRecord(
-      subscriptionItemId,
-      {
-        quantity,
-        timestamp: timestamp || Math.floor(Date.now() / 1000),
-        action: 'set'
-      }
-    );
+    return this.stripe.subscriptionItems.createUsageRecord(subscriptionItemId, {
+      quantity,
+      timestamp: timestamp || Math.floor(Date.now() / 1000),
+      action: 'set',
+    });
   }
 
   async cancelSubscription(subscriptionId: string): Promise<Stripe.Subscription> {
@@ -2046,7 +2039,7 @@ export class StripeService {
 
   async getUpcomingInvoice(customerId: string): Promise<Stripe.Invoice> {
     return this.stripe.invoices.retrieveUpcoming({
-      customer: customerId
+      customer: customerId,
     });
   }
 
@@ -2070,13 +2063,13 @@ import Stripe from 'stripe';
 export class StripeWebhookController {
   constructor(
     private readonly stripeService: StripeService,
-    private readonly tenantRepo: TenantRepository
+    private readonly tenantRepo: TenantRepository,
   ) {}
 
   @Post()
   async handleWebhook(
     @Req() req: RawBodyRequest<Request>,
-    @Headers('stripe-signature') signature: string
+    @Headers('stripe-signature') signature: string,
   ) {
     const payload = req.rawBody;
 
@@ -2120,7 +2113,7 @@ export class StripeWebhookController {
     await this.tenantRepo.updateBilling(tenantId, {
       stripeSubscriptionId: subscription.id,
       status: subscription.status,
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000)
+      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
     });
   }
 
@@ -2128,7 +2121,7 @@ export class StripeWebhookController {
     const tenantId = subscription.metadata.tenantId;
     await this.tenantRepo.updateBilling(tenantId, {
       status: subscription.status,
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000)
+      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
     });
   }
 
@@ -2164,7 +2157,7 @@ export class RecordUsageCommand {
   constructor(
     public readonly tenantId: string,
     public readonly metricType: 'api_calls' | 'storage_gb' | 'wells',
-    public readonly quantity: number
+    public readonly quantity: number,
   ) {}
 }
 
@@ -2172,7 +2165,7 @@ export class RecordUsageCommand {
 export class UsageBillingService {
   constructor(
     private readonly stripeService: StripeService,
-    private readonly tenantRepo: TenantRepository
+    private readonly tenantRepo: TenantRepository,
   ) {}
 
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
@@ -2191,10 +2184,12 @@ export class UsageBillingService {
         // Record to Stripe
         await this.stripeService.createUsageRecord(
           tenant.stripeSubscriptionItemId,
-          apiCalls + (storageGb * 100) + (wellCount * 10)  // Weighted formula
+          apiCalls + storageGb * 100 + wellCount * 10, // Weighted formula
         );
 
-        console.log(`Recorded usage for tenant ${tenant.id}: ${apiCalls} API calls, ${storageGb} GB storage, ${wellCount} wells`);
+        console.log(
+          `Recorded usage for tenant ${tenant.id}: ${apiCalls} API calls, ${storageGb} GB storage, ${wellCount} wells`,
+        );
       } catch (error) {
         console.error(`Failed to record usage for tenant ${tenant.id}:`, error);
       }
@@ -2397,7 +2392,7 @@ spec:
         - name: http-scaling
           http:
             metadata:
-              concurrentRequests: "100"
+              concurrentRequests: '100'
 ---
 apiVersion: apps.azure.com/v1
 kind: ContainerApp
@@ -2562,6 +2557,7 @@ jobs:
 ### Checklist
 
 #### Infrastructure
+
 - [ ] Azure Container Apps configured
 - [ ] Azure PostgreSQL database provisioned
 - [ ] Azure Container Registry created
@@ -2573,6 +2569,7 @@ jobs:
 - [ ] Secrets stored in Azure Key Vault
 
 #### Security
+
 - [ ] Rate limiting enabled (multi-tier)
 - [ ] CORS configured correctly
 - [ ] CSP headers implemented
@@ -2585,6 +2582,7 @@ jobs:
 - [ ] TLS 1.3 enforced
 
 #### Performance
+
 - [ ] Database indexes optimized
 - [ ] Query performance tested (no N+1)
 - [ ] React Query caching configured
@@ -2595,6 +2593,7 @@ jobs:
 - [ ] API response times < 200ms (p95)
 
 #### Monitoring
+
 - [ ] Application Insights dashboards created
 - [ ] Error tracking (Sentry) configured
 - [ ] Uptime monitoring enabled
@@ -2605,6 +2604,7 @@ jobs:
 - [ ] ML model performance tracking
 
 #### Testing
+
 - [ ] Unit test coverage ≥ 80%
 - [ ] Integration tests passing
 - [ ] E2E tests passing
@@ -2613,6 +2613,7 @@ jobs:
 - [ ] ML model validation completed
 
 #### Documentation
+
 - [ ] API documentation (OpenAPI/Swagger)
 - [ ] User guides created
 - [ ] Admin guides created
@@ -2621,6 +2622,7 @@ jobs:
 - [ ] Backup/restore procedures
 
 #### Compliance
+
 - [ ] Privacy policy created
 - [ ] Terms of service created
 - [ ] GDPR compliance verified
@@ -2679,6 +2681,7 @@ jobs:
 ### Q1 2026: Optimization & Scale
 
 **Features**:
+
 - Advanced ML models (neural networks for production forecasting)
 - Mobile app (React Native)
 - Public API for third-party integrations
@@ -2686,6 +2689,7 @@ jobs:
 - White-label solution
 
 **Infrastructure**:
+
 - Multi-region deployment
 - Redis caching layer
 - GraphQL API
@@ -2695,6 +2699,7 @@ jobs:
 ### Q2 2026: Ecosystem & Integrations
 
 **Features**:
+
 - Integrations with SCADA systems
 - Integration with accounting software (QuickBooks, Xero)
 - Integration with land management systems
@@ -2702,6 +2707,7 @@ jobs:
 - Advanced ESG features (Scope 3 emissions)
 
 **Platform**:
+
 - Plugin architecture
 - Webhook system
 - Event-driven architecture
@@ -2710,6 +2716,7 @@ jobs:
 ### Q3 2026: AI & Automation
 
 **Features**:
+
 - AI assistant (ChatGPT integration)
 - Automated work order generation
 - Smart scheduling optimization
@@ -2717,6 +2724,7 @@ jobs:
 - Automated compliance reporting
 
 **ML Enhancements**:
+
 - Deep learning models
 - Reinforcement learning for optimization
 - Computer vision (equipment inspection)
@@ -2725,6 +2733,7 @@ jobs:
 ### Q4 2026: Enterprise & Scale
 
 **Features**:
+
 - Enterprise SSO (SAML, OIDC)
 - Advanced RBAC (custom roles)
 - Multi-tenant reporting
@@ -2732,6 +2741,7 @@ jobs:
 - Advanced audit logging
 
 **Scale**:
+
 - Support for 1000+ tenants
 - 10,000+ wells per tenant
 - 99.99% uptime SLA
@@ -2742,6 +2752,7 @@ jobs:
 ## Phase 3 Completion Criteria
 
 ### Sprint 9 (ML & ESG)
+
 - [ ] Python ML service deployed and accessible
 - [ ] All 5 ML use cases implemented and tested
 - [ ] ML models trained on sample data
@@ -2754,6 +2765,7 @@ jobs:
 - [ ] Performance: ML predictions < 5 seconds
 
 ### Sprint 10 (Admin & Launch)
+
 - [ ] Admin portal deployed
 - [ ] Tenant provisioning working (create, suspend, activate)
 - [ ] Database schema creation automated
@@ -2771,6 +2783,7 @@ jobs:
 - [ ] Documentation complete
 
 ### Overall Phase 3
+
 - [ ] All production readiness items checked
 - [ ] Beta feedback collected and reviewed
 - [ ] Critical bugs fixed
@@ -2792,6 +2805,7 @@ Phase 3 completes the WellPulse MVP by adding:
 4. **Production**: Fully deployed, monitored, and secure infrastructure
 
 **Deliverables**:
+
 - Python FastAPI ML service with trained models
 - ESG compliance module with regulatory reports
 - Admin portal with tenant and billing management
