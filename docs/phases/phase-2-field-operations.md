@@ -73,22 +73,23 @@ Enable operators to enter and visualize daily production data (oil, gas, water v
 
 **Table**: `production_data`
 
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | UUID | Primary key |
-| `well_id` | UUID | Foreign key to wells |
-| `production_date` | DATE | NOT NULL, indexed |
-| `oil_volume` | DECIMAL(10,2) | Barrels |
-| `gas_volume` | DECIMAL(10,2) | MCF (thousand cubic feet) |
-| `water_volume` | DECIMAL(10,2) | Barrels |
-| `entry_method` | ENUM | 'MANUAL', 'SCADA', 'MOBILE', 'ELECTRON' |
-| `notes` | TEXT | Optional |
-| `created_by` | UUID | User who entered data |
-| `created_at` | TIMESTAMP | Auto-generated |
-| `updated_at` | TIMESTAMP | Auto-updated |
-| `deleted_at` | TIMESTAMP | Soft delete |
+| Column            | Type          | Notes                                   |
+| ----------------- | ------------- | --------------------------------------- |
+| `id`              | UUID          | Primary key                             |
+| `well_id`         | UUID          | Foreign key to wells                    |
+| `production_date` | DATE          | NOT NULL, indexed                       |
+| `oil_volume`      | DECIMAL(10,2) | Barrels                                 |
+| `gas_volume`      | DECIMAL(10,2) | MCF (thousand cubic feet)               |
+| `water_volume`    | DECIMAL(10,2) | Barrels                                 |
+| `entry_method`    | ENUM          | 'MANUAL', 'SCADA', 'MOBILE', 'ELECTRON' |
+| `notes`           | TEXT          | Optional                                |
+| `created_by`      | UUID          | User who entered data                   |
+| `created_at`      | TIMESTAMP     | Auto-generated                          |
+| `updated_at`      | TIMESTAMP     | Auto-updated                            |
+| `deleted_at`      | TIMESTAMP     | Soft delete                             |
 
 **Indexes**:
+
 - `idx_production_well_date` on `(well_id, production_date)` - Primary query pattern
 - `idx_production_date` on `production_date` - Range queries
 
@@ -101,9 +102,9 @@ export class ProductionData {
     public readonly id: string,
     private _wellId: string,
     private _productionDate: Date,
-    private _oilVolume: Volume,     // Value Object
-    private _gasVolume: Volume,     // Value Object
-    private _waterVolume: Volume,   // Value Object
+    private _oilVolume: Volume, // Value Object
+    private _gasVolume: Volume, // Value Object
+    private _waterVolume: Volume, // Value Object
     private _entryMethod: EntryMethod,
     private _notes: string | null,
     public readonly createdBy: string,
@@ -192,35 +193,35 @@ Track equipment inventory (pump jacks, tanks, separators), log maintenance activ
 
 **Table**: `equipment`
 
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | UUID | Primary key |
-| `well_id` | UUID | Foreign key to wells |
-| `equipment_type` | ENUM | 'PUMP_JACK', 'TANK', 'SEPARATOR', etc. |
-| `serial_number` | VARCHAR(100) | Unique |
-| `manufacturer` | VARCHAR(255) | Optional |
-| `model` | VARCHAR(255) | Optional |
-| `installation_date` | DATE | Optional |
-| `status` | ENUM | 'OPERATIONAL', 'MAINTENANCE', 'FAILED' |
-| `created_at` | TIMESTAMP | Auto-generated |
-| `updated_at` | TIMESTAMP | Auto-updated |
-| `deleted_at` | TIMESTAMP | Soft delete |
+| Column              | Type         | Notes                                  |
+| ------------------- | ------------ | -------------------------------------- |
+| `id`                | UUID         | Primary key                            |
+| `well_id`           | UUID         | Foreign key to wells                   |
+| `equipment_type`    | ENUM         | 'PUMP_JACK', 'TANK', 'SEPARATOR', etc. |
+| `serial_number`     | VARCHAR(100) | Unique                                 |
+| `manufacturer`      | VARCHAR(255) | Optional                               |
+| `model`             | VARCHAR(255) | Optional                               |
+| `installation_date` | DATE         | Optional                               |
+| `status`            | ENUM         | 'OPERATIONAL', 'MAINTENANCE', 'FAILED' |
+| `created_at`        | TIMESTAMP    | Auto-generated                         |
+| `updated_at`        | TIMESTAMP    | Auto-updated                           |
+| `deleted_at`        | TIMESTAMP    | Soft delete                            |
 
 **Table**: `equipment_maintenance`
 
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | UUID | Primary key |
-| `equipment_id` | UUID | Foreign key to equipment |
-| `maintenance_date` | DATE | NOT NULL |
-| `maintenance_type` | ENUM | 'ROUTINE', 'REPAIR', 'INSPECTION' |
-| `description` | TEXT | Required |
-| `technician` | VARCHAR(255) | Optional |
-| `cost` | DECIMAL(10,2) | Optional |
-| `next_maintenance_date` | DATE | Optional |
-| `photo_urls` | TEXT[] | Array of Azure Blob URLs |
-| `created_by` | UUID | User who logged maintenance |
-| `created_at` | TIMESTAMP | Auto-generated |
+| Column                  | Type          | Notes                             |
+| ----------------------- | ------------- | --------------------------------- |
+| `id`                    | UUID          | Primary key                       |
+| `equipment_id`          | UUID          | Foreign key to equipment          |
+| `maintenance_date`      | DATE          | NOT NULL                          |
+| `maintenance_type`      | ENUM          | 'ROUTINE', 'REPAIR', 'INSPECTION' |
+| `description`           | TEXT          | Required                          |
+| `technician`            | VARCHAR(255)  | Optional                          |
+| `cost`                  | DECIMAL(10,2) | Optional                          |
+| `next_maintenance_date` | DATE          | Optional                          |
+| `photo_urls`            | TEXT[]        | Array of Azure Blob URLs          |
+| `created_by`            | UUID          | User who logged maintenance       |
+| `created_at`            | TIMESTAMP     | Auto-generated                    |
 
 ### Photo Upload Flow (Azure Blob Storage)
 
@@ -376,11 +377,13 @@ CREATE TABLE production_data (
 ### UI/UX Considerations
 
 **Large Touch Targets**: Field operators often wear gloves
+
 - Buttons: 60x60px minimum
 - Form inputs: 50px height
 - Spacing: 20px between elements
 
 **Offline Indicator**: Always visible
+
 ```
 ┌─────────────────────────────────────┐
 │  WellPulse Field Entry              │
@@ -389,6 +392,7 @@ CREATE TABLE production_data (
 ```
 
 **Sync Queue Visibility**: Show pending actions
+
 ```
 Pending Sync (5 items):
 - Production entry for Well 123 (Oct 20)
@@ -532,24 +536,24 @@ interface BatchSyncRequest {
 }
 
 interface PhotoUpload {
-  eventId: string;        // Reference to event
-  localPath: string;      // For logging only
-  base64Data: string;     // Photo as base64
+  eventId: string; // Reference to event
+  localPath: string; // For logging only
+  base64Data: string; // Photo as base64
   filename: string;
   contentType: string;
 }
 
 interface BatchSyncResponse {
-  synced: string[];       // Event IDs successfully synced
-  conflicts: Conflict[];  // Events with conflicts
-  failed: Failed[];       // Events that failed
+  synced: string[]; // Event IDs successfully synced
+  conflicts: Conflict[]; // Events with conflicts
+  failed: Failed[]; // Events that failed
 }
 
 interface Conflict {
   eventId: string;
-  reason: string;         // e.g., "Production data already exists for 2025-10-20"
-  existingData: any;      // Server's current data
-  incomingData: any;      // Client's data
+  reason: string; // e.g., "Production data already exists for 2025-10-20"
+  existingData: any; // Server's current data
+  incomingData: any; // Client's data
   resolution: 'MERGE' | 'OVERWRITE' | 'SKIP' | 'USER_PROMPT';
 }
 ```
@@ -589,6 +593,7 @@ Result: Oil/gas from Electron + notes from Mobile
 ### Mobile UI/UX
 
 **Home Screen**:
+
 ```
 ┌─────────────────────────────────────┐
 │  WellPulse Field Entry              │
@@ -608,6 +613,7 @@ Result: Oil/gas from Electron + notes from Mobile
 ```
 
 **Production Entry Screen**:
+
 ```
 ┌─────────────────────────────────────┐
 │  ← Enter Production                 │
@@ -731,32 +737,35 @@ Result: Oil/gas from Electron + notes from Mobile
 
 ### Performance Targets
 
-| Metric | Target | Notes |
-|--------|--------|-------|
-| **Electron app startup** | < 3 seconds | Cold start on Windows 10 |
-| **Mobile app startup** | < 2 seconds | iOS/Android |
-| **SQLite write** | < 10ms | Single event insert |
-| **SQLite query** | < 50ms | 1000 events |
-| **Batch sync (100 events)** | < 10 seconds | No photos |
-| **Batch sync (10 photos)** | < 30 seconds | 10 MB total |
-| **Photo upload** | < 5 seconds | 2 MB photo to Azure Blob |
-| **Production chart render** | < 1 second | 90 days of data |
+| Metric                      | Target       | Notes                    |
+| --------------------------- | ------------ | ------------------------ |
+| **Electron app startup**    | < 3 seconds  | Cold start on Windows 10 |
+| **Mobile app startup**      | < 2 seconds  | iOS/Android              |
+| **SQLite write**            | < 10ms       | Single event insert      |
+| **SQLite query**            | < 50ms       | 1000 events              |
+| **Batch sync (100 events)** | < 10 seconds | No photos                |
+| **Batch sync (10 photos)**  | < 30 seconds | 10 MB total              |
+| **Photo upload**            | < 5 seconds  | 2 MB photo to Azure Blob |
+| **Production chart render** | < 1 second   | 90 days of data          |
 
 ### Security Considerations
 
 **Electron App**:
+
 - Encrypt SQLite database (sqlite-cipher)
 - Store JWT tokens in secure storage (electron-store with encryption)
 - Auto-lock after 15 minutes of inactivity
 - Require re-authentication on app restart
 
 **Mobile App**:
+
 - Encrypt AsyncStorage (expo-secure-store)
 - Biometric authentication (FaceID, TouchID, fingerprint)
 - Certificate pinning (prevent MITM attacks)
 - Disable screenshots for sensitive screens
 
 **Batch Sync**:
+
 - JWT authentication required
 - Rate limiting (10 sync requests per minute per user)
 - Event signature verification (HMAC)
@@ -796,27 +805,27 @@ Result: Oil/gas from Electron + notes from Mobile
 
 ### High Risks 🔴
 
-| Risk | Impact | Likelihood | Mitigation |
-|------|--------|-----------|-----------|
-| **Offline sync conflicts underestimated** | High | Medium | Prototype conflict resolution in Sprint 7, iterate based on user feedback |
-| **SQLite performance degrades with large datasets** | High | Low | Implement pagination, archiving (>6 months old), and database vacuuming |
-| **Mobile app store rejection** | Medium | Low | Follow Apple/Google guidelines strictly, avoid prohibited features |
-| **GPS accuracy insufficient** | Medium | Medium | Test in real field locations, fallback to manual location entry |
+| Risk                                                | Impact | Likelihood | Mitigation                                                                |
+| --------------------------------------------------- | ------ | ---------- | ------------------------------------------------------------------------- |
+| **Offline sync conflicts underestimated**           | High   | Medium     | Prototype conflict resolution in Sprint 7, iterate based on user feedback |
+| **SQLite performance degrades with large datasets** | High   | Low        | Implement pagination, archiving (>6 months old), and database vacuuming   |
+| **Mobile app store rejection**                      | Medium | Low        | Follow Apple/Google guidelines strictly, avoid prohibited features        |
+| **GPS accuracy insufficient**                       | Medium | Medium     | Test in real field locations, fallback to manual location entry           |
 
 ### Medium Risks 🟡
 
-| Risk | Impact | Likelihood | Mitigation |
-|------|--------|-----------|-----------|
-| **Electron app size too large (>500 MB)** | Medium | Medium | Use electron-builder compression, exclude unnecessary assets |
-| **React Native version compatibility** | Medium | Low | Lock dependencies, test on multiple iOS/Android versions |
-| **Photo storage costs exceed budget** | Low | Medium | Implement image compression, lifecycle management (archive after 1 year) |
+| Risk                                      | Impact | Likelihood | Mitigation                                                               |
+| ----------------------------------------- | ------ | ---------- | ------------------------------------------------------------------------ |
+| **Electron app size too large (>500 MB)** | Medium | Medium     | Use electron-builder compression, exclude unnecessary assets             |
+| **React Native version compatibility**    | Medium | Low        | Lock dependencies, test on multiple iOS/Android versions                 |
+| **Photo storage costs exceed budget**     | Low    | Medium     | Implement image compression, lifecycle management (archive after 1 year) |
 
 ### Low Risks 🟢
 
-| Risk | Impact | Likelihood | Mitigation |
-|------|--------|-----------|-----------|
-| **Users forget to sync** | Low | Medium | Implement auto-sync on network detection, sync reminders |
-| **Camera permissions denied** | Low | Medium | Graceful fallback to file upload, clear permission prompts |
+| Risk                          | Impact | Likelihood | Mitigation                                                 |
+| ----------------------------- | ------ | ---------- | ---------------------------------------------------------- |
+| **Users forget to sync**      | Low    | Medium     | Implement auto-sync on network detection, sync reminders   |
+| **Camera permissions denied** | Low    | Medium     | Graceful fallback to file upload, clear permission prompts |
 
 ---
 
@@ -832,10 +841,10 @@ Result: Oil/gas from Electron + notes from Mobile
 
 ### Sprint Documentation
 
-- [Sprint 5: Production Tracking](../sprints/sprint-05-production-tracking.md) *(to be created)*
-- [Sprint 6: Equipment Management](../sprints/sprint-06-equipment-management.md) *(to be created)*
-- [Sprint 7: Electron Offline App](../sprints/sprint-07-electron-app.md) *(to be created)*
-- [Sprint 8: Mobile App & Sync](../sprints/sprint-08-mobile-sync.md) *(to be created)*
+- [Sprint 5: Production Tracking](../sprints/sprint-05-production-tracking.md) _(to be created)_
+- [Sprint 6: Equipment Management](../sprints/sprint-06-equipment-management.md) _(to be created)_
+- [Sprint 7: Electron Offline App](../sprints/sprint-07-electron-app.md) _(to be created)_
+- [Sprint 8: Mobile App & Sync](../sprints/sprint-08-mobile-sync.md) _(to be created)_
 
 ---
 

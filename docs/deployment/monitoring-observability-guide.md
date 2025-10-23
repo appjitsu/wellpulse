@@ -97,7 +97,8 @@ import * as appInsights from 'applicationinsights';
 async function bootstrap() {
   // Initialize Application Insights FIRST (before NestJS app)
   if (process.env.APPLICATIONINSIGHTS_CONNECTION_STRING) {
-    appInsights.setup(process.env.APPLICATIONINSIGHTS_CONNECTION_STRING)
+    appInsights
+      .setup(process.env.APPLICATIONINSIGHTS_CONNECTION_STRING)
       .setAutoDependencyCorrelation(true)
       .setAutoCollectRequests(true)
       .setAutoCollectPerformance(true, true)
@@ -251,11 +252,7 @@ export class MetricsService {
   }
 
   // Track offline sync
-  trackOfflineSync(
-    deviceType: 'ELECTRON' | 'MOBILE',
-    eventCount: number,
-    success: boolean,
-  ) {
+  trackOfflineSync(deviceType: 'ELECTRON' | 'MOBILE', eventCount: number, success: boolean) {
     this.client?.trackEvent({
       name: 'offline_sync_completed',
       properties: { deviceType, success: success.toString() },
@@ -307,11 +304,7 @@ export class CreateProductionHandler {
       await this.repository.save(command.tenantId, productionData);
 
       // Track business metric
-      this.metrics.trackProductionEntry(
-        command.tenantId,
-        command.wellId,
-        command.oilVolume,
-      );
+      this.metrics.trackProductionEntry(command.tenantId, command.wellId, command.oilVolume);
 
       // Track request duration
       const duration = Date.now() - startTime;
@@ -469,13 +462,13 @@ export class FieldDataSyncProcessor {
 
 ### Log Levels
 
-| Level | When to Use | Retention |
-|-------|-------------|-----------|
-| **ERROR** | Exceptions, failures | 90 days |
-| **WARN** | Recoverable issues, deprecations | 30 days |
-| **INFO** | Business events, state changes | 30 days |
-| **DEBUG** | Detailed flow for troubleshooting | 7 days (local only) |
-| **VERBOSE** | Low-level details | Local only |
+| Level       | When to Use                       | Retention           |
+| ----------- | --------------------------------- | ------------------- |
+| **ERROR**   | Exceptions, failures              | 90 days             |
+| **WARN**    | Recoverable issues, deprecations  | 30 days             |
+| **INFO**    | Business events, state changes    | 30 days             |
+| **DEBUG**   | Detailed flow for troubleshooting | 7 days (local only) |
+| **VERBOSE** | Low-level details                 | Local only          |
 
 ### Structured Logging (NestJS)
 
@@ -549,12 +542,10 @@ export class WellRepository {
         wellId: well.id,
       });
     } catch (error) {
-      this.logger.error(
-        'Failed to save well',
-        (error as Error).stack,
-        'WellRepository',
-        { tenantId, wellId: well.id },
-      );
+      this.logger.error('Failed to save well', (error as Error).stack, 'WellRepository', {
+        tenantId,
+        wellId: well.id,
+      });
       throw error;
     }
   }
@@ -785,15 +776,15 @@ Use Case: During deployments or incidents, watch Live Metrics for immediate feed
 
 ### Key Metrics to Track
 
-| Metric | Target | Alert Threshold |
-|--------|--------|-----------------|
-| **API Response Time (p95)** | <200ms | >500ms |
-| **API Response Time (p99)** | <500ms | >1000ms |
-| **Database Query Time (p95)** | <50ms | >200ms |
-| **Map Load Time** | <2s | >5s |
-| **Production Chart Render** | <1s | >3s |
-| **Offline Sync Duration (100 events)** | <10s | >30s |
-| **ML Prediction Latency** | <500ms | >2s |
+| Metric                                 | Target | Alert Threshold |
+| -------------------------------------- | ------ | --------------- |
+| **API Response Time (p95)**            | <200ms | >500ms          |
+| **API Response Time (p99)**            | <500ms | >1000ms         |
+| **Database Query Time (p95)**          | <50ms  | >200ms          |
+| **Map Load Time**                      | <2s    | >5s             |
+| **Production Chart Render**            | <1s    | >3s             |
+| **Offline Sync Duration (100 events)** | <10s   | >30s            |
+| **ML Prediction Latency**              | <500ms | >2s             |
 
 ### Synthetic Monitoring (Uptime Checks)
 
@@ -824,18 +815,19 @@ Test 3: Multi-Step Test (User Flow)
 
 ### Severity Levels
 
-| Severity | Description | Response Time | Escalation |
-|----------|-------------|---------------|------------|
-| **P0 (Critical)** | Complete outage, all users affected | <15 minutes | Immediate PagerDuty |
-| **P1 (High)** | Major feature broken, many users affected | <1 hour | Email + Slack |
-| **P2 (Medium)** | Minor feature broken, few users affected | <4 hours | Email |
-| **P3 (Low)** | Cosmetic issue, no functional impact | <24 hours | Ticket queue |
+| Severity          | Description                               | Response Time | Escalation          |
+| ----------------- | ----------------------------------------- | ------------- | ------------------- |
+| **P0 (Critical)** | Complete outage, all users affected       | <15 minutes   | Immediate PagerDuty |
+| **P1 (High)**     | Major feature broken, many users affected | <1 hour       | Email + Slack       |
+| **P2 (Medium)**   | Minor feature broken, few users affected  | <4 hours      | Email               |
+| **P3 (Low)**      | Cosmetic issue, no functional impact      | <24 hours     | Ticket queue        |
 
 ### Incident Response Playbook
 
 #### P0: API Completely Down
 
 **Symptoms**:
+
 - Azure Monitor: API error rate 100%
 - Uptime checks: All failing
 - User reports: Cannot access platform
@@ -863,6 +855,7 @@ az containerapp revision set-mode --resource-group wellpulse-prod \
 ```
 
 **Root Cause Analysis (Post-Incident)**:
+
 - Document timeline
 - Identify root cause
 - Create action items to prevent recurrence
@@ -871,6 +864,7 @@ az containerapp revision set-mode --resource-group wellpulse-prod \
 #### P1: Database Performance Degradation
 
 **Symptoms**:
+
 - API latency p95 > 1 second
 - Database query time alerts firing
 - User reports: Slow page loads
@@ -902,6 +896,7 @@ az postgres flexible-server update \
 #### P2: Offline Sync Failures
 
 **Symptoms**:
+
 - Sync failure rate > 10%
 - User reports: Data not syncing from Electron/Mobile
 
@@ -957,8 +952,8 @@ Widgets:
   - Cost per Tenant (if tracking tenant-specific resources)
 
 Example Insights:
-  - "VPN Gateway costs $150/month but only 2 tenants use it"
-  - "Blob Storage costs increased 30% this month (200 GB → 260 GB)"
+  - 'VPN Gateway costs $150/month but only 2 tenants use it'
+  - 'Blob Storage costs increased 30% this month (200 GB → 260 GB)'
 ```
 
 ### Cost Optimization Triggers

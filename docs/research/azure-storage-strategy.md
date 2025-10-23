@@ -13,6 +13,7 @@
 **Staging**: Azure Blob Storage (separate storage account)
 
 **Key Benefits**:
+
 - Native Azure integration (same cloud provider as Container Apps)
 - 99.9% availability SLA
 - Geo-redundant storage (GRS) for disaster recovery
@@ -26,17 +27,18 @@
 
 ### File Types
 
-| File Type | Use Case | Size | Frequency | Retention |
-|-----------|----------|------|-----------|-----------|
-| **Well Photos** | Field operator photos (equipment, leaks, general) | 1-5 MB | 100/day | 7 years |
-| **Maintenance Photos** | Equipment maintenance documentation | 1-5 MB | 50/day | 7 years |
-| **Invoice PDFs** | Generated invoices (for future invoicing feature) | 100-500 KB | 10/day | 10 years |
-| **User Avatars** | Profile pictures | 100-500 KB | 1/user | Until deleted |
-| **Equipment Manuals** | PDF manuals for equipment | 5-50 MB | Rare | Permanent |
+| File Type              | Use Case                                          | Size       | Frequency | Retention     |
+| ---------------------- | ------------------------------------------------- | ---------- | --------- | ------------- |
+| **Well Photos**        | Field operator photos (equipment, leaks, general) | 1-5 MB     | 100/day   | 7 years       |
+| **Maintenance Photos** | Equipment maintenance documentation               | 1-5 MB     | 50/day    | 7 years       |
+| **Invoice PDFs**       | Generated invoices (for future invoicing feature) | 100-500 KB | 10/day    | 10 years      |
+| **User Avatars**       | Profile pictures                                  | 100-500 KB | 1/user    | Until deleted |
+| **Equipment Manuals**  | PDF manuals for equipment                         | 5-50 MB    | Rare      | Permanent     |
 
 ### Storage Estimates
 
 **Year 1 (100 tenants, 5,000 wells):**
+
 ```
 Photos: 150 photos/day × 2 MB × 365 days = 110 GB/year
 PDFs: 10 PDFs/day × 200 KB × 365 days = 0.7 GB/year
@@ -46,6 +48,7 @@ Cost: 111 GB × $0.018/GB = $2/month
 ```
 
 **Year 3 (1,000 tenants, 50,000 wells):**
+
 ```
 Photos: 1,500 photos/day × 2 MB × 365 days × 3 years = 3.3 TB
 PDFs: 100 PDFs/day × 200 KB × 365 days × 3 years = 22 GB
@@ -87,6 +90,7 @@ wellpulse-prod (Storage Account)
 ```
 
 **Why container per tenant?**
+
 - Not needed - single "tenants" container with tenant prefix in blob path
 - Simplifies management (one container)
 - Access control via SAS tokens with tenant-specific permissions
@@ -94,6 +98,7 @@ wellpulse-prod (Storage Account)
 ### Access Patterns
 
 **Upload (Server-Side):**
+
 ```typescript
 // NestJS API generates SAS token for upload
 POST /api/wells/{wellId}/photos/upload-url
@@ -109,6 +114,7 @@ Body: <binary photo data>
 ```
 
 **Download (CDN-Accelerated):**
+
 ```typescript
 // NestJS API generates CDN URL with SAS token
 GET /api/wells/{wellId}/photos/{photoId}
@@ -128,6 +134,7 @@ GET {url}
 ### Environment Variables
 
 **apps/api/.env:**
+
 ```bash
 # Azure Blob Storage (Production)
 AZURE_STORAGE_ACCOUNT_NAME=wellpulseprod
@@ -149,7 +156,12 @@ AZURE_STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=http;AccountName=devsto
 // apps/api/src/infrastructure/storage/azure-blob.service.ts
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { BlobServiceClient, ContainerClient, generateBlobSASQueryParameters, BlobSASPermissions } from '@azure/storage-blob';
+import {
+  BlobServiceClient,
+  ContainerClient,
+  generateBlobSASQueryParameters,
+  BlobSASPermissions,
+} from '@azure/storage-blob';
 
 @Injectable()
 export class AzureBlobService {
@@ -183,13 +195,16 @@ export class AzureBlobService {
     const startsOn = new Date();
     const expiresOn = new Date(startsOn.getTime() + expiresInMinutes * 60 * 1000);
 
-    const sasToken = generateBlobSASQueryParameters({
-      containerName: 'tenants',
-      blobName,
-      permissions: BlobSASPermissions.parse('w'), // Write only
-      startsOn,
-      expiresOn,
-    }, this.blobServiceClient.credential).toString();
+    const sasToken = generateBlobSASQueryParameters(
+      {
+        containerName: 'tenants',
+        blobName,
+        permissions: BlobSASPermissions.parse('w'), // Write only
+        startsOn,
+        expiresOn,
+      },
+      this.blobServiceClient.credential,
+    ).toString();
 
     return {
       uploadUrl: `${blockBlobClient.url}?${sasToken}`,
@@ -224,13 +239,16 @@ export class AzureBlobService {
     const startsOn = new Date();
     const expiresOn = new Date(startsOn.getTime() + expiresInMinutes * 60 * 1000);
 
-    const sasToken = generateBlobSASQueryParameters({
-      containerName: 'tenants',
-      blobName,
-      permissions: BlobSASPermissions.parse('r'), // Read only
-      startsOn,
-      expiresOn,
-    }, this.blobServiceClient.credential).toString();
+    const sasToken = generateBlobSASQueryParameters(
+      {
+        containerName: 'tenants',
+        blobName,
+        permissions: BlobSASPermissions.parse('r'), // Read only
+        startsOn,
+        expiresOn,
+      },
+      this.blobServiceClient.credential,
+    ).toString();
 
     // Use CDN endpoint if configured
     const cdnEndpoint = this.configService.get<string>('AZURE_CDN_ENDPOINT');
@@ -343,10 +361,7 @@ export class WellPhotosController {
    * Confirm photo upload (client calls after successful upload)
    */
   @Post(':photoId/confirm')
-  async confirmUpload(
-    @Req() req: Request,
-    @Param('photoId') photoId: string,
-  ): Promise<void> {
+  async confirmUpload(@Req() req: Request, @Param('photoId') photoId: string): Promise<void> {
     await this.photoRepository.updateStatus(req.tenantId, photoId, 'UPLOADED');
   }
 
@@ -412,6 +427,7 @@ export class WellPhotosController {
 ## Docker Compose (Local Development)
 
 **docker-compose.yml:**
+
 ```yaml
 version: '3.9'
 
@@ -453,8 +469,8 @@ services:
     image: axllent/mailpit:latest
     container_name: wellpulse-mailpit
     ports:
-      - '1025:1025'  # SMTP
-      - '8025:8025'  # Web UI
+      - '1025:1025' # SMTP
+      - '8025:8025' # Web UI
     environment:
       MP_MAX_MESSAGES: 5000
       MP_SMTP_AUTH_ACCEPT_ANY: 1
@@ -466,13 +482,13 @@ services:
     container_name: wellpulse-azurite
     command: azurite-blob --blobHost 0.0.0.0 --blobPort 10000
     ports:
-      - '10000:10000'  # Blob service
+      - '10000:10000' # Blob service
     volumes:
       - azurite_data:/data
     environment:
       AZURITE_ACCOUNTS: devstoreaccount1:Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==
     healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "10000"]
+      test: ['CMD', 'nc', '-z', 'localhost', '10000']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -484,6 +500,7 @@ volumes:
 ```
 
 **Testing Azurite:**
+
 ```bash
 # Start services
 docker compose up -d
@@ -570,6 +587,7 @@ Auto-archive old photos to save costs:
 ```
 
 **Cost Impact:**
+
 - Hot tier (0-90 days): $0.018/GB/month
 - Cool tier (90-365 days): $0.01/GB/month (44% cheaper)
 - Archive tier (1-7 years): $0.002/GB/month (89% cheaper)
@@ -596,6 +614,7 @@ az cdn endpoint create \
 ```
 
 **CDN URLs:**
+
 ```
 Before CDN: https://wellpulseprod.blob.core.windows.net/tenants/acme/wells/123/photo.jpg
 After CDN:  https://wellpulse.azureedge.net/tenants/acme/wells/123/photo.jpg
@@ -643,22 +662,24 @@ this.logger.error(`[Storage] Error: ${error.message}`);
 
 ### Storage Tiers
 
-| Tier | Use Case | Cost/GB/Month | Retrieval Cost |
-|------|----------|---------------|----------------|
-| **Hot** | Recent photos (0-90 days) | $0.018 | Free |
-| **Cool** | Older photos (90-365 days) | $0.010 | $0.01/GB |
-| **Archive** | Compliance archive (1-7 years) | $0.002 | $0.15/GB + 15hr delay |
+| Tier        | Use Case                       | Cost/GB/Month | Retrieval Cost        |
+| ----------- | ------------------------------ | ------------- | --------------------- |
+| **Hot**     | Recent photos (0-90 days)      | $0.018        | Free                  |
+| **Cool**    | Older photos (90-365 days)     | $0.010        | $0.01/GB              |
+| **Archive** | Compliance archive (1-7 years) | $0.002        | $0.15/GB + 15hr delay |
 
 ### Lifecycle Policy Impact
 
 **Example (1,000 tenants, 3 years):**
 
 Without lifecycle management:
+
 ```
 3.4 TB × $0.018/GB = $61/month
 ```
 
 With lifecycle management:
+
 ```
 Recent (0-90 days): 620 GB × $0.018 = $11/month
 Cool (90-365 days): 1,100 GB × $0.010 = $11/month
@@ -670,12 +691,12 @@ Total: $25/month (59% savings!)
 
 ## Alternatives Considered
 
-| Option | Pros | Cons | Decision |
-|--------|------|------|----------|
-| **Azure Blob Storage** | Native Azure, CDN, lifecycle mgmt, 99.9% SLA | None | ✅ **Selected** |
-| **AWS S3** | Industry standard, mature | Cross-cloud complexity, egress costs | ❌ Rejected |
-| **Azure Files** | SMB/NFS support | Expensive ($0.15/GB), overkill for blobs | ❌ Rejected |
-| **Self-hosted (MinIO)** | Full control | Maintenance burden, no CDN, no geo-redundancy | ❌ Rejected |
+| Option                  | Pros                                         | Cons                                          | Decision        |
+| ----------------------- | -------------------------------------------- | --------------------------------------------- | --------------- |
+| **Azure Blob Storage**  | Native Azure, CDN, lifecycle mgmt, 99.9% SLA | None                                          | ✅ **Selected** |
+| **AWS S3**              | Industry standard, mature                    | Cross-cloud complexity, egress costs          | ❌ Rejected     |
+| **Azure Files**         | SMB/NFS support                              | Expensive ($0.15/GB), overkill for blobs      | ❌ Rejected     |
+| **Self-hosted (MinIO)** | Full control                                 | Maintenance burden, no CDN, no geo-redundancy | ❌ Rejected     |
 
 ---
 

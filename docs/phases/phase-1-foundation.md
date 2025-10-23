@@ -11,6 +11,7 @@
 Phase 1 establishes the foundational infrastructure for WellPulse and delivers the first user-facing features: tenant signup, authentication, well registry, and interactive map visualization.
 
 **At the end of Phase 1, operators can:**
+
 1. Sign up for WellPulse (tenant provisioning automatic)
 2. Log in to their dedicated subdomain (acme.wellpulse.app)
 3. Create wells with API numbers, GPS coordinates, and metadata
@@ -24,6 +25,7 @@ Phase 1 establishes the foundational infrastructure for WellPulse and delivers t
 ### Multi-Tenancy
 
 **Database-Per-Tenant Pattern:**
+
 ```
 ┌──────────────────────────────────────┐
 │     Master Database                  │
@@ -47,6 +49,7 @@ Phase 1 establishes the foundational infrastructure for WellPulse and delivers t
 ```
 
 **Subdomain Routing:**
+
 ```
 acme.wellpulse.app → Tenant: ACME Oil & Gas → DB: acme_wellpulse
 permian.wellpulse.app → Tenant: Permian Ops → DB: permian_wellpulse
@@ -89,6 +92,7 @@ permian.wellpulse.app → Tenant: Permian Ops → DB: permian_wellpulse
 **Week 1: Monorepo Scaffolding**
 
 1. **Initialize Monorepo** (Day 1)
+
    ```bash
    # Already done - Turborepo + pnpm configured
    pnpm install
@@ -117,6 +121,7 @@ permian.wellpulse.app → Tenant: Permian Ops → DB: permian_wellpulse
    - ML: Python venv, requirements.txt, FastAPI hello world
 
 6. **Create Shared Packages** (Day 3)
+
    ```
    packages/
    ├── typescript-config/   # Shared tsconfig
@@ -130,6 +135,7 @@ permian.wellpulse.app → Tenant: Permian Ops → DB: permian_wellpulse
    - Create `tenants`, `admin_users`, `billing_subscriptions`, `usage_metrics` tables
    - Drizzle schema definitions
    - Generate and apply migrations
+
    ```bash
    cd apps/api
    pnpm drizzle-kit generate:pg
@@ -157,17 +163,20 @@ permian.wellpulse.app → Tenant: Permian Ops → DB: permian_wellpulse
     - Redis 7 (caching)
     - Mailpit (email testing)
     - Azurite (Azure Blob Storage emulator for local development)
+
     ```bash
     docker compose up -d
     ```
 
 **Deliverable**:
+
 - Monorepo with all apps scaffolded
 - Master database operational
 - API call: `POST /admin/tenants` → new database created automatically
 - Subdomain routing extracts tenant context from URL
 
 **Testing**:
+
 ```bash
 # Create test tenant
 curl -X POST http://localhost:3001/admin/tenants \
@@ -196,23 +205,27 @@ curl -H "Host: acme.wellpulse.app" http://localhost:3001/health
 #### Features
 
 **User Registration**
+
 - Email + password signup
 - Email verification (6-digit code)
 - Automatic first user becomes Admin
 - Additional users require Admin approval (pending state)
 
 **Login/Logout**
+
 - Email + password authentication
 - JWT access token (15-minute expiry)
 - Refresh token (7-day expiry, httpOnly cookie)
 - Token rotation on refresh
 
 **Password Reset**
+
 - Forgot password flow (email with reset link)
 - Reset token expires in 1 hour
 - Password strength requirements (8+ chars, uppercase, lowercase, number)
 
 **Role-Based Access Control (RBAC)**
+
 - 3 roles: **Admin**, **Manager**, **Operator**
 - Stored in `tenant_users` table with `role` column
 - Permissions:
@@ -230,10 +243,10 @@ export const tenantUsers = pgTable('tenant_users', {
   passwordHash: text('password_hash').notNull(),
   name: varchar('name', { length: 255 }).notNull(),
   role: varchar('role', { length: 50 }).notNull().default('OPERATOR'),
-    // "ADMIN" | "MANAGER" | "OPERATOR"
+  // "ADMIN" | "MANAGER" | "OPERATOR"
 
   status: varchar('status', { length: 50 }).notNull().default('PENDING'),
-    // "PENDING" | "ACTIVE" | "SUSPENDED"
+  // "PENDING" | "ACTIVE" | "SUSPENDED"
 
   emailVerified: boolean('email_verified').default(false),
   emailVerificationCode: varchar('email_verification_code', { length: 10 }),
@@ -269,6 +282,7 @@ POST   /users/:id/activate               # Activate pending user
 #### Frontend Pages
 
 **Web App (`apps/web`):**
+
 ```
 app/
 ├── (auth)/
@@ -285,6 +299,7 @@ app/
 ```
 
 **Key Components:**
+
 - `LoginForm` - Email/password with validation
 - `RegisterForm` - Multi-step (credentials → email verification)
 - `UserTable` - List users with role badges, activate/suspend actions
@@ -302,6 +317,7 @@ app/
 7. **Password Requirements**: 8+ chars, mixed case, number
 
 **Deliverable**:
+
 - Users can register at `acme.wellpulse.app/register`
 - Email verification sent via Mailpit
 - Login returns JWT + refresh token
@@ -309,6 +325,7 @@ app/
 - Admin can manage team members
 
 **Testing**:
+
 ```bash
 # Register user
 curl -X POST http://acme.localhost:3001/auth/register \
@@ -348,8 +365,8 @@ export class Well {
   private constructor(
     public readonly id: string,
     private _name: string,
-    private _apiNumber: ApiNumber,  // Value Object
-    private _location: Location,    // Value Object
+    private _apiNumber: ApiNumber, // Value Object
+    private _location: Location, // Value Object
     private _status: WellStatus,
     private _lease: string,
     private readonly _createdAt: Date,
@@ -372,12 +389,18 @@ export class Well {
   }
 
   // Getters
-  get name(): string { return this._name; }
-  get apiNumber(): string { return this._apiNumber.value; }
+  get name(): string {
+    return this._name;
+  }
+  get apiNumber(): string {
+    return this._apiNumber.value;
+  }
   get location(): { latitude: number; longitude: number } {
     return this._location.toJSON();
   }
-  get status(): WellStatus { return this._status; }
+  get status(): WellStatus {
+    return this._status;
+  }
 
   // Business logic methods
   activate(): void {
@@ -417,7 +440,9 @@ export class ApiNumber {
     return new ApiNumber(value);
   }
 
-  get value(): string { return this._value; }
+  get value(): string {
+    return this._value;
+  }
 }
 
 // apps/api/src/domain/wells/value-objects/location.vo.ts
@@ -438,8 +463,12 @@ export class Location {
     return new Location(latitude, longitude);
   }
 
-  get latitude(): number { return this._latitude; }
-  get longitude(): number { return this._longitude; }
+  get latitude(): number {
+    return this._latitude;
+  }
+  get longitude(): number {
+    return this._longitude;
+  }
 
   toJSON() {
     return { latitude: this._latitude, longitude: this._longitude };
@@ -467,7 +496,7 @@ export const wells = pgTable('wells', {
 
   // Details
   status: varchar('status', { length: 50 }).notNull().default('ACTIVE'),
-    // "ACTIVE" | "INACTIVE" | "PLUGGED"
+  // "ACTIVE" | "INACTIVE" | "PLUGGED"
   lease: varchar('lease', { length: 255 }),
   field: varchar('field', { length: 255 }),
   operator: varchar('operator', { length: 255 }),
@@ -475,7 +504,7 @@ export const wells = pgTable('wells', {
   completionDate: date('completion_date'),
 
   // Metadata
-  metadata: jsonb('metadata'),  // Custom fields
+  metadata: jsonb('metadata'), // Custom fields
 
   // Audit
   createdBy: uuid('created_by').references(() => tenantUsers.id),
@@ -490,6 +519,7 @@ export const wells = pgTable('wells', {
 #### CQRS Commands & Queries
 
 **Commands:**
+
 ```typescript
 // apps/api/src/application/wells/commands/create-well.command.ts
 export class CreateWellCommand {
@@ -511,10 +541,7 @@ export class CreateWellHandler {
 
   async execute(command: CreateWellCommand): Promise<string> {
     // 1. Check if API number already exists
-    const existing = await this.wellRepository.findByApiNumber(
-      command.tenantId,
-      command.apiNumber,
-    );
+    const existing = await this.wellRepository.findByApiNumber(command.tenantId, command.apiNumber);
     if (existing) {
       throw new ConflictException('API number already exists');
     }
@@ -538,6 +565,7 @@ export class CreateWellHandler {
 ```
 
 **Queries:**
+
 ```typescript
 // apps/api/src/application/wells/queries/get-wells.query.ts
 export class GetWellsQuery {
@@ -546,7 +574,7 @@ export class GetWellsQuery {
     public readonly filters?: {
       status?: WellStatus;
       lease?: string;
-      search?: string;  // Search by name or API number
+      search?: string; // Search by name or API number
       limit?: number;
       offset?: number;
     },
@@ -559,10 +587,7 @@ export class GetWellsHandler {
   constructor(private readonly wellRepository: IWellRepository) {}
 
   async execute(query: GetWellsQuery): Promise<{ wells: Well[]; total: number }> {
-    const wells = await this.wellRepository.findAll(
-      query.tenantId,
-      query.filters,
-    );
+    const wells = await this.wellRepository.findAll(query.tenantId, query.filters);
 
     const total = await this.wellRepository.count(query.tenantId, query.filters);
 
@@ -609,9 +634,7 @@ export class WellsController {
     @Req() req: Request,
     @Query() query: GetWellsQueryDto,
   ): Promise<GetWellsResponseDto> {
-    const result = await this.queryBus.execute(
-      new GetWellsQuery(req.tenantId, query),
-    );
+    const result = await this.queryBus.execute(new GetWellsQuery(req.tenantId, query));
 
     return {
       wells: result.wells.map(WellMapper.toDto),
@@ -620,13 +643,8 @@ export class WellsController {
   }
 
   @Get(':id')
-  async getWellById(
-    @Req() req: Request,
-    @Param('id') id: string,
-  ): Promise<WellDto> {
-    const well = await this.queryBus.execute(
-      new GetWellByIdQuery(req.tenantId, id),
-    );
+  async getWellById(@Req() req: Request, @Param('id') id: string): Promise<WellDto> {
+    const well = await this.queryBus.execute(new GetWellByIdQuery(req.tenantId, id));
 
     if (!well) {
       throw new NotFoundException('Well not found');
@@ -642,20 +660,13 @@ export class WellsController {
     @Param('id') id: string,
     @Body() dto: UpdateWellDto,
   ): Promise<void> {
-    await this.commandBus.execute(
-      new UpdateWellCommand(req.tenantId, req.user.id, id, dto),
-    );
+    await this.commandBus.execute(new UpdateWellCommand(req.tenantId, req.user.id, id, dto));
   }
 
   @Delete(':id')
   @Roles('ADMIN')
-  async deleteWell(
-    @Req() req: Request,
-    @Param('id') id: string,
-  ): Promise<void> {
-    await this.commandBus.execute(
-      new DeleteWellCommand(req.tenantId, req.user.id, id),
-    );
+  async deleteWell(@Req() req: Request, @Param('id') id: string): Promise<void> {
+    await this.commandBus.execute(new DeleteWellCommand(req.tenantId, req.user.id, id));
   }
 }
 ```
@@ -663,6 +674,7 @@ export class WellsController {
 #### Frontend UI
 
 **Wells List Page:**
+
 ```typescript
 // apps/web/app/(dashboard)/wells/page.tsx
 export default function WellsPage() {
@@ -684,6 +696,7 @@ export default function WellsPage() {
 ```
 
 **Create Well Form:**
+
 ```typescript
 // apps/web/components/wells/create-well-form.tsx
 export function CreateWellForm() {
@@ -720,12 +733,14 @@ export function CreateWellForm() {
 ```
 
 **Deliverable**:
+
 - API endpoints for well CRUD
 - Web UI: wells list, create form, edit form
 - Domain logic: API number validation, location validation
 - Soft delete (wells are never hard-deleted)
 
 **Testing**:
+
 ```bash
 # Create well
 curl -X POST http://acme.localhost:3001/wells \
@@ -790,6 +805,7 @@ curl -X PATCH http://acme.localhost:3001/wells/{id} \
 #### Technical Implementation
 
 **Map Component:**
+
 ```typescript
 // apps/web/components/map/well-map.tsx
 'use client';
@@ -849,6 +865,7 @@ function getMarkerColor(status: WellStatus): string {
 ```
 
 **Clustering (Mapbox):**
+
 ```typescript
 // Add clustering
 map.current.addSource('wells', {
@@ -896,6 +913,7 @@ map.current.addLayer({
 ```
 
 **Map Page:**
+
 ```typescript
 // apps/web/app/(dashboard)/map/page.tsx
 export default function MapPage() {
@@ -922,6 +940,7 @@ export default function MapPage() {
 ```
 
 **Deliverable**:
+
 - Interactive map showing all tenant wells
 - Color-coded markers by status
 - Clustering for performance (1000+ wells)
@@ -929,11 +948,13 @@ export default function MapPage() {
 - Search and filter wells on map
 
 **Performance**:
+
 - Map loads < 2 seconds with 100 wells
 - Clustering handles 10,000+ wells
 - Smooth panning and zooming
 
 **Testing**:
+
 ```bash
 # Seed 100 test wells
 pnpm --filter=api run db:seed:wells --count=100
@@ -954,6 +975,7 @@ open http://acme.localhost:3000/map
 ## Phase 1 Completion Criteria
 
 ### Functional Requirements
+
 - [ ] 10 test tenants created successfully
 - [ ] Each tenant has dedicated subdomain and database
 - [ ] 20 users registered across tenants (email verification working)
@@ -964,6 +986,7 @@ open http://acme.localhost:3000/map
 - [ ] Map clustering works with 1000+ wells
 
 ### Non-Functional Requirements
+
 - [ ] API latency p95 < 200ms
 - [ ] Map loads < 2 seconds (100 wells)
 - [ ] Zero security vulnerabilities (npm audit, Snyk scan)
@@ -972,12 +995,14 @@ open http://acme.localhost:3000/map
 - [ ] All quality checks pass (lint, format, type-check, tests, build)
 
 ### Documentation
+
 - [ ] API endpoints documented (Swagger/OpenAPI)
 - [ ] Frontend components documented (Storybook optional)
 - [ ] README updated with setup instructions
 - [ ] Sprint retrospectives completed
 
 ### Deployment
+
 - [ ] Docker Compose environment stable
 - [ ] CI/CD pipeline green (GitHub Actions)
 - [ ] Staging environment deployed (Railway or Azure)
@@ -987,13 +1012,13 @@ open http://acme.localhost:3000/map
 
 ## Risk Management
 
-| Risk | Impact | Mitigation |
-|------|--------|-----------|
-| **Tenant provisioning fails** | High | Retry logic, manual fallback, detailed error logs |
-| **Subdomain routing breaks** | High | Fallback to `/tenant/:slug` path-based routing |
-| **Email delivery fails (Mailpit)** | Medium | Resend integration ready, fallback to console logs |
-| **Map performance (1000+ wells)** | Medium | Clustering, pagination, server-side filtering |
-| **Sprint velocity lower than expected** | High | Prioritize ruthlessly (map can be simplified) |
+| Risk                                    | Impact | Mitigation                                         |
+| --------------------------------------- | ------ | -------------------------------------------------- |
+| **Tenant provisioning fails**           | High   | Retry logic, manual fallback, detailed error logs  |
+| **Subdomain routing breaks**            | High   | Fallback to `/tenant/:slug` path-based routing     |
+| **Email delivery fails (Mailpit)**      | Medium | Resend integration ready, fallback to console logs |
+| **Map performance (1000+ wells)**       | Medium | Clustering, pagination, server-side filtering      |
+| **Sprint velocity lower than expected** | High   | Prioritize ruthlessly (map can be simplified)      |
 
 ---
 
@@ -1002,6 +1027,7 @@ open http://acme.localhost:3000/map
 **Phase 2: Field Operations & Offline Sync (Weeks 9-16)**
 
 Once Phase 1 is complete, Phase 2 will add:
+
 - Production data tracking (daily oil/gas/water volumes)
 - Equipment management (inventory, maintenance logging)
 - Electron desktop app (offline production entry)
