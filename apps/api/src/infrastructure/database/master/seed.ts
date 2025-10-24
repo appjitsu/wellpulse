@@ -19,7 +19,7 @@ import {
 } from './schema';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const bcrypt = require('bcrypt') as {
+const bcrypt = require('bcryptjs') as {
   hash: (data: string, saltOrRounds: number) => Promise<string>;
 };
 
@@ -54,7 +54,49 @@ async function seed() {
     }
 
     // ========================================================================
-    // 2. Create Sample Tenant (ACME Oil & Gas)
+    // 2. Create Master Tenant (WellPulse - for internal admin users)
+    // ========================================================================
+    console.log('\n🏢 Creating master tenant (WellPulse)...');
+
+    const [wellpulseTenant] = await masterDb
+      .insert(tenants)
+      .values({
+        slug: 'wellpulse',
+        subdomain: 'wellpulse',
+        name: 'WellPulse (Internal)',
+        databaseType: 'POSTGRESQL',
+        databaseUrl:
+          'postgresql://wellpulse:wellpulse@localhost:5432/wellpulse_internal',
+        databaseName: 'wellpulse_internal',
+        databaseHost: 'localhost',
+        databasePort: 5432,
+        subscriptionTier: 'ENTERPRISE',
+        maxWells: 999999, // Unlimited
+        maxUsers: 999999, // Unlimited
+        storageQuotaGb: 999999, // Unlimited
+        status: 'ACTIVE',
+        contactEmail: 'admin@wellpulse.app',
+        billingEmail: 'billing@wellpulse.app',
+        featureFlags: {
+          enableMlPredictions: true,
+          enableOfflineSync: true,
+          enableAdvancedReporting: true,
+        },
+        createdBy: superAdmin?.id,
+      })
+      .returning()
+      .onConflictDoNothing();
+
+    if (wellpulseTenant) {
+      console.log(
+        `✅ Master tenant created: ${wellpulseTenant.name} (${wellpulseTenant.subdomain})`,
+      );
+    } else {
+      console.log('ℹ️  WellPulse master tenant already exists');
+    }
+
+    // ========================================================================
+    // 3. Create Sample Tenant (ACME Oil & Gas)
     // ========================================================================
     console.log('\n🏢 Creating sample tenant...');
 
@@ -97,7 +139,7 @@ async function seed() {
     }
 
     // ========================================================================
-    // 3. Create Billing Subscription for ACME
+    // 4. Create Billing Subscription for ACME
     // ========================================================================
     if (acmeTenant) {
       console.log('\n💳 Creating billing subscription...');
@@ -135,7 +177,7 @@ async function seed() {
     }
 
     // ========================================================================
-    // 4. Create Initial Usage Metrics
+    // 5. Create Initial Usage Metrics
     // ========================================================================
     if (acmeTenant) {
       console.log('\n📊 Creating initial usage metrics...');
@@ -181,7 +223,7 @@ async function seed() {
     }
 
     // ========================================================================
-    // 5. Create Trial Tenant (Demo Company)
+    // 6. Create Trial Tenant (Demo Company)
     // ========================================================================
     console.log('\n🆓 Creating trial tenant...');
 
@@ -228,6 +270,9 @@ async function seed() {
     console.log('\n✅ Master database seed completed!\n');
     console.log('📝 Summary:');
     console.log('   - Super Admin: admin@wellpulse.app / WellPulse2025!');
+    console.log(
+      '   - WellPulse Master Tenant: wellpulse (ENTERPRISE, ACTIVE) - for admin users',
+    );
     console.log('   - ACME Tenant: acme.wellpulse.app (PROFESSIONAL, ACTIVE)');
     console.log('   - Demo Tenant: demo.wellpulse.app (STARTER, TRIAL)');
     console.log('');

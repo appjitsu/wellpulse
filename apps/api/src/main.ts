@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as compression from 'compression';
+import * as cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 
@@ -11,6 +12,9 @@ async function bootstrap() {
 
   // Get ConfigService
   const configService = app.get(ConfigService);
+
+  // Cookie parser middleware (for reading cookies from requests)
+  app.use(cookieParser());
 
   // Compression middleware
   app.use(compression());
@@ -27,11 +31,13 @@ async function bootstrap() {
     }),
   );
 
-  // CORS configuration
-  const corsOrigin =
+  // CORS configuration - support multiple origins
+  const corsOriginEnv =
     configService.get<string>('CORS_ORIGIN') || 'http://localhost:3000';
+  const corsOrigins = corsOriginEnv.split(',').map((origin) => origin.trim());
+
   app.enableCors({
-    origin: corsOrigin,
+    origin: corsOrigins,
     credentials: true, // Allow cookies (for JWT refresh tokens)
   });
 

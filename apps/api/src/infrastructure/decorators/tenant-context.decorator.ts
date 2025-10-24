@@ -18,6 +18,7 @@ export interface TenantContextDto {
   subdomain: string;
   slug: string;
   databaseUrl: string;
+  databaseName: string;
   databaseType: string;
 }
 

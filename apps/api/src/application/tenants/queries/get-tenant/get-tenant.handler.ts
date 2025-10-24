@@ -4,14 +4,17 @@
  * Retrieves a single tenant by ID, slug, or subdomain.
  */
 
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { GetTenantQuery } from './get-tenant.query';
 import { ITenantRepository } from '../../../../domain/repositories/tenant.repository.interface';
 import { Tenant } from '../../../../domain/tenants/tenant.entity';
 
 @Injectable()
 export class GetTenantHandler {
-  constructor(private readonly tenantRepository: ITenantRepository) {}
+  constructor(
+    @Inject('ITenantRepository')
+    private readonly tenantRepository: ITenantRepository,
+  ) {}
 
   async execute(query: GetTenantQuery): Promise<Tenant> {
     let tenant: Tenant | null = null;
