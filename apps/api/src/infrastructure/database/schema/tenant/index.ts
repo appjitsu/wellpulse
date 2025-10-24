@@ -6,3 +6,4 @@
  */
 
 export * from './users.schema';
+export * from './wells.schema';
