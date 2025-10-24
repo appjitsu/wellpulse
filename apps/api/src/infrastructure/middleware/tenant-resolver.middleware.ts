@@ -16,19 +16,35 @@
  * - localhost:3001 → no subdomain (admin portal)
  */
 
-import { Injectable, NestMiddleware, NotFoundException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  NestMiddleware,
+  NotFoundException,
+} from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { ITenantRepository } from '../../domain/repositories/tenant.repository.interface';
 import { TenantContextDto } from '../decorators/tenant-context.decorator';
 
 @Injectable()
 export class TenantResolverMiddleware implements NestMiddleware {
-  constructor(private readonly tenantRepository: ITenantRepository) {}
+  constructor(
+    @Inject('ITenantRepository')
+    private readonly tenantRepository: ITenantRepository,
+  ) {}
 
   async use(req: Request, res: Response, next: NextFunction) {
-    const subdomain = this.extractSubdomain(req.hostname);
+    // Try to extract subdomain from hostname first
+    let subdomain = this.extractSubdomain(req.hostname);
 
-    // Skip tenant resolution for admin portal (no subdomain)
+    // If no subdomain in hostname, check X-Tenant-Subdomain header
+    // (used by admin portal and API clients without subdomain routing)
+    if (!subdomain) {
+      const headerValue = req.headers['x-tenant-subdomain'];
+      subdomain = typeof headerValue === 'string' ? headerValue : null;
+    }
+
+    // Skip tenant resolution if no subdomain found
     if (!subdomain) {
       return next();
     }
@@ -53,6 +69,7 @@ export class TenantResolverMiddleware implements NestMiddleware {
       subdomain: tenant.subdomain,
       slug: tenant.slug,
       databaseUrl: tenant.databaseConfig.url,
+      databaseName: tenant.databaseConfig.name,
       databaseType: tenant.databaseConfig.type,
     };
 

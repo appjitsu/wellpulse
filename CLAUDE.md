@@ -10,6 +10,7 @@ Essential context for developing WellPulse - an Oil & Gas Field Data Management 
 ## Platform Overview
 
 WellPulse provides independent oil & gas operators with:
+
 - **Production Data Consolidation**: Replace Excel spreadsheets with real-time dashboards
 - **Predictive Maintenance**: ML-powered equipment failure prediction
 - **ESG Compliance**: Automated emissions tracking and regulatory reporting
@@ -35,15 +36,16 @@ WellPulse provides independent oil & gas operators with:
 **ML Stack**: Python, FastAPI, scikit-learn, pandas, numpy
 **File Storage**: Azure Blob (default) / AWS S3 (client choice via Strategy Pattern)
 **Deployment**:
+
 - **Production**: Azure (Container Apps, PostgreSQL, Redis, Blob Storage, Service Bus)
 - **Staging/PR Previews**: Railway (ephemeral environments for testing)
 - **Client Databases**: Anywhere (Azure, AWS, on-premises, hybrid) - API connects via secure connection
 
 **Ports**:
 
-- API (Tenant-facing): `http://localhost:3001`
+- API (Tenant-facing): `http://localhost:4000`
 - Web (Client Dashboard): `http://localhost:3000`
-- Admin (Internal Portal): `http://localhost:3002`
+- Admin (Internal Portal): `http://localhost:4002`
 - ML Service: `http://localhost:8000`
 - Mailpit: `http://localhost:8025`
 - Redis: `localhost:6379`
@@ -80,11 +82,13 @@ Tenant Routing (Subdomain → Database)
 ```
 
 **Key Architecture Decision**: WellPulse API/Web hosted on Azure (single deployment), but **tenant databases can be anywhere** the client wants. The API establishes secure connections via:
+
 - Azure Private Link (Azure-to-Azure)
 - VPN Gateway (Azure-to-on-premises)
 - Public endpoint with SSL + IP whitelisting (as fallback)
 
 **Key Patterns**:
+
 - `TenantDatabaseService` manages connection pools per tenant
 - Repository Factory selects correct adapter based on tenant's database type
 - ETL Sync for external system integration (SCADA, ERP, etc.)
@@ -257,6 +261,7 @@ pnpm build
 **Offline-First**: Event sourcing for local changes, batch sync at end of shift, conflict resolution with safety bias
 
 **Multi-Tenancy**: Every query must include tenant context:
+
 ```typescript
 // ✅ Good: Tenant-scoped query
 const well = await wellRepo.findById(tenantId, wellId);

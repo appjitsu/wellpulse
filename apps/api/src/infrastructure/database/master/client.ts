@@ -21,7 +21,7 @@ const { Pool } = require('pg') as { Pool: new (config: unknown) => PgPool };
 const pool: PgPool = new Pool({
   connectionString:
     process.env.MASTER_DATABASE_URL ||
-    'postgresql://postgres:postgres@localhost:5432/wellpulse_master',
+    'postgresql://wellpulse:wellpulse@localhost:5432/wellpulse_master',
   max: 20, // Maximum number of clients in the pool
   idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
   connectionTimeoutMillis: 10000, // Fail fast if connection takes > 10s
