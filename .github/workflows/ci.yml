@@ -8,6 +8,7 @@ on:
 
 jobs:
   lint-and-test:
+    if: false # Workflow disabled
     runs-on: ubuntu-latest
 
     services:

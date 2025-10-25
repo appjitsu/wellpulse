@@ -1,0 +1,178 @@
+/**
+ * Tenant Database Seed File
+ *
+ * Seeds sample data for a tenant database (typically for development):
+ * - Sample wells with production data
+ * - Test users with different roles
+ * - Equipment and operators
+ * - Production entries
+ *
+ * This seed file is designed to be run against a specific tenant database.
+ * Set TENANT_SEED_DATABASE_URL environment variable to specify which tenant to seed.
+ *
+ * Run with: TENANT_SEED_DATABASE_URL=postgresql://wellpulse:wellpulse@localhost:5432/acme_wellpulse pnpm db:seed:tenant
+ */
+
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { Pool } from 'pg';
+import {
+  wells,
+  wellsReadProjection,
+} from '../schema/tenant';
+
+async function seed() {
+  console.log('🌱 Starting tenant database seed...\n');
+
+  // Get target database from environment variable
+  const targetDb =
+    process.env.TENANT_SEED_DATABASE_URL ||
+    'postgresql://wellpulse:wellpulse@localhost:5432/acme_wellpulse';
+
+  console.log(`📦 Target database: ${targetDb.split('@')[1]}\n`);
+
+  // Create database connection
+  const pool = new Pool({
+    connectionString: targetDb,
+  });
+
+  const db = drizzle(pool);
+
+  try {
+    // ========================================================================
+    // 1. Create Sample Wells
+    // ========================================================================
+    console.log('🛢️  Creating sample wells...');
+
+    const sampleWells = [
+      {
+        tenantId: 'TENANT_ID_PLACEHOLDER', // Will be replaced by actual tenant ID
+        apiNumber: 'API-42-123-45678',
+        name: 'Permian Basin Well #1',
+        status: 'ACTIVE' as const,
+        wellType: 'OIL' as const,
+        latitude: 31.9686,
+        longitude: -102.0779,
+        county: 'Midland',
+        state: 'TX',
+        operator: 'ACME Oil & Gas',
+        spudDate: new Date('2023-01-15'),
+        completionDate: new Date('2023-03-20'),
+        measuredDepthFeet: 8500,
+        trueVerticalDepthFeet: 7800,
+        fieldName: 'Spraberry',
+        formation: 'Wolfcamp A',
+      },
+      {
+        tenantId: 'TENANT_ID_PLACEHOLDER',
+        apiNumber: 'API-42-123-45679',
+        name: 'Permian Basin Well #2',
+        status: 'ACTIVE' as const,
+        wellType: 'GAS' as const,
+        latitude: 31.9506,
+        longitude: -102.0899,
+        county: 'Midland',
+        state: 'TX',
+        operator: 'ACME Oil & Gas',
+        spudDate: new Date('2023-02-10'),
+        completionDate: new Date('2023-04-15'),
+        measuredDepthFeet: 9200,
+        trueVerticalDepthFeet: 8400,
+        fieldName: 'Spraberry',
+        formation: 'Wolfcamp B',
+      },
+      {
+        tenantId: 'TENANT_ID_PLACEHOLDER',
+        apiNumber: 'API-42-123-45680',
+        name: 'Delaware Basin Well #1',
+        status: 'DRILLING' as const,
+        wellType: 'OIL' as const,
+        latitude: 32.1234,
+        longitude: -103.5678,
+        county: 'Reeves',
+        state: 'TX',
+        operator: 'ACME Oil & Gas',
+        spudDate: new Date('2024-01-05'),
+        measuredDepthFeet: 10000,
+        trueVerticalDepthFeet: 9000,
+        fieldName: 'Delaware',
+        formation: 'Bone Spring',
+      },
+    ];
+
+    let createdCount = 0;
+    for (const well of sampleWells) {
+      const [created] = await db
+        .insert(wells)
+        .values(well)
+        .returning()
+        .onConflictDoNothing();
+
+      if (created) {
+        createdCount++;
+        console.log(`  ✅ Created well: ${created.name} (${created.apiNumber})`);
+
+        // Create read projection for the well
+        await db
+          .insert(wellsReadProjection)
+          .values({
+            wellId: created.id,
+            tenantId: created.tenantId,
+            apiNumber: created.apiNumber,
+            name: created.name,
+            status: created.status,
+            wellType: created.wellType,
+            latitude: created.latitude,
+            longitude: created.longitude,
+            county: created.county,
+            state: created.state,
+            operator: created.operator,
+            spudDate: created.spudDate,
+            completionDate: created.completionDate,
+            measuredDepthFeet: created.measuredDepthFeet,
+            trueVerticalDepthFeet: created.trueVerticalDepthFeet,
+            fieldName: created.fieldName,
+            formation: created.formation,
+            lastModified: new Date(),
+          })
+          .onConflictDoNothing();
+      }
+    }
+
+    if (createdCount > 0) {
+      console.log(`✅ Created ${createdCount} wells`);
+    } else {
+      console.log('ℹ️  Wells already exist');
+    }
+
+    // ========================================================================
+    // Summary
+    // ========================================================================
+    console.log('\n✅ Tenant database seed completed!\n');
+    console.log('📝 Summary:');
+    console.log(`   - Wells: ${createdCount} created`);
+    console.log('');
+    console.log('💡 Note: Tenant ID placeholders should be replaced with actual');
+    console.log('   tenant IDs from the master database during provisioning.');
+    console.log('');
+  } catch (error) {
+    console.error('❌ Seed failed:', error);
+    throw error;
+  } finally {
+    await pool.end();
+  }
+}
+
+// Run seed if called directly
+if (require.main === module) {
+  seed()
+    .then(() => {
+      console.log('✨ Done!');
+      process.exit(0);
+    })
+    .catch((error) => {
+      console.error('💥 Fatal error:', error);
+      process.exit(1);
+    });
+}
+
+export { seed };

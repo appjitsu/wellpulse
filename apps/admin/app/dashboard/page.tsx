@@ -1,180 +1,218 @@
 /**
- * Admin Dashboard
+ * Admin Dashboard - Overview
  *
- * Main dashboard for WellPulse internal staff.
- * Shows tenant management, system status, and admin tools.
+ * Main dashboard showing system overview, quick stats, and shortcuts.
  */
 
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/use-auth';
-import { authApi } from '@/lib/api/auth.api';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Activity, Building2, Users, TrendingUp, Database, Zap } from 'lucide-react';
+import Link from 'next/link';
 
-export default function AdminDashboardPage() {
-  const router = useRouter();
-  const { user, isAuthenticated, logout } = useAuth();
-
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/');
-    }
-  }, [isAuthenticated, router]);
-
-  const handleLogout = async () => {
-    try {
-      await authApi.logout();
-      logout();
-      router.push('/');
-    } catch (error) {
-      console.error('Logout error:', error);
-      // Logout locally even if API call fails
-      logout();
-      router.push('/');
-    }
-  };
-
-  if (!isAuthenticated || !user) {
-    return null; // Will redirect
-  }
-
+export default function DashboardOverviewPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
+    <div className="space-y-6 p-8">
       {/* Header */}
-      <header className="border-b border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">
-              WellPulse Admin
-            </h1>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
-              Internal Administration Portal
-            </p>
-          </div>
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <p className="text-muted-foreground">
+          Welcome to the WellPulse Admin Portal. Monitor and manage your platform.
+        </p>
+      </div>
 
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-sm font-medium text-slate-900 dark:text-slate-50">
-                {user.firstName} {user.lastName}
+      {/* Stats Grid */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Tenants</CardTitle>
+            <Building2 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">3</div>
+            <p className="text-xs text-muted-foreground">2 active, 1 trial</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">12</div>
+            <p className="text-xs text-muted-foreground">Across all tenants</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">API Health</CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">Healthy</div>
+            <p className="text-xs text-muted-foreground">All systems operational</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Requests/Min</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">234</div>
+            <p className="text-xs text-muted-foreground">Average over last hour</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {/* Metrics Dashboard */}
+        <Link href="/dashboard/metrics">
+          <Card className="cursor-pointer transition-all hover:shadow-md hover:border-blue-400">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900">
+                  <Activity className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">System Metrics</CardTitle>
+                  <CardDescription className="text-xs">Real-time monitoring</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                View connection pools, HTTP metrics, and system performance
               </p>
-              <p className="text-xs text-slate-600 dark:text-slate-400">{user.role}</p>
+            </CardContent>
+          </Card>
+        </Link>
+
+        {/* Tenant Management */}
+        <Link href="/dashboard/tenants">
+          <Card className="cursor-pointer transition-all hover:shadow-md hover:border-purple-400">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100 dark:bg-purple-900">
+                  <Building2 className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Tenant Management</CardTitle>
+                  <CardDescription className="text-xs">Manage organizations</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Create, update, and manage tenant organizations
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
+
+        {/* User Management */}
+        <Link href="/dashboard/users">
+          <Card className="cursor-pointer transition-all hover:shadow-md hover:border-green-400">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900">
+                  <Users className="h-5 w-5 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">User Management</CardTitle>
+                  <CardDescription className="text-xs">Manage all users</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                View and manage users across all tenants
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
+      </div>
+
+      {/* System Status */}
+      <Card>
+        <CardHeader>
+          <CardTitle>System Status</CardTitle>
+          <CardDescription>Current status of system components</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Database className="h-4 w-4 text-green-600" />
+                <span className="text-sm font-medium">Database</span>
+              </div>
+              <span className="text-xs text-green-600 font-semibold">Operational</span>
             </div>
-            <button
-              onClick={handleLogout}
-              className="rounded-md bg-slate-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2"
-            >
-              Logout
-            </button>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Zap className="h-4 w-4 text-green-600" />
+                <span className="text-sm font-medium">Redis</span>
+              </div>
+              <span className="text-xs text-green-600 font-semibold">Operational</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Activity className="h-4 w-4 text-green-600" />
+                <span className="text-sm font-medium">API Server</span>
+              </div>
+              <span className="text-xs text-green-600 font-semibold">Operational</span>
+            </div>
           </div>
-        </div>
-      </header>
+        </CardContent>
+      </Card>
 
-      {/* Main Content */}
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        {/* Welcome Message */}
-        <div className="mb-8 rounded-lg border border-blue-200 bg-blue-50 p-6 dark:border-blue-900/50 dark:bg-blue-900/20">
-          <h2 className="mb-2 text-xl font-semibold text-blue-900 dark:text-blue-100">
-            Welcome back, {user.firstName}!
-          </h2>
-          <p className="text-sm text-blue-700 dark:text-blue-300">
-            You&apos;re logged in as an admin. This is the WellPulse internal administration portal.
-          </p>
-        </div>
-
-        {/* Admin Tools Grid */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {/* Tenant Management */}
-          <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <h3 className="mb-2 text-lg font-semibold text-slate-900 dark:text-slate-50">
-              Tenant Management
-            </h3>
-            <p className="mb-4 text-sm text-slate-600 dark:text-slate-400">
-              Create, manage, and monitor customer tenants
-            </p>
-            <button
-              className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 disabled:opacity-50"
-              disabled
-            >
-              Coming Soon
-            </button>
-          </div>
-
-          {/* System Status */}
-          <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <h3 className="mb-2 text-lg font-semibold text-slate-900 dark:text-slate-50">
-              System Status
-            </h3>
-            <p className="mb-4 text-sm text-slate-600 dark:text-slate-400">
-              Monitor platform health and performance
-            </p>
-            <button
-              className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 disabled:opacity-50"
-              disabled
-            >
-              Coming Soon
-            </button>
-          </div>
-
-          {/* Billing & Analytics */}
-          <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <h3 className="mb-2 text-lg font-semibold text-slate-900 dark:text-slate-50">
-              Billing & Analytics
-            </h3>
-            <p className="mb-4 text-sm text-slate-600 dark:text-slate-400">
-              View revenue, subscriptions, and usage metrics
-            </p>
-            <button
-              className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 disabled:opacity-50"
-              disabled
-            >
-              Coming Soon
-            </button>
-          </div>
-        </div>
-
-        {/* Quick Links */}
-        <div className="mt-8 rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <h3 className="mb-4 text-lg font-semibold text-slate-900 dark:text-slate-50">
-            Quick Links
-          </h3>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Quick Links */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Links</CardTitle>
+          <CardDescription>Useful development and monitoring links</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             <a
-              href={`${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '')}/api/docs`}
+              href="http://localhost:4000/api/docs"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-blue-600 hover:text-blue-500 hover:underline dark:text-blue-400"
+              className="text-sm text-blue-600 hover:underline dark:text-blue-400"
             >
               API Documentation →
             </a>
             <a
-              href={process.env.NEXT_PUBLIC_CLIENT_URL || 'http://localhost:4001'}
+              href="http://localhost:4000/api/health"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-blue-600 hover:text-blue-500 hover:underline dark:text-blue-400"
+              className="text-sm text-blue-600 hover:underline dark:text-blue-400"
             >
-              Client Portal →
+              API Health Check →
             </a>
             <a
               href="http://localhost:8025"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-blue-600 hover:text-blue-500 hover:underline dark:text-blue-400"
+              className="text-sm text-blue-600 hover:underline dark:text-blue-400"
             >
-              Mailpit (Email Testing) →
+              Mailpit (Email) →
             </a>
             <a
-              href={`${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '')}/api/health`}
+              href="http://localhost:3000"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-blue-600 hover:text-blue-500 hover:underline dark:text-blue-400"
+              className="text-sm text-blue-600 hover:underline dark:text-blue-400"
             >
-              API Health Check →
+              Client Portal →
             </a>
           </div>
-        </div>
-      </main>
+        </CardContent>
+      </Card>
     </div>
   );
 }

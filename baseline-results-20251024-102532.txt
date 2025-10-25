@@ -1,0 +1,168 @@
+WellPulse API - Baseline Performance Test Results
+Generated: Fri Oct 24 10:25:32 CDT 2025
+API Base URL: http://localhost:4000
+
+================================================================================
+
+=== Health Endpoint ===
+Endpoint: /api/health
+Load: 1000 requests @ 50 concurrent
+
+
+🚀 Starting WellPulse API Stress Test...
+
+Target:       http://localhost:4000/api/health
+Method:       GET
+Tenant:       N/A
+Load Profile: 1000 requests, 50 concurrent
+
+Warming up...
+
+
+
+═══════════════════════════════════════════════════════════
+                 STRESS TEST RESULTS                       
+═══════════════════════════════════════════════════════════
+
+📊 TEST CONFIGURATION:
+   Endpoint:       http://localhost:4000/api/health
+   Method:         GET
+   Tenant:         N/A
+   Total Requests: 1000
+   Concurrency:    50
+   Delay:          0ms (no delay)
+
+⏱️  PERFORMANCE:
+   Total Duration:   0.24s
+   Requests/Second:  4166.67
+   Avg Response Time: 4.22ms
+   Min Response Time: 2ms
+   Max Response Time: 16ms
+   P50 (Median):      4ms
+   P95:               7ms
+   P99:               12ms
+
+📈 REQUEST STATISTICS:
+   Total Sent:     1000
+   Completed:      1000
+   Succeeded:      9 (0.9%)
+   Failed:         991 (99.1%)
+
+📡 STATUS CODES:
+   ✅ 200: 9 (0.9%)
+   ⚠️ 429: 991 (99.1%)
+
+═══════════════════════════════════════════════════════════
+
+✅ Stress test completed!
+
+
+--------------------------------------------------------------------------------
+
+=== Metrics Endpoint ===
+Endpoint: /api/metrics
+Load: 500 requests @ 50 concurrent
+
+
+🚀 Starting WellPulse API Stress Test...
+
+Target:       http://localhost:4000/api/metrics
+Method:       GET
+Tenant:       N/A
+Load Profile: 500 requests, 50 concurrent
+
+Warming up...
+
+
+
+═══════════════════════════════════════════════════════════
+                 STRESS TEST RESULTS                       
+═══════════════════════════════════════════════════════════
+
+📊 TEST CONFIGURATION:
+   Endpoint:       http://localhost:4000/api/metrics
+   Method:         GET
+   Tenant:         N/A
+   Total Requests: 500
+   Concurrency:    50
+   Delay:          0ms (no delay)
+
+⏱️  PERFORMANCE:
+   Total Duration:   0.13s
+   Requests/Second:  3846.15
+   Avg Response Time: 4.95ms
+   Min Response Time: 2ms
+   Max Response Time: 18ms
+   P50 (Median):      4ms
+   P95:               15ms
+   P99:               16ms
+
+📈 REQUEST STATISTICS:
+   Total Sent:     500
+   Completed:      500
+   Succeeded:      10 (2.0%)
+   Failed:         490 (98.0%)
+
+📡 STATUS CODES:
+   ✅ 200: 10 (2.0%)
+   ⚠️ 429: 490 (98.0%)
+
+═══════════════════════════════════════════════════════════
+
+✅ Stress test completed!
+
+
+--------------------------------------------------------------------------------
+
+=== Admin Users List ===
+Endpoint: /api/admin/users?page=1&limit=10
+Load: 500 requests @ 25 concurrent
+
+
+🚀 Starting WellPulse API Stress Test...
+
+Target:       http://localhost:4000/api/admin/users?page=1
+Method:       GET
+Tenant:       N/A
+Load Profile: 1000 requests, 50 concurrent
+
+Warming up...
+
+
+
+═══════════════════════════════════════════════════════════
+                 STRESS TEST RESULTS                       
+═══════════════════════════════════════════════════════════
+
+📊 TEST CONFIGURATION:
+   Endpoint:       http://localhost:4000/api/admin/users?page=1
+   Method:         GET
+   Tenant:         N/A
+   Total Requests: 1000
+   Concurrency:    50
+   Delay:          0ms (no delay)
+
+⏱️  PERFORMANCE:
+   Total Duration:   0.23s
+   Requests/Second:  4347.83
+   Avg Response Time: 3.78ms
+   Min Response Time: 1ms
+   Max Response Time: 14ms
+   P50 (Median):      4ms
+   P95:               6ms
+   P99:               10ms
+
+📈 REQUEST STATISTICS:
+   Total Sent:     1000
+   Completed:      1000
+   Succeeded:      10 (1.0%)
+   Failed:         990 (99.0%)
+
+📡 STATUS CODES:
+   ✅ 200: 10 (1.0%)
+   ⚠️ 429: 990 (99.0%)
+
+═══════════════════════════════════════════════════════════
+
+✅ Stress test completed!
+

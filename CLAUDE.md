@@ -183,11 +183,13 @@ pnpm dev                          # All apps
 pnpm --filter=api dev             # Backend only
 pnpm --filter=web dev             # Frontend only
 
-# Database
-pnpm --filter=api db:push         # Dev: Push schema
-pnpm --filter=api db:generate     # Prod: Generate migration
-pnpm --filter=api db:migrate      # Prod: Apply migrations
-pnpm --filter=api db:studio       # Drizzle Studio
+# Database (Migration-Based Schema Management)
+pnpm --filter=api db:generate:master   # Generate master DB migration
+pnpm --filter=api db:generate:tenant   # Generate tenant DB migration
+pnpm --filter=api db:migrate:master    # Apply master DB migrations
+pnpm --filter=api db:migrate:tenant    # Apply tenant DB migrations
+pnpm --filter=api db:migrate:all       # Apply all migrations (master + tenant)
+pnpm --filter=api db:studio            # Drizzle Studio
 
 # Testing
 pnpm test                         # All tests
@@ -210,7 +212,7 @@ pnpm build
 1. Domain entity: `apps/api/src/domain/{entity}/` with tenant validation
 2. Repository interface: `apps/api/src/domain/repositories/` with `tenantId` parameter
 3. Drizzle schema: `apps/api/src/infrastructure/database/schema/` in **tenant database**
-4. Run: `pnpm --filter=api db:push` (ask user first per global instructions)
+4. Generate & apply migration: `pnpm --filter=api db:generate:tenant` → `pnpm --filter=api db:migrate:tenant`
 5. Repository implementation: `apps/api/src/infrastructure/database/repositories/` using `TenantDatabaseService`
 6. Command/Query handlers: `apps/api/src/application/{entity}/` with tenant context
 7. Controller: `apps/api/src/presentation/{entity}/` with `@TenantContext()` decorator
@@ -226,11 +228,12 @@ pnpm build
 
 ## Key Documentation
 
-**Patterns** (68+ software development patterns in `docs/patterns/`):
+**Patterns** (73+ software development patterns in `docs/patterns/`):
 
 - **[Pattern Catalog](./docs/patterns/README.md)** - Full pattern index
 - **[Pattern Integration Guide](./docs/patterns/16-Pattern-Integration-Guide.md)** - How to choose patterns
 - **[Database-Per-Tenant Multi-Tenancy Pattern](./docs/patterns/XX-Database-Per-Tenant-Multi-Tenancy-Pattern.md)** 🆕 - Subdomain routing + connection pooling
+- **[Migration-Based Schema Management Pattern](./docs/patterns/73-Migration-Based-Schema-Management-Pattern.md)** 🆕 - Safe, version-controlled database migrations
 - **[Offline Batch Sync Pattern](./docs/patterns/XX-Offline-Batch-Sync-Pattern.md)** 🆕 - Field data entry sync strategy
 - **[Conflict Resolution Pattern](./docs/patterns/XX-Conflict-Resolution-Pattern.md)** 🆕 - Resolving offline data conflicts
 - **[Value Object Layer Boundary Pattern](./docs/patterns/61-Value-Object-Layer-Boundary-Pattern.md)** - Accessing value objects across layers
@@ -240,10 +243,11 @@ pnpm build
 - **[Permian Basin Market Research](./docs/research/01-permian-basin-market-research.md)** 🎯 - Target market analysis, pain points, competitive landscape
 - **[Architecture Feedback](./docs/research/02-architecture-feedback.md)** 🏗️ - Complete architectural decisions and implementation guidance
 
-**Security Guides**:
+**Guides**:
 
 - **[Security Best Practices](./docs/guides/security-best-practices.md)** - Comprehensive security guide
 - **[API Rate Limiting](./docs/guides/api-rate-limiting.md)** - Multi-tier throttling documentation
+- **[Database Migrations](./docs/guides/database-migrations.md)** 🆕 - Migration workflow, patterns, troubleshooting
 
 **Claude Code Commands** (available via `/` prefix):
 

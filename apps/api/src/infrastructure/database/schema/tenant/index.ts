@@ -7,3 +7,4 @@
 
 export * from './users.schema';
 export * from './wells.schema';
+export * from './wells-read-projection.schema';

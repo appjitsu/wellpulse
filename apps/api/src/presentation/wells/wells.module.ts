@@ -8,7 +8,7 @@ import { Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { WellsController } from './wells.controller';
 import { WellRepository } from '../../infrastructure/database/repositories/well.repository';
-import { TenantDatabaseService } from '../../infrastructure/database/tenant-database.service';
+import { WellsReadProjectionRepository } from '../../infrastructure/database/repositories/wells-read-projection.repository';
 
 // Command Handlers
 import { CreateWellHandler } from '../../application/wells/commands/create-well.command';
@@ -21,6 +21,13 @@ import { DeactivateWellHandler } from '../../application/wells/commands/deactiva
 import { GetWellsHandler } from '../../application/wells/queries/get-wells.query';
 import { GetWellByIdHandler } from '../../application/wells/queries/get-well-by-id.query';
 import { GetWellByApiNumberHandler } from '../../application/wells/queries/get-well-by-api-number.query';
+
+// Projection Event Handlers
+import {
+  WellCreatedProjectionHandler,
+  WellUpdatedProjectionHandler,
+  WellDeletedProjectionHandler,
+} from '../../application/wells/projections/wells-projection-updater.handler';
 
 const CommandHandlers = [
   CreateWellHandler,
@@ -36,8 +43,15 @@ const QueryHandlers = [
   GetWellByApiNumberHandler,
 ];
 
+const EventHandlers = [
+  WellCreatedProjectionHandler,
+  WellUpdatedProjectionHandler,
+  WellDeletedProjectionHandler,
+];
+
 const Repositories = [
   WellRepository,
+  WellsReadProjectionRepository,
   {
     provide: 'IWellRepository',
     useExisting: WellRepository,
@@ -48,9 +62,9 @@ const Repositories = [
   imports: [CqrsModule],
   controllers: [WellsController],
   providers: [
-    TenantDatabaseService,
     ...CommandHandlers,
     ...QueryHandlers,
+    ...EventHandlers,
     ...Repositories,
   ],
   exports: [],
