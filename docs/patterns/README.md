@@ -81,6 +81,8 @@ A comprehensive collection of architectural, design, and implementation patterns
 - **[49 - Event Sourcing Pattern](./49-Event-Sourcing-Pattern.md)** - Event-based state management
 - **[50 - SAGA Pattern](./50-SAGA-Pattern.md)** - Distributed transactions
 - **[51 - Feature Flags Pattern](./51-Feature-Flags-Pattern.md)** - Progressive feature rollout
+- **[73 - Custom Metrics Dashboard Pattern](./73-Custom-Metrics-Dashboard-Pattern.md)** 🆕 💰 - Cost-saving alternative to Grafana on Azure
+- **[74 - Stress Testing and Load Testing Pattern](./74-Stress-Testing-And-Load-Testing-Pattern.md)** 🆕 ⚡ - Artillery & custom scripts for performance testing
 
 ---
 
@@ -279,13 +281,13 @@ Apply PSA-specific patterns:
 
 ## 📊 Pattern Statistics
 
-- **Total Patterns:** 63
+- **Total Patterns:** 65
 - **Architectural Patterns:** 17
 - **Frontend Patterns:** 19
 - **Backend Patterns:** 5
-- **Integration Patterns:** 10
+- **Integration Patterns:** 12 (includes #74 Stress Testing)
 - **Implementation Patterns:** 12
-- **New Patterns (October 2025):** 6 (58, 59, 60, 61, 62, 63)
+- **New Patterns (October 2025):** 8 (58, 59, 60, 61, 62, 63, 73, 74)
 
 ---
 
@@ -326,6 +328,6 @@ Apply PSA-specific patterns:
 
 ---
 
-**Last Updated:** October 18, 2025
-**Pattern Count:** 63 patterns
-**Version:** 2.3 (Sprint 8A + JSONB undefined value handling)
+**Last Updated:** October 24, 2025
+**Pattern Count:** 65 patterns
+**Version:** 2.5 (Sprint 8A + Custom Metrics Dashboard + Stress Testing)

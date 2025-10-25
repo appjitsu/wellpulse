@@ -1,71 +1,256 @@
 /**
- * Wells Controller (EXAMPLE - Demonstrates Tenant Context Usage)
+ * Wells Controller
  *
- * This controller demonstrates how to use tenant-scoped routing:
- * - @UseGuards(TenantRequiredGuard) ensures tenant context exists
- * - @TenantContext() decorator extracts tenant info from request
- *
- * Example requests:
- * - http://acme.localhost:3001/wells (tenant: acme)
- * - http://demo.localhost:3001/wells (tenant: demo)
- * - http://localhost:3001/wells (throws ForbiddenException - no tenant)
+ * REST API endpoints for well management.
+ * All endpoints require authentication and tenant context.
  */
 
-import { Controller, Get, UseGuards } from '@nestjs/common';
-import { TenantRequiredGuard } from '../../infrastructure/guards/tenant-required.guard';
 import {
-  TenantContext,
-  TenantContextDto,
-} from '../../infrastructure/decorators/tenant-context.decorator';
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  Query,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+  NotFoundException,
+} from '@nestjs/common';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import {
+  ApiBearerAuth,
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger';
+import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { RolesGuard } from '../guards/roles.guard';
+import { Roles } from '../decorators/roles.decorator';
+import { CurrentUser } from '../decorators/current-user.decorator';
+import { TenantId } from '../decorators/tenant-id.decorator';
+import { CreateWellDto } from './dto/create-well.dto';
+import { UpdateWellDto } from './dto/update-well.dto';
+import { GetWellsQueryDto } from './dto/get-wells-query.dto';
+import {
+  WellDto,
+  GetWellsResponseDto,
+  CreateWellResponseDto,
+} from './dto/well.dto';
+import { CreateWellCommand } from '../../application/wells/commands/create-well.command';
+import { UpdateWellCommand } from '../../application/wells/commands/update-well.command';
+import { DeleteWellCommand } from '../../application/wells/commands/delete-well.command';
+import { ActivateWellCommand } from '../../application/wells/commands/activate-well.command';
+import { DeactivateWellCommand } from '../../application/wells/commands/deactivate-well.command';
+import {
+  GetWellsQuery,
+  GetWellsResult,
+} from '../../application/wells/queries/get-wells.query';
+import {
+  GetWellByIdQuery,
+  WellDto as GetWellByIdResult,
+} from '../../application/wells/queries/get-well-by-id.query';
 
+@ApiTags('wells')
+@ApiBearerAuth('access-token')
 @Controller('wells')
-@UseGuards(TenantRequiredGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class WellsController {
-  /**
-   * Get all wells for the current tenant
-   * GET /wells
-   *
-   * Example:
-   * curl http://acme.localhost:3001/wells
-   * -> Returns wells for ACME Oil & Gas tenant
-   */
-  @Get()
-  getWells(@TenantContext() tenant: TenantContextDto | undefined) {
-    // Guard ensures tenant is defined, but TypeScript doesn't know that
-    if (!tenant) {
-      throw new Error('Tenant context is required');
-    }
+  constructor(
+    private readonly commandBus: CommandBus,
+    private readonly queryBus: QueryBus,
+  ) {}
 
-    // In a real implementation, this would query the tenant's database
-    // using the tenant.databaseUrl connection string
+  /**
+   * Create a new well
+   * POST /wells
+   *
+   * Only Admin and Manager roles can create wells.
+   */
+  @Post()
+  @Roles('ADMIN', 'MANAGER')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create a new well' })
+  @ApiResponse({
+    status: 201,
+    description: 'Well created successfully',
+    type: CreateWellResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Invalid input' })
+  @ApiResponse({ status: 409, description: 'API number already exists' })
+  async createWell(
+    @TenantId() tenantId: string,
+    @CurrentUser() user: { userId: string },
+    @Body() dto: CreateWellDto,
+  ): Promise<CreateWellResponseDto> {
+    const wellId = await this.commandBus.execute<CreateWellCommand, string>(
+      new CreateWellCommand(tenantId, user.userId, dto),
+    );
+
     return {
-      message: `Fetching wells for tenant: ${tenant.subdomain}`,
-      tenant: {
-        id: tenant.id,
-        subdomain: tenant.subdomain,
-        slug: tenant.slug,
-        databaseType: tenant.databaseType,
-      },
-      wells: [
-        // Mock data - in reality this would come from tenant database
-        { id: '1', name: 'Well 001', status: 'ACTIVE' },
-        { id: '2', name: 'Well 002', status: 'ACTIVE' },
-      ],
+      id: wellId,
+      message: 'Well created successfully',
     };
   }
 
   /**
-   * Get tenant info (demonstrates decorator usage)
-   * GET /wells/tenant-info
+   * Get all wells with optional filters
+   * GET /wells
    *
-   * Example:
-   * curl http://acme.localhost:3001/wells/tenant-info
+   * All authenticated users can view wells.
    */
-  @Get('tenant-info')
-  getTenantInfo(@TenantContext() tenant: TenantContextDto | undefined) {
+  @Get()
+  @ApiOperation({ summary: 'Get all wells for tenant' })
+  @ApiResponse({
+    status: 200,
+    description: 'Wells retrieved successfully',
+    type: GetWellsResponseDto,
+  })
+  async getWells(
+    @TenantId() tenantId: string,
+    @Query() query: GetWellsQueryDto,
+  ): Promise<GetWellsResponseDto> {
+    return this.queryBus.execute<GetWellsQuery, GetWellsResult>(
+      new GetWellsQuery(tenantId, query),
+    );
+  }
+
+  /**
+   * Get well by ID
+   * GET /wells/:id
+   *
+   * All authenticated users can view well details.
+   */
+  @Get(':id')
+  @ApiOperation({ summary: 'Get well by ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Well retrieved successfully',
+    type: WellDto,
+  })
+  @ApiResponse({ status: 404, description: 'Well not found' })
+  async getWellById(
+    @TenantId() tenantId: string,
+    @Param('id') id: string,
+  ): Promise<WellDto> {
+    const well = await this.queryBus.execute<
+      GetWellByIdQuery,
+      GetWellByIdResult | null
+    >(new GetWellByIdQuery(tenantId, id));
+
+    if (!well) {
+      throw new NotFoundException('Well not found');
+    }
+
+    return well;
+  }
+
+  /**
+   * Update well
+   * PATCH /wells/:id
+   *
+   * Only Admin and Manager roles can update wells.
+   */
+  @Patch(':id')
+  @Roles('ADMIN', 'MANAGER')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Update well' })
+  @ApiResponse({ status: 200, description: 'Well updated successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid input' })
+  @ApiResponse({ status: 404, description: 'Well not found' })
+  async updateWell(
+    @TenantId() tenantId: string,
+    @CurrentUser() user: { userId: string },
+    @Param('id') id: string,
+    @Body() dto: UpdateWellDto,
+  ): Promise<{ message: string }> {
+    await this.commandBus.execute(
+      new UpdateWellCommand(tenantId, user.userId, id, dto),
+    );
+
     return {
-      tenant,
-      message: 'This endpoint can access the current tenant context',
+      message: 'Well updated successfully',
+    };
+  }
+
+  /**
+   * Delete well (soft delete)
+   * DELETE /wells/:id
+   *
+   * Only Admin role can delete wells.
+   */
+  @Delete(':id')
+  @Roles('ADMIN')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Delete well (soft delete)' })
+  @ApiResponse({ status: 200, description: 'Well deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Well not found' })
+  async deleteWell(
+    @TenantId() tenantId: string,
+    @CurrentUser() user: { userId: string },
+    @Param('id') id: string,
+  ): Promise<{ message: string }> {
+    await this.commandBus.execute(
+      new DeleteWellCommand(tenantId, user.userId, id),
+    );
+
+    return {
+      message: 'Well deleted successfully',
+    };
+  }
+
+  /**
+   * Activate well
+   * PATCH /wells/:id/activate
+   *
+   * Only Admin and Manager roles can activate wells.
+   */
+  @Patch(':id/activate')
+  @Roles('ADMIN', 'MANAGER')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Activate well' })
+  @ApiResponse({ status: 200, description: 'Well activated successfully' })
+  @ApiResponse({ status: 400, description: 'Cannot activate plugged well' })
+  @ApiResponse({ status: 404, description: 'Well not found' })
+  async activateWell(
+    @TenantId() tenantId: string,
+    @CurrentUser() user: { userId: string },
+    @Param('id') id: string,
+  ): Promise<{ message: string }> {
+    await this.commandBus.execute(
+      new ActivateWellCommand(tenantId, user.userId, id),
+    );
+
+    return {
+      message: 'Well activated successfully',
+    };
+  }
+
+  /**
+   * Deactivate well
+   * PATCH /wells/:id/deactivate
+   *
+   * Only Admin and Manager roles can deactivate wells.
+   */
+  @Patch(':id/deactivate')
+  @Roles('ADMIN', 'MANAGER')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Deactivate well' })
+  @ApiResponse({ status: 200, description: 'Well deactivated successfully' })
+  @ApiResponse({ status: 404, description: 'Well not found' })
+  async deactivateWell(
+    @TenantId() tenantId: string,
+    @CurrentUser() user: { userId: string },
+    @Param('id') id: string,
+  ): Promise<{ message: string }> {
+    await this.commandBus.execute(
+      new DeactivateWellCommand(tenantId, user.userId, id),
+    );
+
+    return {
+      message: 'Well deactivated successfully',
     };
   }
 }

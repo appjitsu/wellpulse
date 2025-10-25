@@ -21,7 +21,7 @@ export default {
   dbCredentials: {
     url:
       process.env.MASTER_DATABASE_URL ||
-      'postgresql://postgres:postgres@localhost:5432/wellpulse_master',
+      'postgresql://wellpulse:wellpulse@localhost:5432/wellpulse_master',
   },
   verbose: true,
   strict: true,

@@ -1,27 +1,23 @@
 /**
- * Master Database Seed Script
+ * Master Database Seed File
  *
- * Creates initial development data:
+ * Seeds initial development data for the master database:
  * - Super admin user for platform management
- * - Sample tenant for testing
- * - Billing subscription
+ * - Sample tenants for testing (WellPulse internal, ACME, Demo)
+ * - Billing subscriptions
  * - Initial usage metrics
  *
- * Run with: pnpm db:seed
+ * Run with: pnpm db:seed:master
  */
 
-import { masterDb } from './client';
+import { masterDb } from '../master/client';
 import {
   tenants,
   adminUsers,
   billingSubscriptions,
   usageMetrics,
-} from './schema';
-
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const bcrypt = require('bcryptjs') as {
-  hash: (data: string, saltOrRounds: number) => Promise<string>;
-};
+} from '../master/schema';
+import * as bcrypt from 'bcryptjs';
 
 async function seed() {
   console.log('🌱 Starting master database seed...\n');

@@ -1,0 +1,457 @@
+name: Performance Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'apps/api/**'
+      - 'apps/admin/**'
+      - 'artillery-load-test.yml'
+      - 'scripts/stress-test.js'
+      - '.github/workflows/performance-tests.yml'
+
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/api/**'
+
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      test_type:
+        description: 'Type of performance test to run'
+        required: true
+        default: 'baseline'
+        type: choice
+        options:
+          - baseline
+          - artillery
+          - stress
+          - full
+
+permissions:
+  contents: read
+  pull-requests: write # Allow commenting on PRs
+  checks: write # Allow creating check runs
+
+env:
+  NODE_VERSION: '18'
+  PNPM_VERSION: '8'
+
+jobs:
+  # Job 1: Quick Smoke Test
+  smoke-test:
+    if: false # Workflow disabled
+    name: Performance Smoke Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: wellpulse
+          POSTGRES_PASSWORD: wellpulse
+          POSTGRES_DB: wellpulse_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup database
+        env:
+          DATABASE_URL: postgresql://wellpulse:wellpulse@localhost:5432/wellpulse_test
+          REDIS_URL: redis://localhost:6379
+        run: |
+          pnpm --filter=api db:migrate:master
+          pnpm --filter=api db:migrate:tenant
+
+      - name: Start API server
+        env:
+          DATABASE_URL: postgresql://wellpulse:wellpulse@localhost:5432/wellpulse_test
+          REDIS_URL: redis://localhost:6379
+          NODE_ENV: test
+        run: |
+          pnpm --filter=api build
+          pnpm --filter=api start &
+          echo $! > api.pid
+
+          # Wait for API to be ready
+          echo "Waiting for API to start..."
+          timeout 60 bash -c 'until curl -sf http://localhost:4000/api/health; do sleep 2; done'
+          echo "API is ready!"
+
+      - name: Run smoke test
+        run: |
+          echo "Running quick smoke test..."
+          node scripts/stress-test.js \
+            --endpoint http://localhost:4000/api/health \
+            --requests 100 \
+            --concurrency 10 \
+            > smoke-test-results.txt
+
+          cat smoke-test-results.txt
+
+      - name: Check smoke test results
+        run: |
+          # Extract P95 latency
+          P95=$(grep "P95:" smoke-test-results.txt | awk '{print $2}' | sed 's/ms//')
+
+          echo "P95 Latency: ${P95}ms"
+
+          # Fail if P95 > 100ms (very lenient for CI environment)
+          if [ "$P95" -gt 100 ]; then
+            echo "❌ FAILED: P95 latency ${P95}ms exceeds threshold of 100ms"
+            exit 1
+          fi
+
+          echo "✅ PASSED: Smoke test meets performance thresholds"
+
+      - name: Cleanup
+        if: always()
+        run: |
+          if [ -f api.pid ]; then
+            kill $(cat api.pid) || true
+          fi
+
+      - name: Upload smoke test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-test-results
+          path: smoke-test-results.txt
+          retention-days: 7
+
+  # Job 2: Baseline Performance Tests
+  baseline-test:
+    if: false # Workflow disabled
+    name: Baseline Performance Test
+    runs-on: ubuntu-latest
+    needs: smoke-test
+    timeout-minutes: 10
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: wellpulse
+          POSTGRES_PASSWORD: wellpulse
+          POSTGRES_DB: wellpulse_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup database
+        env:
+          DATABASE_URL: postgresql://wellpulse:wellpulse@localhost:5432/wellpulse_test
+          REDIS_URL: redis://localhost:6379
+        run: |
+          pnpm --filter=api db:migrate:master
+          pnpm --filter=api db:migrate:tenant
+
+      - name: Start API server
+        env:
+          DATABASE_URL: postgresql://wellpulse:wellpulse@localhost:5432/wellpulse_test
+          REDIS_URL: redis://localhost:6379
+          NODE_ENV: test
+        run: |
+          pnpm --filter=api build
+          pnpm --filter=api start &
+          echo $! > api.pid
+
+          timeout 60 bash -c 'until curl -sf http://localhost:4000/api/health; do sleep 2; done'
+
+      - name: Run baseline tests
+        run: |
+          echo "Testing Health endpoint..."
+          node scripts/stress-test.js \
+            --endpoint http://localhost:4000/api/health \
+            --requests 500 \
+            --concurrency 25 \
+            > baseline-health.txt
+
+          echo "Testing Metrics endpoint..."
+          node scripts/stress-test.js \
+            --endpoint http://localhost:4000/api/metrics \
+            --requests 500 \
+            --concurrency 25 \
+            > baseline-metrics.txt
+
+      - name: Analyze baseline results
+        id: analyze
+        run: |
+          echo "## Baseline Performance Results" > baseline-summary.md
+          echo "" >> baseline-summary.md
+
+          # Extract metrics from health test
+          HEALTH_P95=$(grep "P95:" baseline-health.txt | awk '{print $2}' | sed 's/ms//')
+          HEALTH_RPS=$(grep "Requests/Second:" baseline-health.txt | awk '{print $2}')
+
+          # Extract metrics from metrics test
+          METRICS_P95=$(grep "P95:" baseline-metrics.txt | awk '{print $2}' | sed 's/ms//')
+          METRICS_RPS=$(grep "Requests/Second:" baseline-metrics.txt | awk '{print $2}')
+
+          echo "### Health Endpoint" >> baseline-summary.md
+          echo "- **Requests/Second:** $HEALTH_RPS" >> baseline-summary.md
+          echo "- **P95 Latency:** ${HEALTH_P95}ms" >> baseline-summary.md
+          echo "" >> baseline-summary.md
+
+          echo "### Metrics Endpoint" >> baseline-summary.md
+          echo "- **Requests/Second:** $METRICS_RPS" >> baseline-summary.md
+          echo "- **P95 Latency:** ${METRICS_P95}ms" >> baseline-summary.md
+          echo "" >> baseline-summary.md
+
+          # Check thresholds
+          FAILED=0
+
+          if [ "$HEALTH_P95" -gt 200 ]; then
+            echo "⚠️ Health endpoint P95 (${HEALTH_P95}ms) exceeds threshold of 200ms" >> baseline-summary.md
+            FAILED=1
+          fi
+
+          if [ "$METRICS_P95" -gt 500 ]; then
+            echo "⚠️ Metrics endpoint P95 (${METRICS_P95}ms) exceeds threshold of 500ms" >> baseline-summary.md
+            FAILED=1
+          fi
+
+          if [ "$FAILED" -eq 0 ]; then
+            echo "✅ All endpoints meet performance thresholds" >> baseline-summary.md
+          fi
+
+          cat baseline-summary.md
+
+          # Set outputs
+          echo "health_p95=$HEALTH_P95" >> $GITHUB_OUTPUT
+          echo "metrics_p95=$METRICS_P95" >> $GITHUB_OUTPUT
+          echo "failed=$FAILED" >> $GITHUB_OUTPUT
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const summary = fs.readFileSync('baseline-summary.md', 'utf8');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 📊 Performance Test Results\n\n${summary}\n\n<details>\n<summary>View detailed results</summary>\n\n### Health Endpoint\n\`\`\`\n${fs.readFileSync('baseline-health.txt', 'utf8')}\n\`\`\`\n\n### Metrics Endpoint\n\`\`\`\n${fs.readFileSync('baseline-metrics.txt', 'utf8')}\n\`\`\`\n\n</details>`
+            });
+
+      - name: Fail if thresholds exceeded
+        if: steps.analyze.outputs.failed == '1'
+        run: |
+          echo "❌ Performance regression detected!"
+          exit 1
+
+      - name: Cleanup
+        if: always()
+        run: |
+          if [ -f api.pid ]; then
+            kill $(cat api.pid) || true
+          fi
+
+      - name: Upload baseline results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: baseline-results
+          path: |
+            baseline-*.txt
+            baseline-summary.md
+          retention-days: 30
+
+  # Job 3: Artillery Load Test (Optional)
+  artillery-test:
+    if: false # Workflow disabled
+    name: Artillery Load Test
+    runs-on: ubuntu-latest
+    needs: smoke-test
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: wellpulse
+          POSTGRES_PASSWORD: wellpulse
+          POSTGRES_DB: wellpulse_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Artillery
+        run: npm install -g artillery@latest
+
+      - name: Setup database
+        env:
+          DATABASE_URL: postgresql://wellpulse:wellpulse@localhost:5432/wellpulse_test
+          REDIS_URL: redis://localhost:6379
+        run: |
+          pnpm --filter=api db:migrate:master
+          pnpm --filter=api db:migrate:tenant
+
+      - name: Start API server
+        env:
+          DATABASE_URL: postgresql://wellpulse:wellpulse@localhost:5432/wellpulse_test
+          REDIS_URL: redis://localhost:6379
+          NODE_ENV: test
+        run: |
+          pnpm --filter=api build
+          pnpm --filter=api start &
+          echo $! > api.pid
+
+          timeout 60 bash -c 'until curl -sf http://localhost:4000/api/health; do sleep 2; done'
+
+      - name: Run Artillery load test
+        run: |
+          artillery run --output artillery-results.json artillery-load-test.yml || true
+
+      - name: Generate Artillery report
+        if: always()
+        run: |
+          artillery report artillery-results.json --output artillery-report.html || true
+
+      - name: Cleanup
+        if: always()
+        run: |
+          if [ -f api.pid ]; then
+            kill $(cat api.pid) || true
+          fi
+
+      - name: Upload Artillery results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: artillery-results
+          path: |
+            artillery-results.json
+            artillery-report.html
+          retention-days: 30
+
+  # Job 4: Performance Summary
+  summary:
+    if: false # Workflow disabled
+    name: Performance Test Summary
+    runs-on: ubuntu-latest
+    needs: [smoke-test, baseline-test]
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create summary
+        run: |
+          echo "# 📊 Performance Test Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f artifacts/baseline-results/baseline-summary.md ]; then
+            cat artifacts/baseline-results/baseline-summary.md >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📁 Artifacts available for download in the workflow run summary." >> $GITHUB_STEP_SUMMARY

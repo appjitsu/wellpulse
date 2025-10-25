@@ -1,0 +1,422 @@
+# WellPulse API - Performance Alert Rules
+#
+# These alert rules are based on performance baselines established through stress testing.
+# See: docs/baselines/performance-baselines.md
+#
+# Usage with Prometheus:
+#   prometheus --config.file=prometheus.yml --storage.tsdb.path=./data
+
+groups:
+  # ===========================================================================
+  # API Performance Alerts
+  # ===========================================================================
+  - name: api_performance
+    interval: 30s
+    rules:
+      # High P95 Latency Warning
+      - alert: HighP95Latency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 0.5
+        for: 2m
+        labels:
+          severity: warning
+          component: api
+          category: performance
+        annotations:
+          summary: 'High P95 latency detected on {{ $labels.route }}'
+          description: |
+            P95 latency is {{ $value | humanizeDuration }} (threshold: 500ms)
+            Route: {{ $labels.route }}
+            Method: {{ $labels.method }}
+
+            This indicates that 95% of requests are completing within {{ $value | humanizeDuration }},
+            which exceeds our baseline threshold.
+
+            **Action Required:**
+            1. Check API logs for slow queries
+            2. Review database connection pool metrics
+            3. Check for N+1 query issues
+            4. Review recent code changes
+          dashboard: 'http://localhost:4002/dashboard/metrics'
+          runbook: 'https://github.com/yourorg/wellpulse/blob/main/docs/runbooks/high-latency.md'
+
+      # Critical P95 Latency
+      - alert: CriticalP95Latency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1.0
+        for: 1m
+        labels:
+          severity: critical
+          component: api
+          category: performance
+        annotations:
+          summary: 'CRITICAL: P95 latency exceeds 1 second on {{ $labels.route }}'
+          description: |
+            P95 latency is {{ $value | humanizeDuration }} (critical threshold: 1s)
+            Route: {{ $labels.route }}
+            Method: {{ $labels.method }}
+
+            **Immediate Actions:**
+            1. Page on-call engineer
+            2. Check database health
+            3. Review connection pool exhaustion
+            4. Consider scaling up API instances
+          dashboard: 'http://localhost:4002/dashboard/metrics'
+
+      # High P99 Latency Warning
+      - alert: HighP99Latency
+        expr: histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m])) > 1.0
+        for: 2m
+        labels:
+          severity: warning
+          component: api
+          category: performance
+        annotations:
+          summary: 'High P99 latency detected on {{ $labels.route }}'
+          description: |
+            P99 latency is {{ $value | humanizeDuration }} (threshold: 1s)
+            Route: {{ $labels.route }}
+
+            While 99th percentile can have outliers, sustained high P99 indicates issues.
+
+      # Critical P99 Latency
+      - alert: CriticalP99Latency
+        expr: histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m])) > 2.0
+        for: 1m
+        labels:
+          severity: critical
+          component: api
+          category: performance
+        annotations:
+          summary: 'CRITICAL: P99 latency exceeds 2 seconds on {{ $labels.route }}'
+          description: |
+            P99 latency is {{ $value | humanizeDuration }} (critical threshold: 2s)
+            This affects the worst-case user experience significantly.
+
+  # ===========================================================================
+  # Error Rate Alerts
+  # ===========================================================================
+  - name: api_errors
+    interval: 30s
+    rules:
+      # High Error Rate Warning
+      - alert: HighErrorRate
+        expr: |
+          (
+            rate(http_requests_total{status_code=~"5.."}[5m])
+            /
+            rate(http_requests_total[5m])
+          ) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+          component: api
+          category: reliability
+        annotations:
+          summary: 'High error rate detected ({{ $value | humanizePercentage }})'
+          description: |
+            Error rate is {{ $value | humanizePercentage }} (threshold: 1%)
+            Route: {{ $labels.route }}
+
+            **Actions:**
+            1. Check API error logs
+            2. Review recent deployments
+            3. Check database connectivity
+            4. Verify external service health
+
+      # Critical Error Rate
+      - alert: CriticalErrorRate
+        expr: |
+          (
+            rate(http_requests_total{status_code=~"5.."}[5m])
+            /
+            rate(http_requests_total[5m])
+          ) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+          component: api
+          category: reliability
+        annotations:
+          summary: 'CRITICAL: Error rate exceeds 5% ({{ $value | humanizePercentage }})'
+          description: |
+            Error rate is {{ $value | humanizePercentage }} (critical threshold: 5%)
+
+            **Immediate Actions:**
+            1. Page on-call engineer
+            2. Consider rolling back recent deployment
+            3. Check system health dashboard
+            4. Review incident response plan
+
+      # No 4xx errors alert (informational)
+      - alert: High4xxRate
+        expr: |
+          (
+            rate(http_requests_total{status_code=~"4.."}[5m])
+            /
+            rate(http_requests_total[5m])
+          ) > 0.20
+        for: 10m
+        labels:
+          severity: info
+          component: api
+          category: validation
+        annotations:
+          summary: 'High rate of 4xx errors ({{ $value | humanizePercentage }})'
+          description: |
+            4xx error rate is {{ $value | humanizePercentage }} (threshold: 20%)
+
+            This may indicate:
+            - Invalid API usage by clients
+            - Authentication/authorization issues
+            - Validation errors
+
+            Review API logs for patterns.
+
+  # ===========================================================================
+  # Connection Pool Alerts
+  # ===========================================================================
+  - name: connection_pools
+    interval: 30s
+    rules:
+      # Connection Pool Exhaustion Warning
+      - alert: ConnectionPoolWaitingClients
+        expr: tenant_connection_pool_waiting > 5
+        for: 1m
+        labels:
+          severity: warning
+          component: database
+          category: capacity
+        annotations:
+          summary: 'Connection pool has waiting clients for tenant {{ $labels.tenant_name }}'
+          description: |
+            {{ $value }} clients are waiting for database connections
+            Tenant: {{ $labels.tenant_name }} ({{ $labels.tenant_id }})
+            Database: {{ $labels.database_name }}
+
+            **Actions:**
+            1. Check connection pool size configuration
+            2. Review long-running queries
+            3. Consider increasing pool max size
+            4. Check for connection leaks
+
+      # Connection Pool Exhaustion Critical
+      - alert: ConnectionPoolExhaustion
+        expr: tenant_connection_pool_waiting > 20
+        for: 30s
+        labels:
+          severity: critical
+          component: database
+          category: capacity
+        annotations:
+          summary: 'CRITICAL: Connection pool exhaustion for tenant {{ $labels.tenant_name }}'
+          description: |
+            {{ $value }} clients are waiting (critical threshold: 20)
+            Tenant: {{ $labels.tenant_name }}
+
+            **Immediate Actions:**
+            1. Page on-call engineer
+            2. Kill long-running queries
+            3. Increase pool size temporarily
+            4. Review application connection handling
+
+      # High Connection Pool Utilization
+      - alert: HighConnectionPoolUtilization
+        expr: |
+          (
+            (tenant_connection_pool_size - tenant_connection_pool_idle)
+            /
+            tenant_connection_pool_size
+          ) > 0.80
+        for: 5m
+        labels:
+          severity: warning
+          component: database
+          category: capacity
+        annotations:
+          summary: 'High connection pool utilization ({{ $value | humanizePercentage }}) for tenant {{ $labels.tenant_name }}'
+          description: |
+            Connection pool is {{ $value | humanizePercentage }} utilized (threshold: 80%)
+            Tenant: {{ $labels.tenant_name }}
+
+            Consider increasing pool size or investigating query performance.
+
+      # No Active Connections (Unexpected)
+      - alert: TenantConnectionPoolDead
+        expr: tenant_connection_pool_size == 0
+        for: 2m
+        labels:
+          severity: warning
+          component: database
+          category: health
+        annotations:
+          summary: 'No active connections for tenant {{ $labels.tenant_name }}'
+          description: |
+            Connection pool has 0 connections for {{ $labels.tenant_name }}
+
+            This may indicate:
+            - Database connectivity issues
+            - Pool configuration error
+            - Tenant database is offline
+
+  # ===========================================================================
+  # Rate Limiting Alerts
+  # ===========================================================================
+  - name: rate_limiting
+    interval: 30s
+    rules:
+      # Rate Limiting Not Working
+      - alert: RateLimitingIneffective
+        expr: |
+          (
+            rate(http_requests_total{status_code="429"}[1m])
+            /
+            rate(http_requests_total[1m])
+          ) < 0.50
+        for: 5m
+        labels:
+          severity: warning
+          component: api
+          category: security
+        annotations:
+          summary: 'Rate limiting may not be working effectively'
+          description: |
+            Only {{ $value | humanizePercentage }} of requests are being rate limited under high load
+            Expected: > 50% rejection during sustained high traffic
+
+            **Actions:**
+            1. Check Redis connectivity
+            2. Verify rate limit configuration
+            3. Review throttle middleware
+            4. Check for bypass conditions
+
+      # Excessive Rate Limiting (May indicate attack)
+      - alert: ExcessiveRateLimiting
+        expr: |
+          (
+            rate(http_requests_total{status_code="429"}[1m])
+            /
+            rate(http_requests_total[1m])
+          ) > 0.80
+        for: 10m
+        labels:
+          severity: warning
+          component: api
+          category: security
+        annotations:
+          summary: 'High rate of requests being rate limited ({{ $value | humanizePercentage }})'
+          description: |
+            {{ $value | humanizePercentage }} of requests are being rate limited
+
+            This may indicate:
+            - DDoS attack or abuse
+            - Misconfigured client retrying aggressively
+            - Rate limits too restrictive
+
+            Review access logs for patterns.
+
+  # ===========================================================================
+  # System Resource Alerts
+  # ===========================================================================
+  - name: system_resources
+    interval: 30s
+    rules:
+      # High Memory Usage
+      - alert: HighMemoryUsage
+        expr: |
+          (
+            wellpulse_nodejs_heap_size_used_bytes
+            /
+            wellpulse_nodejs_heap_size_total_bytes
+          ) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          component: api
+          category: resources
+        annotations:
+          summary: 'High memory usage ({{ $value | humanizePercentage }})'
+          description: |
+            Memory usage is {{ $value | humanizePercentage }} (threshold: 85%)
+
+            **Actions:**
+            1. Check for memory leaks
+            2. Review heap snapshots
+            3. Consider increasing memory limits
+            4. Review recent code changes
+
+      # Memory Exhaustion Imminent
+      - alert: MemoryExhaustion
+        expr: |
+          (
+            wellpulse_nodejs_heap_size_used_bytes
+            /
+            wellpulse_nodejs_heap_size_total_bytes
+          ) > 0.95
+        for: 1m
+        labels:
+          severity: critical
+          component: api
+          category: resources
+        annotations:
+          summary: 'CRITICAL: Memory exhaustion imminent ({{ $value | humanizePercentage }})'
+          description: |
+            Memory usage is {{ $value | humanizePercentage }} (critical threshold: 95%)
+
+            **Immediate Actions:**
+            1. Restart API instance
+            2. Trigger heap dump for analysis
+            3. Check for memory leaks
+            4. Scale horizontally if needed
+
+  # ===========================================================================
+  # Throughput Alerts
+  # ===========================================================================
+  - name: throughput
+    interval: 30s
+    rules:
+      # Throughput Drop (Anomaly Detection)
+      - alert: ThroughputDropped
+        expr: |
+          (
+            rate(http_requests_total[1m])
+            <
+            (
+              rate(http_requests_total[1m] offset 10m) * 0.5
+            )
+          )
+          and
+          rate(http_requests_total[1m] offset 10m) > 10
+        for: 3m
+        labels:
+          severity: warning
+          component: api
+          category: availability
+        annotations:
+          summary: 'Throughput dropped by > 50% compared to 10 minutes ago'
+          description: |
+            Current RPS: {{ $value | humanize }}
+            Previous RPS: {{ with query "rate(http_requests_total[1m] offset 10m)" }}{{ . | first | value | humanize }}{{ end }}
+
+            **Actions:**
+            1. Check API health
+            2. Review load balancer metrics
+            3. Check database connectivity
+            4. Review system logs for errors
+
+      # No Traffic (Unexpected)
+      - alert: NoAPITraffic
+        expr: rate(http_requests_total[5m]) == 0
+        for: 3m
+        labels:
+          severity: critical
+          component: api
+          category: availability
+        annotations:
+          summary: 'No API traffic detected for 3 minutes'
+          description: |
+            API is receiving no requests.
+
+            **Immediate Actions:**
+            1. Check API health endpoint
+            2. Verify load balancer configuration
+            3. Check DNS resolution
+            4. Review firewall rules

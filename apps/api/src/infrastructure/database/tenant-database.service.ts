@@ -40,7 +40,7 @@ interface PoolConfig {
 /**
  * Tenant database connection info
  */
-interface TenantConnection {
+export interface TenantConnection {
   pool: Pool;
   db: NodePgDatabase<typeof tenantSchema>;
 }
@@ -161,5 +161,13 @@ export class TenantDatabaseService implements OnModuleDestroy {
       await connection.pool.end();
       this.connections.delete(tenantId);
     }
+  }
+
+  /**
+   * Get all tenant connections for monitoring/metrics
+   * Returns read-only map of tenantId -> TenantConnection
+   */
+  getAllConnections(): ReadonlyMap<string, TenantConnection> {
+    return this.connections;
   }
 }

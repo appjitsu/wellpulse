@@ -1,0 +1,201 @@
+# Artillery Load Testing Configuration for WellPulse API
+# Run with: npx artillery run artillery-load-test.yml
+#
+# Install Artillery: pnpm add -D artillery
+#
+# This configuration tests API endpoints under various load conditions:
+# - Warm-up phase: Gradually increase load
+# - Sustained load: Constant traffic
+# - Spike test: Sudden traffic burst
+# - Stress test: Push to limits
+
+config:
+  target: 'http://localhost:4000'
+
+  # Test phases - uncomment the scenario you want to run
+  phases:
+    # Light load test (good for initial testing)
+    - duration: 60
+      arrivalRate: 5 # 5 requests per second
+      name: 'Light load - warm up'
+
+    - duration: 120
+      arrivalRate: 10 # 10 requests per second
+      name: 'Light load - sustained'
+
+    # # Medium load test (typical production traffic)
+    # - duration: 60
+    #   arrivalRate: 20  # 20 requests per second
+    #   name: "Medium load - warm up"
+
+    # - duration: 180
+    #   arrivalRate: 50  # 50 requests per second
+    #   name: "Medium load - sustained"
+
+    # # Heavy load test (stress testing)
+    # - duration: 30
+    #   arrivalRate: 50  # Start at 50 RPS
+    #   rampTo: 100      # Ramp up to 100 RPS
+    #   name: "Heavy load - ramp up"
+
+    # - duration: 120
+    #   arrivalRate: 100  # 100 requests per second
+    #   name: "Heavy load - sustained"
+
+    # # Spike test (sudden traffic burst)
+    # - duration: 10
+    #   arrivalRate: 200  # 200 requests per second
+    #   name: "Spike test"
+
+    # - duration: 60
+    #   arrivalRate: 10
+    #   name: "Recovery period"
+
+  # Performance thresholds
+  ensure:
+    maxErrorRate: 1 # Max 1% error rate
+    p95: 500 # 95th percentile response time < 500ms
+    p99: 1000 # 99th percentile response time < 1000ms
+
+  # HTTP defaults
+  http:
+    timeout: 10 # 10 second timeout
+
+  # Payload generation
+  payload:
+    path: './artillery-payloads.csv'
+    fields:
+      - subdomain
+      - email
+      - password
+    skipHeader: true
+    order: sequence # Use entries in sequence
+    loadAll: false # Load as needed (memory efficient)
+
+  # Plugins for enhanced metrics
+  plugins:
+    # Publish metrics to stdout in JSON format
+    publish-metrics:
+      - type: json
+        path: './artillery-results.json'
+
+    # Track custom metrics
+    metrics-by-endpoint:
+      stripQueryString: true
+      ignoreUnknownEndpoints: false
+
+  # Custom variables
+  variables:
+    apiVersion: 'v1'
+
+# Test scenarios
+scenarios:
+  # Scenario 1: Health check endpoint (baseline)
+  - name: 'Health Check'
+    weight: 10 # 10% of traffic
+    flow:
+      - get:
+          url: '/api/health'
+          capture:
+            - json: '$.status'
+              as: 'healthStatus'
+      - think: 1 # Wait 1 second between requests
+
+  # Scenario 2: Metrics endpoint (monitoring stress)
+  - name: 'Metrics Endpoint'
+    weight: 15 # 15% of traffic
+    flow:
+      - get:
+          url: '/api/metrics'
+          headers:
+            Accept: 'text/plain'
+      - think: 2
+
+  # Scenario 3: Admin endpoints (authenticated requests)
+  - name: 'Admin Endpoints'
+    weight: 5 # 5% of traffic
+    flow:
+      # Get all tenants
+      - get:
+          url: '/api/admin/tenants?page=1&limit=10'
+          headers:
+            Cookie: 'access_token={{ $randomString() }}' # Mock auth (replace with real token)
+          expect:
+            - statusCode:
+                - 200
+                - 401 # Expected if not authenticated
+      - think: 1
+
+      # Get all users
+      - get:
+          url: '/api/admin/users?page=1&limit=10'
+          headers:
+            Cookie: 'access_token={{ $randomString() }}'
+          expect:
+            - statusCode:
+                - 200
+                - 401
+
+  # Scenario 4: Wells API endpoints (tenant-scoped)
+  - name: 'Wells Endpoints'
+    weight: 30 # 30% of traffic
+    flow:
+      # Get wells list
+      - get:
+          url: '/api/wells?page=1&limit=20'
+          headers:
+            Host: 'acmeoil.localhost:4000' # Tenant subdomain
+            Cookie: 'access_token={{ $randomString() }}'
+          expect:
+            - statusCode:
+                - 200
+                - 401
+      - think: 1
+
+      # Create well (write operation)
+      - post:
+          url: '/api/wells'
+          headers:
+            Host: 'acmeoil.localhost:4000'
+            Cookie: 'access_token={{ $randomString() }}'
+            Content-Type: 'application/json'
+          json:
+            name: 'Test Well {{ $randomNumber(1, 10000) }}'
+            apiNumber: 'API-{{ $randomNumber(10000, 99999) }}'
+            location:
+              latitude: 32.0
+              longitude: -102.0
+            status: 'ACTIVE'
+          expect:
+            - statusCode:
+                - 201
+                - 401
+                - 400
+
+  # Scenario 5: Mixed tenant operations
+  - name: 'Multi-Tenant Load'
+    weight: 40 # 40% of traffic
+    flow:
+      # Randomly select tenant subdomain
+      - function: 'selectTenant'
+
+      # Get tenant-specific data
+      - get:
+          url: '/api/wells'
+          headers:
+            Host: '{{ tenantSubdomain }}.localhost:4000'
+            Cookie: 'access_token={{ $randomString() }}'
+      - think: 0.5
+
+      # Get metrics (admin monitoring)
+      - get:
+          url: '/api/metrics'
+      - think: 0.5
+
+# Custom JavaScript functions
+processor: './artillery-processor.js'
+
+# After test summary
+after:
+  flow:
+    - log: 'Load test completed. Check artillery-results.json for detailed metrics.'
