@@ -150,7 +150,7 @@ jobs:
 
       - name: Upload smoke test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: smoke-test-results
           path: smoke-test-results.txt
@@ -321,7 +321,7 @@ jobs:
 
       - name: Upload baseline results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: baseline-results
           path: |
@@ -421,7 +421,7 @@ jobs:
 
       - name: Upload Artillery results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: artillery-results
           path: |
