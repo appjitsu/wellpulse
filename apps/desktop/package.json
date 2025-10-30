@@ -16,7 +16,7 @@
   "dependencies": {
     "@wellpulse/shared-rn": "workspace:*",
     "react": "19.0.0",
-    "react-native": "^0.79.6",
+    "react-native": "^0.82.1",
     "react-native-macos": "^0.79.0",
     "react-native-windows": "^0.79.4"
   },
