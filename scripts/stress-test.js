@@ -272,7 +272,9 @@ function printResults() {
   console.log(`   Endpoint:       ${config.endpoint}`);
   console.log(`   Method:         ${config.method}`);
   console.log(`   Tenant:         ${config.tenant || 'N/A'}`);
-  console.log(`   Total Requests: ${config.requests}${config.duration ? ` (${config.duration}s duration)` : ''}`);
+  console.log(
+    `   Total Requests: ${config.requests}${config.duration ? ` (${config.duration}s duration)` : ''}`,
+  );
   console.log(`   Concurrency:    ${config.concurrency}`);
   console.log(
     `   Delay:          ${config.delay}ms${config.delay > 0 ? ' (between batches)' : ' (no delay)'}`,
@@ -291,8 +293,12 @@ function printResults() {
   console.log(`\n📈 REQUEST STATISTICS:`);
   console.log(`   Total Sent:     ${stats.total}`);
   console.log(`   Completed:      ${stats.completed}`);
-  console.log(`   Succeeded:      ${stats.succeeded} (${((stats.succeeded / stats.completed) * 100).toFixed(1)}%)`);
-  console.log(`   Failed:         ${stats.failed} (${((stats.failed / stats.completed) * 100).toFixed(1)}%)`);
+  console.log(
+    `   Succeeded:      ${stats.succeeded} (${((stats.succeeded / stats.completed) * 100).toFixed(1)}%)`,
+  );
+  console.log(
+    `   Failed:         ${stats.failed} (${((stats.failed / stats.completed) * 100).toFixed(1)}%)`,
+  );
 
   console.log(`\n📡 STATUS CODES:`);
   Object.entries(stats.statusCodes)

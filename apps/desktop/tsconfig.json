@@ -1,0 +1,11 @@
+{
+  "extends": "@react-native/typescript-config/tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@wellpulse/shared-rn": ["../../packages/shared-rn/src"],
+      "@wellpulse/shared-rn/*": ["../../packages/shared-rn/src/*"]
+    }
+  },
+  "include": ["src/**/*", "../../packages/shared-rn/src/**/*"]
+}

@@ -29,15 +29,15 @@ This document defines the comprehensive testing strategy for WellPulse, covering
 
 ### Coverage Targets
 
-| Layer | Target Coverage | Priority |
-|-------|----------------|----------|
-| **Domain Layer** | 100% | Critical - Contains all business rules |
-| **Application Layer** | 95% | High - CQRS handlers and use cases |
-| **Infrastructure Layer** | 80% | Medium - Repository implementations |
-| **Presentation Layer** | 70% | Medium - Controllers and DTOs |
-| **Frontend Components** | 80% | High - UI logic and user interactions |
-| **Frontend Hooks** | 90% | High - Business logic and state management |
-| **Overall Target** | 80%+ | Required for production deployment |
+| Layer                    | Target Coverage | Priority                                   |
+| ------------------------ | --------------- | ------------------------------------------ |
+| **Domain Layer**         | 100%            | Critical - Contains all business rules     |
+| **Application Layer**    | 95%             | High - CQRS handlers and use cases         |
+| **Infrastructure Layer** | 80%             | Medium - Repository implementations        |
+| **Presentation Layer**   | 70%             | Medium - Controllers and DTOs              |
+| **Frontend Components**  | 80%             | High - UI logic and user interactions      |
+| **Frontend Hooks**       | 90%             | High - Business logic and state management |
+| **Overall Target**       | 80%+            | Required for production deployment         |
 
 ---
 
@@ -50,6 +50,7 @@ This document defines the comprehensive testing strategy for WellPulse, covering
 **Test Focus**: Pure business logic without external dependencies
 
 **Tools**:
+
 - Jest 29+
 - ts-jest (TypeScript support)
 - @nestjs/testing (NestJS utilities)
@@ -147,7 +148,7 @@ describe('Well Entity', () => {
       const well2 = Well.create({
         name: 'Well 2',
         apiNumber: '42-165-12346',
-        latitude: 31.8567,  // ~0.75 miles north
+        latitude: 31.8567, // ~0.75 miles north
         longitude: -102.3676,
       });
 
@@ -183,10 +184,7 @@ describe('CreateWellHandler', () => {
     };
 
     const module = await Test.createTestingModule({
-      providers: [
-        CreateWellHandler,
-        { provide: 'IWellRepository', useValue: mockRepository },
-      ],
+      providers: [CreateWellHandler, { provide: 'IWellRepository', useValue: mockRepository }],
     }).compile();
 
     handler = module.get(CreateWellHandler);
@@ -278,6 +276,7 @@ const mockBlobService = {
 **Test Focus**: Interactions between layers (application → repository → database)
 
 **Tools**:
+
 - Jest
 - Test database (PostgreSQL or in-memory)
 - Testcontainers (optional, for real PostgreSQL)
@@ -396,20 +395,14 @@ describe('DrizzleWellRepository Integration', () => {
       await repository.save('tenant-123', well);
 
       // Query
-      const found = await repository.findByApiNumber(
-        'tenant-123',
-        '42-165-12345',
-      );
+      const found = await repository.findByApiNumber('tenant-123', '42-165-12345');
 
       expect(found).toBeDefined();
       expect(found.name).toBe('Test Well');
     });
 
     it('should return null when API number does not exist', async () => {
-      const found = await repository.findByApiNumber(
-        'tenant-123',
-        '99-999-99999',
-      );
+      const found = await repository.findByApiNumber('tenant-123', '99-999-99999');
 
       expect(found).toBeNull();
     });
@@ -424,10 +417,7 @@ describe('DrizzleWellRepository Integration', () => {
       await repository.save('tenant-123', well);
       await repository.delete('tenant-123', well.id, 'user-123');
 
-      const found = await repository.findByApiNumber(
-        'tenant-123',
-        '42-165-12345',
-      );
+      const found = await repository.findByApiNumber('tenant-123', '42-165-12345');
 
       expect(found).toBeNull();
     });
@@ -503,14 +493,12 @@ describe('POST /wells (Integration)', () => {
   });
 
   it('should return 401 without auth token', async () => {
-    const response = await request(app.getHttpServer())
-      .post('/wells')
-      .send({
-        name: 'Test Well',
-        apiNumber: '42-165-12345',
-        latitude: 31.8457,
-        longitude: -102.3676,
-      });
+    const response = await request(app.getHttpServer()).post('/wells').send({
+      name: 'Test Well',
+      apiNumber: '42-165-12345',
+      latitude: 31.8457,
+      longitude: -102.3676,
+    });
 
     expect(response.status).toBe(401);
   });
@@ -526,6 +514,7 @@ describe('POST /wells (Integration)', () => {
 **Test Focus**: Complete user workflows across multiple endpoints
 
 **Tools**:
+
 - Jest
 - Supertest
 - Test database
@@ -566,9 +555,7 @@ describe('Well Management Workflow (E2E)', () => {
       .set('Authorization', `Bearer ${operatorToken}`);
 
     expect(listResponse.status).toBe(200);
-    expect(listResponse.body.items).toContainEqual(
-      expect.objectContaining({ id: wellId }),
-    );
+    expect(listResponse.body.items).toContainEqual(expect.objectContaining({ id: wellId }));
 
     // 3. Operator enters production data
     const productionResponse = await request(app.getHttpServer())
@@ -620,6 +607,7 @@ describe('Well Management Workflow (E2E)', () => {
 **Test Focus**: Component rendering, user interactions, state management
 
 **Tools**:
+
 - Jest
 - React Testing Library
 - MSW (Mock Service Worker) for API mocks
@@ -741,6 +729,7 @@ describe('useWells', () => {
 **Test Focus**: Complete user workflows in real browser
 
 **Tools**:
+
 - Playwright
 
 ```typescript
@@ -776,9 +765,7 @@ test.describe('Well Management', () => {
 
     // Verify success
     await expect(page.locator('text=Well created successfully')).toBeVisible();
-    await expect(
-      page.locator('text=Playwright Test Well'),
-    ).toBeVisible();
+    await expect(page.locator('text=Playwright Test Well')).toBeVisible();
   });
 
   test('should display well on map', async ({ page }) => {
@@ -974,10 +961,10 @@ config:
   target: 'http://localhost:3001'
   phases:
     - duration: 60
-      arrivalRate: 10  # 10 users per second
+      arrivalRate: 10 # 10 users per second
       name: Warm up
     - duration: 120
-      arrivalRate: 50  # 50 users per second
+      arrivalRate: 50 # 50 users per second
       name: Sustained load
     - duration: 60
       arrivalRate: 100 # 100 users per second (spike)
@@ -1013,14 +1000,14 @@ scenarios:
 
 ### Performance Benchmarks
 
-| Operation | Target | Notes |
-|-----------|--------|-------|
-| **API Response Time (p95)** | < 200ms | 95th percentile |
-| **API Response Time (p99)** | < 500ms | 99th percentile |
-| **Map Load (100 wells)** | < 2 seconds | Initial render |
-| **Production Chart (90 days)** | < 1 second | Time series render |
-| **Database Query** | < 50ms | Single table query |
-| **Join Query (3 tables)** | < 100ms | Complex joins |
+| Operation                      | Target      | Notes              |
+| ------------------------------ | ----------- | ------------------ |
+| **API Response Time (p95)**    | < 200ms     | 95th percentile    |
+| **API Response Time (p99)**    | < 500ms     | 99th percentile    |
+| **Map Load (100 wells)**       | < 2 seconds | Initial render     |
+| **Production Chart (90 days)** | < 1 second  | Time series render |
+| **Database Query**             | < 50ms      | Single table query |
+| **Join Query (3 tables)**      | < 100ms     | Complex joins      |
 
 ---
 
@@ -1116,7 +1103,7 @@ describe('Well', () => {
 ```typescript
 it('should activate an inactive well', () => {
   // Arrange
-  const well = Well.create({ status: 'INACTIVE', /* ... */ });
+  const well = Well.create({ status: 'INACTIVE' /* ... */ });
 
   // Act
   well.activate();

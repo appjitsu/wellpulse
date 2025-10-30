@@ -13,6 +13,8 @@ describe('Tenant Entity', () => {
   const validProps = {
     slug: 'acme-oil-gas',
     subdomain: 'acme',
+    tenantId: 'ACME-A5L32W',
+    secretKeyHash: 'hashed_secret_key_placeholder',
     name: 'ACME Oil & Gas',
     databaseConfig: DatabaseConfig.create({
       type: 'POSTGRESQL',
@@ -422,6 +424,8 @@ describe('Tenant Entity', () => {
         id: '123e4567-e89b-12d3-a456-426614174000',
         slug: 'acme-oil-gas',
         subdomain: 'acme',
+        tenantId: 'ACME-A5L32W',
+        secretKeyHash: 'hashed_secret_key_placeholder',
         name: 'ACME Oil & Gas',
         databaseConfig: DatabaseConfig.create({
           type: 'POSTGRESQL',

@@ -18,6 +18,7 @@ The Database-Per-Tenant Multi-Tenancy pattern provides complete data isolation b
 - **Compliance alignment**: Easier to meet regulatory requirements (data residency, audit trails)
 
 This pattern is critical for WellPulse because oil & gas operators demand:
+
 1. Control over where their production data is stored
 2. Assurance that competitors cannot access their data (even accidentally)
 3. Ability to keep databases on-premises for security/compliance
@@ -27,6 +28,7 @@ This pattern is critical for WellPulse because oil & gas operators demand:
 ## The Problem
 
 **Scenario**: WellPulse serves 50+ independent oil & gas operators. Each operator has:
+
 - Proprietary production data (well outputs, equipment sensors, field notes)
 - Regulatory compliance requirements (state-specific, data residency)
 - Different infrastructure preferences (some use Azure, some AWS, some on-prem)
@@ -35,10 +37,7 @@ This pattern is critical for WellPulse because oil & gas operators demand:
 
 ```typescript
 // ❌ Shared database approach (not suitable for WellPulse)
-await db
-  .select()
-  .from(wellsTable)
-  .where(eq(wellsTable.organizationId, currentOrgId)); // RLS filter
+await db.select().from(wellsTable).where(eq(wellsTable.organizationId, currentOrgId)); // RLS filter
 
 // Problems:
 // 1. Single database failure = all tenants down
@@ -49,6 +48,7 @@ await db
 ```
 
 **What We Need**:
+
 - Each tenant has a completely separate database
 - WellPulse API dynamically connects to the correct tenant database per request
 - Efficient connection pooling (don't create new DB connections on every request)
@@ -124,7 +124,7 @@ export const tenants = pgTable('tenants', {
   // Database connection info
   databaseUrl: text('database_url').notNull(), // Full PostgreSQL connection string
   connectionType: varchar('connection_type', { length: 50 }).notNull(),
-    // "AZURE_PRIVATE_LINK" | "AWS_VPN" | "ON_PREMISES_VPN" | "PUBLIC_SSL"
+  // "AZURE_PRIVATE_LINK" | "AWS_VPN" | "ON_PREMISES_VPN" | "PUBLIC_SSL"
 
   // Deployment info
   region: varchar('region', { length: 50 }).notNull(), // "azure-east-us", "aws-us-west-2", "on-premises"
@@ -132,12 +132,12 @@ export const tenants = pgTable('tenants', {
 
   // Feature flags & tier
   tier: varchar('tier', { length: 50 }).notNull().default('STARTER'),
-    // "STARTER" | "PROFESSIONAL" | "ENTERPRISE"
+  // "STARTER" | "PROFESSIONAL" | "ENTERPRISE"
   features: jsonb('features').notNull().default({}), // { predictiveMaintenance: true, ... }
 
   // Status & lifecycle
   status: varchar('status', { length: 50 }).notNull().default('ACTIVE'),
-    // "ACTIVE" | "SUSPENDED" | "TRIAL" | "MIGRATING"
+  // "ACTIVE" | "SUSPENDED" | "TRIAL" | "MIGRATING"
   trialEndsAt: timestamp('trial_ends_at'),
 
   // Metadata
@@ -328,10 +328,7 @@ export class TenantConfigService {
   }
 
   async getAllActiveTenants(): Promise<Tenant[]> {
-    return await this.masterDb
-      .select()
-      .from(tenants)
-      .where(eq(tenants.status, 'ACTIVE'));
+    return await this.masterDb.select().from(tenants).where(eq(tenants.status, 'ACTIVE'));
   }
 
   // Invalidate cache when tenant is updated
@@ -379,7 +376,9 @@ export class TenantDatabaseService {
       throw new InternalServerErrorException(`Tenant ${tenantId} not found in master database`);
     }
 
-    this.logger.log(`Creating connection pool for tenant: ${tenant.slug} (${tenant.connectionType})`);
+    this.logger.log(
+      `Creating connection pool for tenant: ${tenant.slug} (${tenant.connectionType})`,
+    );
 
     // Create new PostgreSQL connection pool
     const pool = new Pool({
@@ -504,8 +503,8 @@ export class WellRepository implements IWellRepository {
       .where(
         and(
           eq(wellsTable.id, wellId),
-          eq(wellsTable.deletedAt, null) // Soft delete filter
-        )
+          eq(wellsTable.deletedAt, null), // Soft delete filter
+        ),
       )
       .limit(1);
 
@@ -515,10 +514,7 @@ export class WellRepository implements IWellRepository {
   async findAll(tenantId: string): Promise<Well[]> {
     const db = await this.tenantDbService.getTenantDatabase(tenantId);
 
-    const results = await db
-      .select()
-      .from(wellsTable)
-      .where(eq(wellsTable.deletedAt, null));
+    const results = await db.select().from(wellsTable).where(eq(wellsTable.deletedAt, null));
 
     return results.map(this.toDomain);
   }
@@ -538,10 +534,7 @@ export class WellRepository implements IWellRepository {
     const db = await this.tenantDbService.getTenantDatabase(tenantId);
 
     // Soft delete
-    await db
-      .update(wellsTable)
-      .set({ deletedAt: new Date() })
-      .where(eq(wellsTable.id, wellId));
+    await db.update(wellsTable).set({ deletedAt: new Date() }).where(eq(wellsTable.id, wellId));
   }
 
   private toDomain(row: any): Well {
@@ -554,7 +547,7 @@ export class WellRepository implements IWellRepository {
         status: row.status,
         createdAt: row.created_at,
       },
-      row.id
+      row.id,
     );
   }
 
@@ -586,12 +579,10 @@ Use custom decorator to extract tenant from request:
 // apps/api/src/presentation/decorators/tenant-context.decorator.ts
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 
-export const TenantContext = createParamDecorator(
-  (data: unknown, ctx: ExecutionContext) => {
-    const request = ctx.switchToHttp().getRequest();
-    return request.tenant; // Injected by TenantIdentificationMiddleware
-  },
-);
+export const TenantContext = createParamDecorator((data: unknown, ctx: ExecutionContext) => {
+  const request = ctx.switchToHttp().getRequest();
+  return request.tenant; // Injected by TenantIdentificationMiddleware
+});
 ```
 
 **Usage in Controller**:
@@ -621,6 +612,7 @@ export class WellsController {
 ```
 
 **Flow**:
+
 1. Request: `GET https://acmeoil.wellpulse.io/wells/well-123`
 2. Middleware extracts subdomain `acmeoil`
 3. Middleware fetches tenant from master DB
@@ -651,13 +643,13 @@ Clients choose where their database lives:
 
 ```typescript
 // Client A: Azure East US (close to their headquarters)
-tenants.databaseUrl = 'postgresql://...@azure-east-us.postgres.database.azure.com/...'
+tenants.databaseUrl = 'postgresql://...@azure-east-us.postgres.database.azure.com/...';
 
 // Client B: AWS US-West-2 (they already use AWS)
-tenants.databaseUrl = 'postgresql://...@us-west-2.rds.amazonaws.com/...'
+tenants.databaseUrl = 'postgresql://...@us-west-2.rds.amazonaws.com/...';
 
 // Client C: On-premises (behind their firewall)
-tenants.databaseUrl = 'postgresql://...@192.168.50.10/...'
+tenants.databaseUrl = 'postgresql://...@192.168.50.10/...';
 ```
 
 ### 3. **Independent Scaling**
@@ -672,6 +664,7 @@ Large tenants get dedicated database servers:
 ### 4. **Easier Compliance**
 
 Each tenant's database can have different:
+
 - Backup retention policies
 - Encryption keys
 - Audit logging levels
@@ -704,12 +697,13 @@ Migrate one tenant at a time (not all-or-nothing):
 
 const pool = new Pool({
   max: 20, // Per-tenant pool size
-  min: 5,  // Keep 5 connections warm
+  min: 5, // Keep 5 connections warm
   idleTimeoutMillis: 30000, // Close idle connections after 30s
 });
 ```
 
 **Azure PostgreSQL Flexible Server limits**:
+
 - Burstable B1ms: 50 max connections
 - General Purpose 2 vCores: 859 max connections
 - General Purpose 4 vCores: 1719 max connections
@@ -984,6 +978,7 @@ The **Database-Per-Tenant Multi-Tenancy Pattern** provides:
 5. **Independent scaling** (small tenants share, large tenants get dedicated resources)
 
 **Critical Implementation Points**:
+
 - Store tenant metadata in master database
 - Lazy-load connection pools (don't create upfront)
 - Always require `tenantId` parameter in repositories
@@ -995,6 +990,7 @@ This pattern is essential for WellPulse because oil & gas operators demand contr
 ---
 
 **Related Documentation**:
+
 - [Azure Production Architecture](../deployment/azure-production-architecture.md)
 - [Offline Batch Sync Pattern](./70-Offline-Batch-Sync-Pattern.md)
 - [Conflict Resolution Pattern](./71-Conflict-Resolution-Pattern.md)

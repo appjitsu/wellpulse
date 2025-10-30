@@ -27,7 +27,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3001",  # API server (development)
+        "http://localhost:4001",  # API server (development)
         "https://api.wellpulse.app",  # API server (production)
     ],
     allow_credentials=True,

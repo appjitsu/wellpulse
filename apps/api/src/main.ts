@@ -2,16 +2,80 @@ import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import * as compression from 'compression';
-import * as cookieParser from 'cookie-parser';
+import { Request, Response, NextFunction } from 'express';
+import compression from 'compression';
+import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
+import * as appInsights from 'applicationinsights';
 import { AppModule } from './app.module';
+import {
+  createWinstonLogger,
+  WinstonLoggerService,
+} from './infrastructure/monitoring/winston-logger.config';
+
+/**
+ * Extended Express Request with correlation ID
+ */
+interface RequestWithCorrelation extends Request {
+  correlationId?: string;
+}
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // Initialize Application Insights early (before app creation)
+  // This ensures all telemetry is captured from the start
+  const connectionString = process.env.APPLICATIONINSIGHTS_CONNECTION_STRING;
+  if (connectionString) {
+    appInsights
+      .setup(connectionString)
+      .setAutoDependencyCorrelation(true)
+      .setAutoCollectRequests(true)
+      .setAutoCollectPerformance(true, true)
+      .setAutoCollectExceptions(true)
+      .setAutoCollectDependencies(true)
+      .setAutoCollectConsole(true, true)
+      .setUseDiskRetryCaching(true)
+      .setSendLiveMetrics(true)
+      .setDistributedTracingMode(appInsights.DistributedTracingModes.AI_AND_W3C)
+      .start();
+
+    console.log('✅ Application Insights initialized');
+  } else {
+    console.log(
+      '⚠️  Application Insights not configured - running without Azure monitoring',
+    );
+  }
+
+  // Create Winston logger
+  const logLevel = process.env.LOG_LEVEL || 'info';
+  const winstonLogger = createWinstonLogger(connectionString, logLevel);
+  const logger = new WinstonLoggerService(winstonLogger);
+
+  // Create NestJS app with Winston logger
+  const app = await NestFactory.create(AppModule, {
+    logger,
+  });
 
   // Get ConfigService
   const configService = app.get(ConfigService);
+
+  // Correlation ID middleware (for request tracing)
+  // Adds X-Correlation-ID header to all requests
+  app.use((req: RequestWithCorrelation, res: Response, next: NextFunction) => {
+    const correlationId =
+      (req.headers['x-correlation-id'] as string) ||
+      `${Date.now()}-${Math.random().toString(36).substring(7)}`;
+    req.correlationId = correlationId;
+    res.setHeader('X-Correlation-ID', correlationId);
+
+    // Add to Application Insights context
+    if (appInsights.defaultClient) {
+      appInsights.defaultClient.context.tags[
+        appInsights.defaultClient.context.keys.operationId
+      ] = correlationId;
+    }
+
+    next();
+  });
 
   // Cookie parser middleware (for reading cookies from requests)
   app.use(cookieParser());
@@ -89,9 +153,42 @@ async function bootstrap() {
   const port = configService.get<number>('PORT') || 4000;
   await app.listen(port);
 
-  console.log(`🚀 WellPulse API is running on: http://localhost:${port}/api`);
-  console.log(`📚 API docs available at: http://localhost:${port}/api/docs`);
-  console.log(`🏥 Health check: http://localhost:${port}/api/health`);
+  logger.log(
+    `🚀 WellPulse API is running on: http://localhost:${port}/api`,
+    'Bootstrap',
+  );
+  logger.log(
+    `📚 API docs available at: http://localhost:${port}/api/docs`,
+    'Bootstrap',
+  );
+  logger.log(
+    `🏥 Health check: http://localhost:${port}/api/health`,
+    'Bootstrap',
+  );
+  logger.log(
+    `📊 Metrics endpoint: http://localhost:${port}/metrics`,
+    'Bootstrap',
+  );
+
+  // Graceful shutdown handler
+  process.on('SIGTERM', () => {
+    void (async () => {
+      logger.log('SIGTERM signal received: closing HTTP server', 'Bootstrap');
+
+      // Flush Application Insights telemetry before shutdown
+      if (appInsights.defaultClient) {
+        logger.log('Flushing Application Insights telemetry...', 'Bootstrap');
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        appInsights.defaultClient.flush();
+        // Give it a moment to complete
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        logger.log('Application Insights telemetry flushed', 'Bootstrap');
+      }
+
+      await app.close();
+      logger.log('HTTP server closed', 'Bootstrap');
+    })();
+  });
 }
 
 void bootstrap();

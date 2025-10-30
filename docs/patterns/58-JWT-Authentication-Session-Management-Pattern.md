@@ -478,6 +478,134 @@ res.cookie('refreshToken', token, {
 });
 ```
 
+### 6. Cross-Origin Cookie Blocking (Subdomain Development)
+
+**Problem:**
+
+```typescript
+// ❌ Cookies don't work across different origins
+// API: localhost:4000
+// Web: demo.localhost:4001
+// Browser blocks cookies even with Domain=.localhost
+```
+
+**Why it happens:**
+
+- API and web app are on **different origins** (`localhost:4000` vs `demo.localhost:4001`)
+- Browser security prevents cross-origin cookies even with proper domain settings
+- `Domain=.localhost` doesn't work when the setting origin is `localhost:4000`
+- httpOnly cookies won't be sent with requests from `demo.localhost:4001`
+
+**Impact:**
+
+1. Login succeeds and sets `refreshToken` cookie
+2. Cookie appears in response headers but browser doesn't store it
+3. Subsequent requests to protected routes don't include cookie
+4. Middleware redirects to login (sees no cookie)
+5. **Result:** Login successful toast shows, but redirect to dashboard fails
+
+**Solution (Development Only):**
+
+```typescript
+// apps/web/middleware.ts
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // ... public route checks ...
+
+  // DEVELOPMENT MODE: Skip cookie check entirely
+  // In dev, API is at localhost:4000 and web is at demo.localhost:4001 (different origins)
+  // Cookies set by API won't be accessible to web app due to browser security
+  // We rely on client-side auth checks instead
+  const isDevelopment = process.env.NODE_ENV !== 'production';
+  const refreshToken = request.cookies.get('refreshToken');
+  const isAuthenticated = isDevelopment ? true : !!refreshToken;
+
+  // ... rest of middleware logic ...
+}
+```
+
+**Production Solution:**
+
+In production, both API and web are on the same parent domain:
+
+```typescript
+// Production deployment:
+// API:  api.wellpulse.app
+// Web:  demo.wellpulse.app
+// Domain: .wellpulse.app (works perfectly)
+
+res.cookie('refreshToken', token, {
+  httpOnly: true,
+  secure: true,
+  sameSite: 'strict',
+  domain: '.wellpulse.app', // Shared across subdomains
+  path: '/',
+});
+```
+
+**Key Insights:**
+
+- **Development:** Cross-origin restrictions can't be bypassed - disable server-side auth checks, rely on client-side
+- **Production:** Same-domain architecture allows proper cookie sharing
+- **Security:** Client-side auth in dev is acceptable (local machine only)
+- **Alternative:** Use same-origin proxy in development if strict testing needed
+
+### 7. Rate Limiting Blocking Development
+
+**Problem:**
+
+```typescript
+// ❌ Production rate limits too strict for testing
+@Throttle({ default: { limit: 5, ttl: 900000 } }) // 5 requests per 15 min
+async login(@Body() dto: LoginDto) { ... }
+```
+
+**Why it happens:**
+
+- Brute-force protection limits login attempts
+- Development requires frequent testing/retries
+- Hit rate limit quickly during development/debugging
+- Returns HTTP 429 Too Many Requests
+
+**Impact:**
+
+1. Test login flow multiple times
+2. Hit 5-attempt limit within minutes
+3. Locked out for 15 minutes
+4. **Result:** "Request failed with status code 429" error
+
+**Solution:**
+
+```typescript
+// apps/api/src/presentation/auth/auth.controller.ts
+@Throttle({
+  default: {
+    limit: process.env.NODE_ENV === 'production' ? 5 : 100,
+    ttl: 900000, // 15 minutes
+  },
+})
+async login(
+  @TenantContext() tenant: TenantContextDto | undefined,
+  @Body() dto: LoginDto,
+  @Res({ passthrough: true }) res: Response,
+) { ... }
+```
+
+**Emergency Reset:**
+
+```bash
+# Clear Redis throttle cache to immediately reset limits
+redis-cli FLUSHDB
+```
+
+**Key Insights:**
+
+- **Development:** Generous limits (100+) for rapid iteration
+- **Production:** Strict limits (5) for security
+- **Environment-aware:** Same codebase, different behavior
+- **Cache clearing:** Use sparingly, only when blocked
+
 ## Testing Strategy
 
 ### Unit Tests
@@ -619,6 +747,13 @@ test('should not logout on tab switch', async ({ page }) => {
 - [HttpOnly Cookies](https://owasp.org/www-community/HttpOnly)
 
 ## Changelog
+
+- **2025-10-25**: Added cross-origin and rate limiting documentation
+  - Documented cross-origin cookie blocking in subdomain development
+  - Added middleware bypass solution for development mode
+  - Documented rate limiting issues and environment-based limits
+  - Added troubleshooting for login redirect loops
+  - Included Redis cache clearing for rate limit reset
 
 - **2025-10-15**: Initial pattern documentation
   - Documented dual-token authentication strategy

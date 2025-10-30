@@ -1,0 +1,130 @@
+config:
+  target: "http://localhost:4000"
+  phases:
+    # Gradual ramp-up to find breaking point
+    - duration: 120
+      arrivalRate: 1
+      rampTo: 50
+      name: "Ramp up to 50 users/sec"
+
+    - duration: 120
+      arrivalRate: 50
+      rampTo: 100
+      name: "Ramp up to 100 users/sec"
+
+    - duration: 120
+      arrivalRate: 100
+      rampTo: 200
+      name: "Ramp up to 200 users/sec"
+
+    # Hold at peak
+    - duration: 180
+      arrivalRate: 200
+      name: "Sustained peak load"
+
+    # Cool down
+    - duration: 60
+      arrivalRate: 200
+      rampTo: 10
+      name: "Cool down"
+
+  # More lenient thresholds for stress test
+  ensure:
+    maxErrorRate: 10  # Allow 10% errors at peak
+    p99: 5000  # Allow slower responses under stress
+
+  processor: "./load-tests/processor.js"
+
+scenarios:
+  # Realistic user behavior
+  - name: "Realistic User Flow"
+    weight: 60
+    flow:
+      # Login
+      - post:
+          url: "/auth/login"
+          json:
+            email: "loadtest@wellpulse.io"
+            password: "LoadTest123!@#"
+          capture:
+            - json: "$.accessToken"
+              as: "token"
+          beforeRequest: "logScenarioStart"
+
+      # Think time
+      - function: "customThink"
+
+      # Browse wells
+      - get:
+          url: "/wells?page={{ $randomNumber(1, 10) }}&limit=20"
+          headers:
+            Authorization: "Bearer {{ token }}"
+          afterResponse: "logResponseTime"
+
+      # Think time
+      - function: "customThink"
+
+      # View dashboard
+      - get:
+          url: "/dashboard/metrics"
+          headers:
+            Authorization: "Bearer {{ token }}"
+
+      # Think time
+      - function: "customThink"
+
+      # Check alerts
+      - get:
+          url: "/alerts?status=pending"
+          headers:
+            Authorization: "Bearer {{ token }}"
+
+  # Heavy read operations
+  - name: "Read-Heavy Operations"
+    weight: 30
+    flow:
+      - post:
+          url: "/auth/login"
+          json:
+            email: "loadtest@wellpulse.io"
+            password: "LoadTest123!@#"
+          capture:
+            - json: "$.accessToken"
+              as: "token"
+
+      # Multiple rapid reads
+      - loop:
+          - get:
+              url: "/wells?page={{ $randomNumber(1, 5) }}"
+              headers:
+                Authorization: "Bearer {{ token }}"
+        count: 10
+
+  # Write operations (more intensive)
+  - name: "Write-Heavy Operations"
+    weight: 10
+    flow:
+      - post:
+          url: "/auth/login"
+          json:
+            email: "loadtest@wellpulse.io"
+            password: "LoadTest123!@#"
+          capture:
+            - json: "$.accessToken"
+              as: "token"
+
+      - beforeRequest: "generateProductionData"
+
+      # Create field entries
+      - loop:
+          - post:
+              url: "/field-entries"
+              headers:
+                Authorization: "Bearer {{ token }}"
+              json:
+                wellId: "well_{{ $randomString() }}"
+                entryDate: "{{ entryDate }}"
+                productionVolume: "{{ productionVolume }}"
+                gasVolume: "{{ gasVolume }}"
+                waterVolume: "{{ waterVolume }}"
+        count: 5

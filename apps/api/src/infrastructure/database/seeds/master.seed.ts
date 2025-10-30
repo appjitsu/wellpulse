@@ -3,9 +3,8 @@
  *
  * Seeds initial development data for the master database:
  * - Super admin user for platform management
- * - Sample tenants for testing (WellPulse internal, ACME, Demo)
- * - Billing subscriptions
- * - Initial usage metrics
+ * - WellPulse internal tenant (for admin portal)
+ * - Demo trial tenant (for testing)
  *
  * Run with: pnpm db:seed:master
  */
@@ -18,6 +17,16 @@ import {
   usageMetrics,
 } from '../master/schema';
 import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
+
+/**
+ * Generate tenant secret key and hash
+ */
+function generateTenantSecret(): { secret: string; hash: string } {
+  const secret = crypto.randomBytes(32).toString('base64');
+  const hash = crypto.createHash('sha256').update(secret).digest('hex');
+  return { secret, hash };
+}
 
 async function seed() {
   console.log('🌱 Starting master database seed...\n');
@@ -54,11 +63,15 @@ async function seed() {
     // ========================================================================
     console.log('\n🏢 Creating master tenant (WellPulse)...');
 
+    const wellpulseSecret = generateTenantSecret();
+
     const [wellpulseTenant] = await masterDb
       .insert(tenants)
       .values({
         slug: 'wellpulse',
         subdomain: 'wellpulse',
+        tenantId: 'WELLPULS-ADMIN1', // Static tenant ID for internal use (8 letters + 6 chars)
+        secretKeyHash: wellpulseSecret.hash,
         name: 'WellPulse (Internal)',
         databaseType: 'POSTGRESQL',
         databaseUrl:
@@ -87,150 +100,29 @@ async function seed() {
       console.log(
         `✅ Master tenant created: ${wellpulseTenant.name} (${wellpulseTenant.subdomain})`,
       );
+      console.log(`   Tenant ID: ${wellpulseTenant.tenantId}`);
+      console.log(`   Secret: ${wellpulseSecret.secret}`);
     } else {
       console.log('ℹ️  WellPulse master tenant already exists');
     }
 
     // ========================================================================
-    // 3. Create Sample Tenant (ACME Oil & Gas)
-    // ========================================================================
-    console.log('\n🏢 Creating sample tenant...');
-
-    const [acmeTenant] = await masterDb
-      .insert(tenants)
-      .values({
-        slug: 'acme-oil-gas',
-        subdomain: 'acme',
-        name: 'ACME Oil & Gas',
-        databaseType: 'POSTGRESQL',
-        databaseUrl:
-          'postgresql://wellpulse:wellpulse@localhost:5432/acme_wellpulse',
-        databaseName: 'acme_wellpulse',
-        databaseHost: 'localhost',
-        databasePort: 5432,
-        subscriptionTier: 'PROFESSIONAL',
-        maxWells: 200,
-        maxUsers: 20,
-        storageQuotaGb: 50,
-        status: 'ACTIVE',
-        contactEmail: 'admin@acmeoil.com',
-        contactPhone: '+1-555-0100',
-        billingEmail: 'billing@acmeoil.com',
-        featureFlags: {
-          enableMlPredictions: true,
-          enableOfflineSync: true,
-          enableAdvancedReporting: true,
-        },
-        createdBy: superAdmin?.id,
-      })
-      .returning()
-      .onConflictDoNothing();
-
-    if (acmeTenant) {
-      console.log(
-        `✅ Tenant created: ${acmeTenant.name} (${acmeTenant.subdomain}.wellpulse.app)`,
-      );
-    } else {
-      console.log('ℹ️  ACME tenant already exists');
-    }
-
-    // ========================================================================
-    // 4. Create Billing Subscription for ACME
-    // ========================================================================
-    if (acmeTenant) {
-      console.log('\n💳 Creating billing subscription...');
-
-      const now = new Date();
-      const nextMonth = new Date(now);
-      nextMonth.setMonth(nextMonth.getMonth() + 1);
-
-      const [subscription] = await masterDb
-        .insert(billingSubscriptions)
-        .values({
-          tenantId: acmeTenant.id,
-          tier: 'PROFESSIONAL',
-          status: 'ACTIVE',
-          billingCycle: 'MONTHLY',
-          basePriceUsd: 29900, // $299.00
-          perWellPriceUsd: 500, // $5.00 per well
-          perUserPriceUsd: 2000, // $20.00 per user
-          storageOveragePricePerGbUsd: 100, // $1.00 per GB
-          currentPeriodStart: now,
-          currentPeriodEnd: nextMonth,
-          nextBillingDate: nextMonth,
-          paymentMethod: 'CREDIT_CARD',
-        })
-        .returning()
-        .onConflictDoNothing();
-
-      if (subscription) {
-        console.log(
-          `✅ Subscription created: ${subscription.tier} - $${subscription.basePriceUsd / 100}/mo`,
-        );
-      } else {
-        console.log('ℹ️  Subscription already exists');
-      }
-    }
-
-    // ========================================================================
-    // 5. Create Initial Usage Metrics
-    // ========================================================================
-    if (acmeTenant) {
-      console.log('\n📊 Creating initial usage metrics...');
-
-      const now = new Date();
-      const yesterday = new Date(now);
-      yesterday.setDate(yesterday.getDate() - 1);
-
-      const [metrics] = await masterDb
-        .insert(usageMetrics)
-        .values({
-          tenantId: acmeTenant.id,
-          periodStart: yesterday,
-          periodEnd: now,
-          metricDate: now,
-          activeWellCount: 45,
-          totalWellCount: 50,
-          activeUserCount: 8,
-          totalUserCount: 10,
-          storageUsedGb: 12,
-          storageQuotaGb: 50,
-          storageOverageGb: 0,
-          apiRequestCount: 1250,
-          apiErrorCount: 3,
-          apiRateLimitHits: 0,
-          productionDataEntriesCount: 150,
-          mlPredictionsCount: 25,
-          mobileAppSyncsCount: 12,
-          electronAppSyncsCount: 8,
-          avgApiResponseTimeMs: 85,
-          p95ApiResponseTimeMs: 210,
-        })
-        .returning()
-        .onConflictDoNothing();
-
-      if (metrics) {
-        console.log(
-          `✅ Usage metrics created: ${metrics.activeWellCount} wells, ${metrics.activeUserCount} users`,
-        );
-      } else {
-        console.log('ℹ️  Usage metrics already exist');
-      }
-    }
-
-    // ========================================================================
-    // 6. Create Trial Tenant (Demo Company)
+    // 3. Create Trial Tenant (Demo Company)
     // ========================================================================
     console.log('\n🆓 Creating trial tenant...');
 
     const trialEndsAt = new Date();
     trialEndsAt.setDate(trialEndsAt.getDate() + 14); // 14-day trial
 
+    const demoSecret = generateTenantSecret();
+
     const [trialTenant] = await masterDb
       .insert(tenants)
       .values({
         slug: 'demo-oil-co',
         subdomain: 'demo',
+        tenantId: 'DEMO-A5L32W', // Fixed tenant ID for demo tenant
+        secretKeyHash: demoSecret.hash,
         name: 'Demo Oil Company',
         databaseType: 'POSTGRESQL',
         databaseUrl:
@@ -259,6 +151,8 @@ async function seed() {
       console.log(
         `✅ Trial tenant created: ${trialTenant.name} (expires ${trialTenant.trialEndsAt?.toLocaleDateString()})`,
       );
+      console.log(`   Tenant ID: ${trialTenant.tenantId}`);
+      console.log(`   Secret: ${demoSecret.secret}`);
     } else {
       console.log('ℹ️  Trial tenant already exists');
     }
@@ -267,10 +161,16 @@ async function seed() {
     console.log('📝 Summary:');
     console.log('   - Super Admin: admin@wellpulse.app / WellPulse2025!');
     console.log(
-      '   - WellPulse Master Tenant: wellpulse (ENTERPRISE, ACTIVE) - for admin users',
+      '   - WellPulse Master Tenant: wellpulse.wellpulse.app (ENTERPRISE, ACTIVE)',
     );
-    console.log('   - ACME Tenant: acme.wellpulse.app (PROFESSIONAL, ACTIVE)');
+    console.log('     Tenant ID: WELLPULS-ADMIN1');
     console.log('   - Demo Tenant: demo.wellpulse.app (STARTER, TRIAL)');
+    console.log('     Tenant ID: DEMO-A5L32W');
+    console.log('');
+    console.log('🔐 IMPORTANT: Save tenant secrets securely!');
+    console.log(
+      '   Secrets are only shown once during seed and must be stored securely.',
+    );
     console.log('');
   } catch (error) {
     console.error('❌ Seed failed:', error);

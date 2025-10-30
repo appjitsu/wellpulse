@@ -13,9 +13,16 @@
 
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
-import postgres from 'postgres';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
+import type { Sql } from 'postgres';
+
+// Handle CommonJS/ESM interop for postgres package
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const postgres = require('postgres') as (
+  url: string,
+  options?: { max?: number },
+) => Sql;
 
 dotenv.config();
 
@@ -40,7 +47,7 @@ async function runMigration() {
     await migrate(db, { migrationsFolder });
 
     console.log('✅ Master database migrations completed successfully!');
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('❌ Migration failed:', error);
     process.exit(1);
   } finally {

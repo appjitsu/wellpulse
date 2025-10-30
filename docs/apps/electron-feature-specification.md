@@ -13,6 +13,7 @@ The WellPulse Electron app is a **desktop application for laptop-based field dat
 **Target Users**: Field operators, lease operators, pumpers, production technicians
 
 **Use Cases:**
+
 - Record daily production data (oil, gas, water) at well sites
 - Log equipment inspections and maintenance activities
 - Capture equipment photos and notes
@@ -21,6 +22,7 @@ The WellPulse Electron app is a **desktop application for laptop-based field dat
 - Track field activities and time spent
 
 **Key Features:**
+
 - Works 100% offline (internet not required during field work)
 - Local SQLite database stores all data
 - Automatic sync when internet connection detected
@@ -48,6 +50,7 @@ local_database.db
 ```
 
 **Event Sourcing Pattern**: All field data entries are stored as immutable events in `field_events` table. This enables:
+
 - Complete audit trail
 - Conflict detection and resolution
 - Batch sync with retry logic
@@ -64,6 +67,7 @@ Field Operator Workflow:
 ```
 
 **Sync Modes:**
+
 - **Automatic sync**: When internet detected (WiFi, mobile hotspot)
 - **Manual sync**: Operator clicks "Sync Now" button
 - **Scheduled sync**: Every 4 hours if online (background)
@@ -74,13 +78,35 @@ Field Operator Workflow:
 
 ### 1. Authentication & Login
 
+**Triple-Credential Authentication:**
+
+Desktop apps use the same three-layer security system as mobile apps:
+
+1. **X-Tenant-ID Header** (Format: `DEMO-A5L32W`)
+   - Public identifier for the tenant
+   - Stored in encrypted electron-store after first login
+   - Included in all API requests
+
+2. **X-Tenant-Secret Header** (Server-issued credential)
+   - Received ONCE during first login
+   - Stored in Electron's `safeStorage` API (OS-level encryption - Keychain on macOS, Credential Vault on Windows, Secret Service on Linux)
+   - Never logged or displayed in app UI
+   - Rotatable by super admin if device compromised
+
+3. **User Email/Password + JWT** (Standard authentication)
+   - User-specific credentials
+   - JWT access token (15 min expiration)
+   - JWT refresh token (7 day expiration, stored in encrypted storage)
+
 **Offline-First Login:**
-- First-time login requires internet (download tenant data)
-- Subsequent logins work offline (cached credentials)
-- JWT stored locally (encrypted)
-- Remember device option (auto-login)
+
+- First-time login requires internet (download tenant data + receive tenant secret)
+- Subsequent logins work offline (cached credentials validated locally)
+- All three credentials cached in encrypted storage
+- Remember device option (auto-login with cached credentials)
 
 **Login Screen:**
+
 ```
 ┌─────────────────────────────────────┐
 │         WellPulse Field App         │
@@ -98,9 +124,12 @@ Field Operator Workflow:
 ```
 
 **Security:**
-- Encrypted local storage (electron-store with encryption)
+
+- Triple-credential authentication (X-Tenant-ID + X-Tenant-Secret + User JWT)
+- Tenant Secret stored using Electron's safeStorage API (OS-level encryption)
+- JWT tokens stored in encrypted electron-store
 - Auto-logout after 12 hours of inactivity (field shift length)
-- PIN code option for quick re-auth (4-digit)
+- PIN code option for quick re-auth (4-digit, unlocks cached credentials)
 
 ---
 
@@ -147,6 +176,7 @@ Field Operator Workflow:
 ```
 
 **Features:**
+
 - Sync status indicator (online/offline, pending count)
 - Daily production progress (wells completed vs. total)
 - Quick action buttons (large, touch-friendly)
@@ -186,12 +216,14 @@ Field Operator Workflow:
 ```
 
 **Features:**
+
 - Offline search (local SQLite query)
 - Filter by lease, status, recorded today
 - Status badges: ✓ Recorded today, ⏱ Pending, ⚠️ Issue reported
 - Tap well to view details or record production
 
 **Data Sync:**
+
 - Wells synced from cloud on app launch (if online)
 - Stored locally in SQLite for offline access
 - Updated during daily sync
@@ -262,6 +294,7 @@ Field Operator Workflow:
 ```
 
 **Features:**
+
 - Large input fields (easy for gloved hands)
 - Custom numpad (faster than keyboard)
 - Auto-save draft (prevent data loss)
@@ -271,6 +304,7 @@ Field Operator Workflow:
 - Timestamp capture (exact time of reading)
 
 **Local Storage:**
+
 ```javascript
 // Stored as event in field_events table
 {
@@ -348,6 +382,7 @@ Field Operator Workflow:
 ```
 
 **Features:**
+
 - Maintenance type selection (preventive/corrective/inspection)
 - Issue and action text areas
 - Parts inventory tracking
@@ -362,6 +397,7 @@ Field Operator Workflow:
 **Purpose**: Document equipment condition with photos
 
 **Features:**
+
 - Native camera integration (if laptop has webcam)
 - Or file upload from external camera/phone
 - Photo annotations (draw arrows, add text notes)
@@ -370,6 +406,7 @@ Field Operator Workflow:
 - Compress images for faster sync (reduce file size)
 
 **Photo Storage:**
+
 - Original photos: `~/.wellpulse/photos/original/`
 - Compressed for sync: `~/.wellpulse/photos/compressed/`
 - SQLite stores file paths + metadata
@@ -382,6 +419,7 @@ Field Operator Workflow:
 **Purpose**: Control when and how data syncs to cloud
 
 **Sync Screen:**
+
 ```
 ┌─────────────────────────────────────────────────┐
 │ ← Back               Sync Status                │
@@ -426,6 +464,7 @@ Field Operator Workflow:
 ```
 
 **Sync Process:**
+
 1. Check internet connectivity
 2. Fetch latest well/equipment data from cloud (delta sync)
 3. Upload pending events batch
@@ -435,6 +474,7 @@ Field Operator Workflow:
 7. Show sync success notification
 
 **Conflict Resolution:**
+
 - If conflict detected → Pause sync, show conflict screen
 - Operator chooses resolution strategy:
   - Use my data (local wins)
@@ -481,6 +521,7 @@ Field Operator Workflow:
 ```
 
 **Conflict Resolution Strategies (Auto-Applied When Possible):**
+
 - **Newest Wins**: For sensor readings (default)
 - **Highest Value**: For production volumes (regulatory requirement)
 - **Manual Review**: For safety-critical data (always)
@@ -492,6 +533,7 @@ Field Operator Workflow:
 **Purpose**: Configure app behavior and sync preferences
 
 **Settings Screen:**
+
 ```
 ┌─────────────────────────────────────────────────┐
 │ ← Back               Settings                   │
@@ -539,6 +581,7 @@ Field Operator Workflow:
 ### Electron Main Process
 
 **Responsibilities:**
+
 - Window management (main window, modals)
 - SQLite database operations (via better-sqlite3)
 - File system operations (photo storage)
@@ -549,6 +592,7 @@ Field Operator Workflow:
 ### Electron Renderer Process (React)
 
 **Responsibilities:**
+
 - UI rendering (React components)
 - User interactions (forms, navigation)
 - Local state management (Zustand)
@@ -661,21 +705,25 @@ Response:
 ## Performance & Optimization
 
 ### Startup Performance
+
 - Load critical data first (wells, equipment)
 - Lazy load sync history, settings
 - Cache React components for faster navigation
 
 ### Database Performance
+
 - Index on `well_id`, `timestamp`, `synced` columns
 - Vacuum database weekly (cleanup)
 - Limit local storage to last 30 days (archive older data)
 
 ### Photo Optimization
+
 - Compress photos to < 1MB each (JPEG quality 80%)
 - Generate thumbnails for UI display (< 100KB)
 - Upload compressed versions, keep originals locally
 
 ### Battery Optimization
+
 - Reduce background sync frequency on battery power
 - Disable auto-sync if battery < 20%
 - Low-power mode available in settings
@@ -685,16 +733,39 @@ Response:
 ## Security
 
 ### Data Encryption
+
 - SQLite database encrypted (SQLCipher)
-- JWT tokens encrypted in local storage
+- Triple-credential authentication (X-Tenant-ID + X-Tenant-Secret + User JWT)
+- Tenant Secret stored using Electron's safeStorage API (OS-level keychain)
+- JWT tokens encrypted in electron-store
 - Photos encrypted at rest
 
 ### Authentication
-- Offline authentication via cached JWT (expires after 30 days)
-- Re-authenticate when online to refresh token
-- Optional PIN code for quick re-auth
+
+**Triple-Credential System:**
+
+- Layer 1: X-Tenant-ID (public identifier, stored encrypted)
+- Layer 2: X-Tenant-Secret (server-issued, stored in OS keychain via safeStorage)
+- Layer 3: User JWT (15 min access token, 7 day refresh token)
+
+**Network Communication:**
+
+- HTTPS only (certificate pinning for wellpulse.app)
+- API Base URL: `https://api.wellpulse.app`
+- All API requests include three headers:
+  - `X-Tenant-ID`: Tenant identifier (e.g., DEMO-A5L32W)
+  - `X-Tenant-Secret`: Server-issued credential (from OS keychain)
+  - `Authorization`: Bearer JWT access token
+
+**Offline Authentication:**
+
+- Cached credentials allow offline login (validated against local hash)
+- Offline JWT valid for up to 7 days (refresh token expiration)
+- Re-authenticate when online to refresh tokens
+- Optional PIN code for quick re-auth (4-digit, unlocks cached credentials)
 
 ### Audit Trail
+
 - All local actions logged with timestamp
 - Device ID tracked for multi-device audit
 - Immutable event log (cannot be edited once created)
@@ -704,11 +775,13 @@ Response:
 ## Distribution
 
 ### Installation
+
 - Windows: `.exe` installer (NSIS)
 - macOS: `.dmg` disk image (code-signed)
 - Linux: `.AppImage` or `.deb` package
 
 ### Auto-Updates
+
 - Electron auto-updater checks for updates daily
 - Download updates in background
 - Prompt user to install on next launch
@@ -729,6 +802,7 @@ Response:
 ## Deployment
 
 ### Build Process
+
 ```bash
 # Install dependencies
 pnpm install
@@ -744,6 +818,7 @@ pnpm dist
 ```
 
 ### Distribution Channels
+
 - Direct download from wellpulse.io/download
 - Auto-update from GitHub Releases
 - Microsoft Store (future)
@@ -760,6 +835,7 @@ pnpm dist
 ---
 
 **Next Steps:**
+
 1. Set up Electron project structure
 2. Implement SQLite database layer
 3. Build core UI components (production form, sync screen)

@@ -7,6 +7,7 @@
  * - Admin users (WellPulse platform staff)
  * - Billing and subscription information
  * - Usage metrics for tenant management
+ * - Nominal range templates (global defaults)
  */
 
 import {
@@ -20,6 +21,7 @@ import {
   jsonb,
   index,
   uniqueIndex,
+  decimal,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
@@ -33,6 +35,12 @@ export const tenants = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     slug: varchar('slug', { length: 100 }).notNull().unique(), // URL-friendly: "acme-oil-gas"
     subdomain: varchar('subdomain', { length: 100 }).notNull().unique(), // "acme.wellpulse.app"
+
+    // Triple-Credential Authentication (Mobile Apps)
+    tenantId: varchar('tenant_id', { length: 15 }).notNull().unique(), // Format: COMPANY-XXXXXX (e.g., DEMO-A5L32W)
+    secretKeyHash: text('secret_key_hash').notNull(), // SHA-256 hashed secret key for mobile app auth
+    secretRotatedAt: timestamp('secret_rotated_at'), // When secret was last rotated by super admin
+
     name: varchar('name', { length: 255 }).notNull(), // "ACME Oil & Gas"
 
     // Database Configuration
@@ -63,10 +71,17 @@ export const tenants = pgTable(
     contactPhone: varchar('contact_phone', { length: 50 }),
     billingEmail: varchar('billing_email', { length: 255 }),
 
+    // Azure Entra ID Integration (Sprint 4 MVP)
+    azureTenantId: varchar('azure_tenant_id', { length: 255 }), // Azure AD Tenant ID
+    ssoEnabled: boolean('sso_enabled').notNull().default(false), // SSO enabled flag
+
     // ETL Configuration (for ETL_SYNCED tenants)
     etlConfig: jsonb('etl_config'), // SCADA/ERP integration settings
     etlLastSyncAt: timestamp('etl_last_sync_at'), // Last successful ETL sync
     etlSyncFrequencyMinutes: integer('etl_sync_frequency_minutes').default(60), // How often to sync
+
+    // White-Label Branding (Sprint 4 MVP)
+    brandingConfig: jsonb('branding_config'), // { logo: string, primaryColor: string, secondaryColor: string }
 
     // Metadata & Features
     metadata: jsonb('metadata'), // Additional custom fields
@@ -77,11 +92,15 @@ export const tenants = pgTable(
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
     deletedAt: timestamp('deleted_at'), // Soft delete
-    createdBy: uuid('created_by'), // Admin user who created tenant
+    createdBy: varchar('created_by', { length: 255 }), // Admin user who created tenant
   },
   (table) => ({
     slugIdx: uniqueIndex('tenants_slug_idx').on(table.slug),
     subdomainIdx: uniqueIndex('tenants_subdomain_idx').on(table.subdomain),
+    tenantIdIdx: uniqueIndex('tenants_tenant_id_idx').on(table.tenantId), // Fast lookup for mobile apps
+    azureTenantIdIdx: uniqueIndex('tenants_azure_tenant_id_idx').on(
+      table.azureTenantId,
+    ),
     statusIdx: index('tenants_status_idx').on(table.status),
     subscriptionTierIdx: index('tenants_subscription_tier_idx').on(
       table.subscriptionTier,
@@ -307,6 +326,46 @@ export const auditLogs = pgTable(
 );
 
 // ============================================================================
+// Nominal Range Templates Table (Sprint 4 MVP - Global Defaults)
+// ============================================================================
+
+export const nominalRangeTemplates = pgTable(
+  'nominal_range_templates',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    fieldName: varchar('field_name', { length: 100 }).notNull(), // e.g., "productionVolume", "pressure"
+    wellType: varchar('well_type', { length: 50 }), // NULL = applies to all well types, or "beam-pump", "pcp", etc.
+    minValue: decimal('min_value', { precision: 10, scale: 2 }), // NULL = no minimum
+    maxValue: decimal('max_value', { precision: 10, scale: 2 }), // NULL = no maximum
+    unit: varchar('unit', { length: 20 }).notNull(), // "bbl/day", "psi", "°F", "%", etc.
+    severity: varchar('severity', { length: 20 }).notNull().default('warning'), // "info" | "warning" | "critical"
+    description: text('description'), // Human-readable explanation of the range
+
+    // Metadata
+    isActive: boolean('is_active').notNull().default(true), // Allow disabling templates without deletion
+    metadata: jsonb('metadata'), // Additional configuration
+
+    // Audit Fields
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => ({
+    fieldNameIdx: index('nominal_range_templates_field_name_idx').on(
+      table.fieldName,
+    ),
+    wellTypeIdx: index('nominal_range_templates_well_type_idx').on(
+      table.wellType,
+    ),
+    isActiveIdx: index('nominal_range_templates_is_active_idx').on(
+      table.isActive,
+    ),
+    fieldNameWellTypeIdx: index(
+      'nominal_range_templates_field_name_well_type_idx',
+    ).on(table.fieldName, table.wellType),
+  }),
+);
+
+// ============================================================================
 // Drizzle Relations
 // ============================================================================
 
@@ -360,6 +419,7 @@ export const masterSchema = {
   billingSubscriptions,
   usageMetrics,
   auditLogs,
+  nominalRangeTemplates,
   tenantsRelations,
   adminUsersRelations,
   billingSubscriptionsRelations,

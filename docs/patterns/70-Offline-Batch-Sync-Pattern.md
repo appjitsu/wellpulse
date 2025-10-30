@@ -18,6 +18,7 @@ The Offline-First Batch Sync pattern enables field operators to collect data in 
 - **Conflict resolution**: Handle cases where multiple operators edit the same data
 
 This pattern is critical for WellPulse because:
+
 1. Oil field well sites often have **no electricity or internet**
 2. Field operators need to record data **immediately** (equipment readings, inspection notes)
 3. Cellular coverage in remote Permian Basin locations is spotty
@@ -43,18 +44,21 @@ This pattern is critical for WellPulse because:
 **Challenges**:
 
 ❌ **Real-time sync doesn't work**:
+
 ```typescript
 // Won't work in oil field
 await api.post('/production-data', { wellId, volume }); // Network unavailable
 ```
 
 ❌ **Queueing for later is risky**:
+
 ```typescript
 // What if app crashes before sync?
 const queue = [entry1, entry2, entry3]; // Lost if not persisted
 ```
 
 ❌ **Naive sync causes data loss**:
+
 ```typescript
 // If another operator synced first, this overwrites their data
 await api.put(`/wells/${wellId}`, localData); // Conflict!
@@ -212,7 +216,7 @@ export class LocalEventStore {
     this.db
       .prepare(
         `INSERT INTO events (id, type, payload, timestamp, device_id, user_id, synced, sync_attempts, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         event.id,
@@ -246,9 +250,7 @@ export class LocalEventStore {
   async markEventsSynced(eventIds: string[]): Promise<void> {
     const placeholders = eventIds.map(() => '?').join(',');
 
-    this.db
-      .prepare(`UPDATE events SET synced = 1 WHERE id IN (${placeholders})`)
-      .run(...eventIds);
+    this.db.prepare(`UPDATE events SET synced = 1 WHERE id IN (${placeholders})`).run(...eventIds);
   }
 
   /**
@@ -272,7 +274,7 @@ export class LocalEventStore {
           SUM(CASE WHEN synced = 0 THEN 1 ELSE 0 END) as unsynced,
           SUM(CASE WHEN synced = 1 THEN 1 ELSE 0 END) as synced,
           COUNT(*) as total
-         FROM events`
+         FROM events`,
       )
       .get() as any;
 
@@ -542,7 +544,7 @@ export class FieldDataSyncService {
       const response = await fetch(`${this.apiUrl}/field-data/sync`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.authToken}`,
+          Authorization: `Bearer ${this.authToken}`,
           'Content-Type': 'application/json',
           'X-Device-Id': this.deviceId,
         },
@@ -684,12 +686,7 @@ export class FieldDataController {
     @Body() dto: SyncFieldDataDto,
     @CurrentUser() user: any,
   ): Promise<SyncResponseDto> {
-    const command = new SyncFieldDataCommand(
-      dto.tenantId,
-      dto.events,
-      dto.deviceInfo,
-      user.id,
-    );
+    const command = new SyncFieldDataCommand(dto.tenantId, dto.events, dto.deviceInfo, user.id);
 
     return this.commandBus.execute(command);
   }
@@ -752,7 +749,10 @@ export class SyncFieldDataHandler implements ICommandHandler<SyncFieldDataComman
     };
   }
 
-  private async detectConflict(db: any, event: any): Promise<{ reason: string; existingData: any } | null> {
+  private async detectConflict(
+    db: any,
+    event: any,
+  ): Promise<{ reason: string; existingData: any } | null> {
     // Example: Check if production data already exists for this well + timestamp
     if (event.type === 'PRODUCTION_LOGGED') {
       const { wellId, recordedAt } = event.payload;
@@ -763,8 +763,8 @@ export class SyncFieldDataHandler implements ICommandHandler<SyncFieldDataComman
         .where(
           and(
             eq(productionDataTable.wellId, wellId),
-            eq(productionDataTable.recordedAt, new Date(recordedAt))
-          )
+            eq(productionDataTable.recordedAt, new Date(recordedAt)),
+          ),
         )
         .limit(1);
 
@@ -1144,6 +1144,7 @@ The **Offline-First Batch Sync Pattern** enables WellPulse field operators to:
 5. **Maintain audit trail** (event sourcing tracks all changes)
 
 **Critical Implementation Points**:
+
 - Store events, not state (event sourcing)
 - Persist to local database immediately (SQLite or AsyncStorage)
 - Sync in batches when connectivity available
@@ -1155,6 +1156,7 @@ This pattern is essential for WellPulse because oil field locations have unrelia
 ---
 
 **Related Documentation**:
+
 - [Database-Per-Tenant Multi-Tenancy Pattern](./69-Database-Per-Tenant-Multi-Tenancy-Pattern.md)
 - [Conflict Resolution Pattern](./71-Conflict-Resolution-Pattern.md)
 - [Azure Production Architecture](../deployment/azure-production-architecture.md)

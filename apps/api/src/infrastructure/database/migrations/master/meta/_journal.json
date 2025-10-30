@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1761372688562,
+      "tag": "0000_abnormal_vertigo",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1761428424594,
+      "tag": "0001_burly_micromax",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1761773715400,
+      "tag": "0002_wise_wallflower",
+      "breakpoints": true
+    }
+  ]
+}

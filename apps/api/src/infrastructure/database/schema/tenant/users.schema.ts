@@ -28,6 +28,10 @@ export const tenantUsers = pgTable(
     // Profile
     name: varchar('name', { length: 255 }).notNull(),
 
+    // Azure Entra ID Integration (Sprint 4 MVP)
+    azureObjectId: varchar('azure_object_id', { length: 255 }), // Azure AD User Object ID
+    ssoProvider: varchar('sso_provider', { length: 50 }), // 'azure-ad' | 'credentials' | NULL
+
     // Authorization
     role: varchar('role', { length: 50 }).notNull().default('OPERATOR'),
     // Roles: "ADMIN" | "MANAGER" | "OPERATOR"
@@ -60,6 +64,9 @@ export const tenantUsers = pgTable(
       emailIdx: index('tenant_users_email_idx').on(table.email),
       statusIdx: index('tenant_users_status_idx').on(table.status),
       roleIdx: index('tenant_users_role_idx').on(table.role),
+      azureObjectIdIdx: index('tenant_users_azure_object_id_idx').on(
+        table.azureObjectId,
+      ),
     };
   },
 );

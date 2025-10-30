@@ -18,6 +18,18 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import { Transporter } from 'nodemailer';
+import {
+  FieldEntryReportTemplate,
+  FieldEntryReportData,
+} from '../templates/email/field-entry-report.template';
+import {
+  EmailVerificationTemplate,
+  EmailVerificationData,
+} from '../templates/email/email-verification.template';
+import {
+  PasswordResetTemplate,
+  PasswordResetData,
+} from '../templates/email/password-reset.template';
 
 @Injectable()
 export class EmailService {
@@ -29,7 +41,7 @@ export class EmailService {
     this.transporter = nodemailer.createTransport({
       host: this.configService.get<string>('SMTP_HOST'),
       port: this.configService.get<number>('SMTP_PORT'),
-      secure: this.configService.get<boolean>('SMTP_SECURE', false), // true for 465, false for other ports
+      secure: this.configService.get<string>('SMTP_SECURE') === 'true', // true for 465, false for other ports
       auth:
         this.configService.get<string>('SMTP_USER') &&
         this.configService.get<string>('SMTP_PASS')
@@ -57,16 +69,22 @@ export class EmailService {
   ): Promise<void> {
     const verificationUrl = `https://${tenantSlug}.wellpulse.app/verify-email?email=${encodeURIComponent(email)}&code=${code}`;
 
-    const htmlContent = this.createVerificationEmailTemplate(
+    // Prepare template data
+    const templateData: EmailVerificationData = {
       code,
       verificationUrl,
-    );
+    };
+
+    // Render email using template
+    const template = new EmailVerificationTemplate();
+    const htmlContent = template.render(templateData);
+    const subject = template.getSubject();
 
     try {
       await this.transporter.sendMail({
         from: this.configService.get<string>('SMTP_FROM'),
         to: email,
-        subject: 'Verify your WellPulse account',
+        subject,
         html: htmlContent,
       });
 
@@ -97,13 +115,21 @@ export class EmailService {
   ): Promise<void> {
     const resetUrl = `https://${tenantSlug}.wellpulse.app/reset-password?token=${token}`;
 
-    const htmlContent = this.createPasswordResetEmailTemplate(resetUrl);
+    // Prepare template data
+    const templateData: PasswordResetData = {
+      resetUrl,
+    };
+
+    // Render email using template
+    const template = new PasswordResetTemplate();
+    const htmlContent = template.render(templateData);
+    const subject = template.getSubject();
 
     try {
       await this.transporter.sendMail({
         from: this.configService.get<string>('SMTP_FROM'),
         to: email,
-        subject: 'Reset your WellPulse password',
+        subject,
         html: htmlContent,
       });
 
@@ -121,161 +147,143 @@ export class EmailService {
   }
 
   /**
-   * Create verification email HTML template
-   * Uses inline CSS for email client compatibility
+   * Send field entry photos via email with attachments
+   *
+   * @param recipientEmails - Array of recipient email addresses
+   * @param photos - Array of photo URIs
+   * @param senderName - Name of the field operator sending the photos
+   * @param wellName - Optional well name for context
+   * @param entryData - Optional field entry data (production, pressure, etc.)
+   * @param checklist - Optional checklist items
    */
-  private createVerificationEmailTemplate(
-    code: string,
-    verificationUrl: string,
-  ): string {
-    return `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Verify your WellPulse account</title>
-</head>
-<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
-  <table role="presentation" style="width: 100%; border-collapse: collapse;">
-    <tr>
-      <td style="padding: 40px 20px;">
-        <table role="presentation" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-          <!-- Header -->
-          <tr>
-            <td style="padding: 40px 40px 20px; text-align: center; border-bottom: 3px solid #0066cc;">
-              <h1 style="margin: 0; color: #0066cc; font-size: 28px; font-weight: bold;">WellPulse</h1>
-              <p style="margin: 10px 0 0; color: #666666; font-size: 14px;">Field Data Management Platform</p>
-            </td>
-          </tr>
+  async sendFieldEntryPhotos(
+    recipientEmails: string[],
+    photos: Array<{ localUri: string; remoteUrl?: string }>,
+    senderName: string,
+    wellName?: string,
+    entryData?: {
+      productionVolume?: number;
+      pressure?: number;
+      temperature?: number;
+      gasVolume?: number;
+      waterCut?: number;
+      notes?: string;
+      recordedAt?: string;
+      latitude?: number;
+      longitude?: number;
+    },
+    checklist?: Array<{ label: string; checked: boolean }>,
+  ): Promise<void> {
+    // Prepare template data
+    const templateData: FieldEntryReportData = {
+      senderName,
+      wellName,
+      photoCount: photos.length,
+      entryData,
+      checklist,
+    };
 
-          <!-- Content -->
-          <tr>
-            <td style="padding: 40px;">
-              <h2 style="margin: 0 0 20px; color: #333333; font-size: 24px; font-weight: normal;">Welcome to WellPulse!</h2>
+    // Render email using template
+    const template = new FieldEntryReportTemplate();
+    const htmlContent = template.render(templateData);
+    const subject = template.getSubject(templateData);
 
-              <p style="margin: 0 0 20px; color: #666666; font-size: 16px; line-height: 1.5;">
-                Thank you for signing up. To complete your registration, please verify your email address using the code below:
-              </p>
+    try {
+      // Download photos and create attachments
+      const attachments = await this.createPhotoAttachments(photos);
 
-              <!-- Verification Code -->
-              <div style="background-color: #f8f9fa; border: 2px solid #0066cc; border-radius: 8px; padding: 30px; text-align: center; margin: 30px 0;">
-                <div style="color: #666666; font-size: 14px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px;">Verification Code</div>
-                <div style="font-size: 36px; font-weight: bold; color: #0066cc; letter-spacing: 8px; font-family: 'Courier New', monospace;">${code}</div>
-              </div>
+      await this.transporter.sendMail({
+        from: this.configService.get<string>('SMTP_FROM'),
+        to: recipientEmails.join(', '),
+        subject,
+        html: htmlContent,
+        attachments,
+      });
 
-              <p style="margin: 20px 0; color: #666666; font-size: 16px; line-height: 1.5;">
-                Or click the button below to verify your email:
-              </p>
-
-              <!-- CTA Button -->
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="${verificationUrl}" style="display: inline-block; padding: 14px 40px; background-color: #0066cc; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: bold;">Verify Email</a>
-              </div>
-
-              <p style="margin: 20px 0 0; color: #999999; font-size: 14px; line-height: 1.5;">
-                This verification code will expire in <strong>24 hours</strong>.
-              </p>
-            </td>
-          </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td style="padding: 30px 40px; background-color: #f8f9fa; border-top: 1px solid #e0e0e0; border-radius: 0 0 8px 8px;">
-              <p style="margin: 0; color: #999999; font-size: 12px; line-height: 1.5;">
-                If you didn't create a WellPulse account, you can safely ignore this email.
-              </p>
-              <p style="margin: 15px 0 0; color: #999999; font-size: 12px; line-height: 1.5;">
-                &copy; ${new Date().getFullYear()} WellPulse. All rights reserved.
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>
-    `.trim();
+      this.logger.log(
+        `Field entry photos email sent to ${recipientEmails.length} recipient(s) with ${attachments.length} attachment(s)`,
+      );
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      const errorStack = error instanceof Error ? error.stack : undefined;
+      this.logger.error(
+        `Failed to send field entry photos email: ${errorMessage}`,
+        errorStack,
+      );
+      throw error; // Throw to let caller know the email failed
+    }
   }
 
   /**
-   * Create password reset email HTML template
-   * Uses inline CSS for email client compatibility
+   * Create photo attachments from URIs
+   * Downloads photos from remoteUrl or converts base64 localUri to buffer
    */
-  private createPasswordResetEmailTemplate(resetUrl: string): string {
-    return `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reset your WellPulse password</title>
-</head>
-<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
-  <table role="presentation" style="width: 100%; border-collapse: collapse;">
-    <tr>
-      <td style="padding: 40px 20px;">
-        <table role="presentation" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-          <!-- Header -->
-          <tr>
-            <td style="padding: 40px 40px 20px; text-align: center; border-bottom: 3px solid #0066cc;">
-              <h1 style="margin: 0; color: #0066cc; font-size: 28px; font-weight: bold;">WellPulse</h1>
-              <p style="margin: 10px 0 0; color: #666666; font-size: 14px;">Field Data Management Platform</p>
-            </td>
-          </tr>
+  private async createPhotoAttachments(
+    photos: Array<{ localUri: string; remoteUrl?: string }>,
+  ): Promise<
+    Array<{ filename: string; content: Buffer; contentType: string }>
+  > {
+    const attachments: Array<{
+      filename: string;
+      content: Buffer;
+      contentType: string;
+    }> = [];
 
-          <!-- Content -->
-          <tr>
-            <td style="padding: 40px;">
-              <h2 style="margin: 0 0 20px; color: #333333; font-size: 24px; font-weight: normal;">Password Reset Request</h2>
+    for (let i = 0; i < photos.length; i++) {
+      const photo = photos[i];
+      try {
+        let photoBuffer: Buffer;
 
-              <p style="margin: 0 0 20px; color: #666666; font-size: 16px; line-height: 1.5;">
-                We received a request to reset your WellPulse password. Click the button below to create a new password:
-              </p>
+        if (photo.remoteUrl) {
+          // Download from remote URL
+          const response = await fetch(photo.remoteUrl);
+          if (!response.ok) {
+            this.logger.warn(
+              `Failed to download photo from ${photo.remoteUrl}`,
+            );
+            continue;
+          }
+          const arrayBuffer = await response.arrayBuffer();
+          photoBuffer = Buffer.from(arrayBuffer);
+        } else if (photo.localUri.startsWith('data:')) {
+          // Extract base64 data from data URI
+          const matches = photo.localUri.match(/^data:([^;]+);base64,(.+)$/);
+          if (matches) {
+            photoBuffer = Buffer.from(matches[2], 'base64');
+          } else {
+            this.logger.warn(`Invalid data URI format for photo ${i + 1}`);
+            continue;
+          }
+        } else if (photo.localUri.startsWith('http')) {
+          // Download from HTTP URL
+          const response = await fetch(photo.localUri);
+          if (!response.ok) {
+            this.logger.warn(`Failed to download photo from ${photo.localUri}`);
+            continue;
+          }
+          const arrayBuffer = await response.arrayBuffer();
+          photoBuffer = Buffer.from(arrayBuffer);
+        } else {
+          // Assume it's a file path (for Electron app)
+          // Skip for now as we can't access local file system from API
+          this.logger.warn(`Skipping local file path: ${photo.localUri}`);
+          continue;
+        }
 
-              <!-- CTA Button -->
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="${resetUrl}" style="display: inline-block; padding: 14px 40px; background-color: #0066cc; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: bold;">Reset Password</a>
-              </div>
+        attachments.push({
+          filename: `photo-${i + 1}.jpg`,
+          content: photoBuffer,
+          contentType: 'image/jpeg',
+        });
+      } catch (error) {
+        this.logger.warn(
+          `Failed to process photo ${i + 1}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
+        // Continue with other photos
+      }
+    }
 
-              <p style="margin: 20px 0 0; color: #999999; font-size: 14px; line-height: 1.5;">
-                This password reset link will expire in <strong>1 hour</strong> for security reasons.
-              </p>
-
-              <!-- Security Notice -->
-              <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 30px 0; border-radius: 4px;">
-                <p style="margin: 0; color: #856404; font-size: 14px; line-height: 1.5;">
-                  <strong>Security Notice:</strong> If you didn't request a password reset, please ignore this email. Your password will remain unchanged.
-                </p>
-              </div>
-
-              <p style="margin: 20px 0 0; color: #999999; font-size: 14px; line-height: 1.5;">
-                If the button doesn't work, copy and paste this link into your browser:
-              </p>
-              <p style="margin: 10px 0 0; color: #0066cc; font-size: 12px; word-break: break-all;">
-                ${resetUrl}
-              </p>
-            </td>
-          </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td style="padding: 30px 40px; background-color: #f8f9fa; border-top: 1px solid #e0e0e0; border-radius: 0 0 8px 8px;">
-              <p style="margin: 0; color: #999999; font-size: 12px; line-height: 1.5;">
-                For security reasons, this link will expire after 1 hour. If you need assistance, please contact our support team.
-              </p>
-              <p style="margin: 15px 0 0; color: #999999; font-size: 12px; line-height: 1.5;">
-                &copy; ${new Date().getFullYear()} WellPulse. All rights reserved.
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>
-    `.trim();
+    return attachments;
   }
 }

@@ -11,6 +11,7 @@
 The WellPulse Web Dashboard is the **client-facing application** for oil & gas operators to monitor wells, track production, manage equipment, view predictive maintenance alerts, and generate ESG compliance reports. Accessed via subdomain routing (`acmeoil.wellpulse.io`), each tenant gets a branded dashboard with their data.
 
 **Key Features:**
+
 - Interactive map interface showing all wells with real-time status
 - Production data visualization (charts, trends, forecasts)
 - Equipment health monitoring with predictive alerts
@@ -95,6 +96,7 @@ app/
 **Page**: `/login`
 
 **Features:**
+
 - Email/password login form
 - "Remember me" checkbox
 - Password visibility toggle
@@ -104,11 +106,13 @@ app/
 - MFA code input (if user has MFA enabled)
 
 **Components:**
+
 - `LoginForm` - Email/password inputs with validation
 - `MFACodeInput` - 6-digit code input
 - `AuthErrorBanner` - Display authentication errors
 
 **State Management:**
+
 - Zustand store for auth state (user, token, loading)
 - React Query mutation for login API call
 - Persist auth state in httpOnly cookie (managed by API)
@@ -120,6 +124,7 @@ app/
 **Page**: `/`
 
 **Features:**
+
 - High-level KPI cards:
   - Total active wells
   - Today's oil/gas production
@@ -132,6 +137,7 @@ app/
 - Upcoming maintenance tasks
 
 **Components:**
+
 - `KPICard` - Reusable metric card with icon, value, trend indicator
 - `ActivityFeed` - Timeline of recent actions
 - `ProductionTrendChart` - Line chart (Recharts or Chart.js)
@@ -139,6 +145,7 @@ app/
 - `MaintenanceCalendar` - Upcoming maintenance tasks
 
 **Data Fetching:**
+
 - React Query: `useQuery` for dashboard summary (`GET /analytics/production-summary`)
 - Auto-refresh every 60 seconds (production data updates)
 
@@ -149,6 +156,7 @@ app/
 **Page**: `/wells`
 
 **Features:**
+
 - **Map View (default)**:
   - Interactive map showing all wells as markers (Mapbox or Google Maps)
   - Marker colors indicate well status (green=active, yellow=maintenance, red=failed)
@@ -168,6 +176,7 @@ app/
   - Bulk actions: Export to CSV, Bulk status update (admin only)
 
 **Components:**
+
 - `WellsMap` - Interactive map with well markers
 - `WellMarker` - Custom map marker with status color
 - `WellPopup` - Popup card showing well summary
@@ -176,11 +185,13 @@ app/
 - `WellsSearchBar` - Search by name/API number
 
 **Data Fetching:**
+
 - React Query: `useQuery` for wells list (`GET /wells`)
 - Infinite scroll for list view (virtual scrolling for 500+ wells)
 - Map markers loaded in viewport (performance optimization)
 
 **State Management:**
+
 - Zustand: Map view state (zoom level, center coordinates, filters)
 - URL query params for filters (shareable filtered views)
 
@@ -191,6 +202,7 @@ app/
 **Page**: `/wells/[id]`
 
 **Features:**
+
 - **Well Information Card**:
   - Name, API number, lease, operator, status
   - Location (lat/long) with mini map
@@ -215,6 +227,7 @@ app/
   - Delete Well button (admin only, soft delete)
 
 **Components:**
+
 - `WellInfoCard` - Well metadata display
 - `ProductionHistoryTable` - Production records table
 - `ProductionTrendChart` - Line chart
@@ -223,6 +236,7 @@ app/
 - `WellActionMenu` - Dropdown with actions
 
 **Data Fetching:**
+
 - React Query: `useQuery` for well details (`GET /wells/:id`)
 - React Query: `useQuery` for production history (`GET /wells/:id/production`)
 - React Query: `useQuery` for equipment (`GET /wells/:id/equipment`)
@@ -235,6 +249,7 @@ app/
 **Page**: `/production`
 
 **Features:**
+
 - **Production Data Table**:
   - Columns: Date, Well, Oil (bbl), Gas (mcf), Water (bbl), Runtime (hrs), Actions
   - Sortable by any column
@@ -259,6 +274,7 @@ app/
   - Tooltip shows anomaly reason (e.g., "Oil production 40% below expected")
 
 **Components:**
+
 - `ProductionDataTable` - Sortable/filterable table
 - `QuickProductionForm` - Inline add form
 - `ProductionFilters` - Date range, well, anomaly filters
@@ -266,6 +282,7 @@ app/
 - `ProductionImportWizard` - Multi-step import flow
 
 **Data Fetching:**
+
 - React Query: `useQuery` for production data (`GET /production`)
 - React Query: `useMutation` for creating production records (`POST /production`)
 - React Query: `useMutation` for bulk import (`POST /production/batch`)
@@ -277,6 +294,7 @@ app/
 **Page**: `/production/charts`
 
 **Features:**
+
 - **Time-series Charts**:
   - Oil production over time (line chart)
   - Gas production over time (line chart)
@@ -294,12 +312,14 @@ app/
   - Export chart data as CSV
 
 **Components:**
+
 - `ProductionLineChart` - Recharts line chart
 - `DateRangePicker` - Date range selector
 - `WellMultiSelect` - Multi-select dropdown for well comparison
 - `ChartExportButton` - Export chart as PNG
 
 **Data Fetching:**
+
 - React Query: `useQuery` for production time-series (`GET /production?aggregation=daily`)
 - Query params for date range and wells filter
 
@@ -310,6 +330,7 @@ app/
 **Page**: `/equipment`
 
 **Features:**
+
 - **Equipment List**:
   - Cards or table view (toggle)
   - Equipment type icon, name, status badge
@@ -328,6 +349,7 @@ app/
   - "Schedule Maintenance" button
 
 **Components:**
+
 - `EquipmentCard` - Equipment summary card
 - `EquipmentTable` - Table view (alternative to cards)
 - `EquipmentFilters` - Filter panel
@@ -335,6 +357,7 @@ app/
 - `EquipmentStatusBadge` - Status indicator (color-coded)
 
 **Data Fetching:**
+
 - React Query: `useQuery` for equipment list (`GET /equipment`)
 - React Query: `useQuery` for maintenance predictions (`GET /equipment/:id/predictions`)
 
@@ -345,6 +368,7 @@ app/
 **Page**: `/equipment/[id]`
 
 **Features:**
+
 - **Equipment Information Card**:
   - Name, type, serial number, manufacturer
   - Install date, assigned well
@@ -369,6 +393,7 @@ app/
   - Decommission Equipment button (admin only)
 
 **Components:**
+
 - `EquipmentInfoCard` - Equipment metadata
 - `MaintenanceHistoryTimeline` - Past maintenance records
 - `PredictiveMaintenanceCard` - ML prediction display
@@ -376,6 +401,7 @@ app/
 - `MaintenanceForm` - Log maintenance activity
 
 **Data Fetching:**
+
 - React Query: `useQuery` for equipment details (`GET /equipment/:id`)
 - React Query: `useQuery` for maintenance history (`GET /equipment/:id/maintenance-history`)
 - React Query: `useQuery` for ML predictions (`GET /equipment/:id/predictions`)
@@ -388,6 +414,7 @@ app/
 **Page**: `/emissions`
 
 **Features:**
+
 - **KPI Cards**:
   - Total CO2 emissions (current period)
   - Total CH4 emissions (current period)
@@ -413,6 +440,7 @@ app/
   - Configure Thresholds button (admin only)
 
 **Components:**
+
 - `EmissionsKPICard` - Metric card with trend
 - `RegulatoryThresholdBar` - Progress bar with color coding
 - `EmissionsTrendChart` - Line chart
@@ -420,6 +448,7 @@ app/
 - `ComplianceReportsList` - Table of reports
 
 **Data Fetching:**
+
 - React Query: `useQuery` for emissions summary (`GET /emissions/summary`)
 - React Query: `useQuery` for compliance reports (`GET /emissions/reports`)
 - React Query: `useMutation` for generating report (`POST /emissions/reports`)
@@ -431,6 +460,7 @@ app/
 **Page**: `/emissions/reports/new`
 
 **Features:**
+
 - **Report Configuration Form**:
   - Report type dropdown (EPA, State, Custom)
   - Date range picker (start date, end date)
@@ -449,12 +479,14 @@ app/
   - Custom template
 
 **Components:**
+
 - `ReportConfigForm` - Report configuration inputs
 - `WellMultiSelect` - Select wells to include
 - `ReportPreview` - Preview report summary
 - `ReportGenerationProgress` - Progress indicator
 
 **Data Fetching:**
+
 - React Query: `useMutation` for generating report (`POST /emissions/reports`)
 - Polling or WebSocket for generation progress
 
@@ -465,6 +497,7 @@ app/
 **Page**: `/analytics`
 
 **Features:**
+
 - **Customizable Dashboard**:
   - Drag-and-drop widget layout
   - Save custom layouts per user
@@ -473,7 +506,7 @@ app/
   - Well performance leaderboard (top/bottom performers)
   - Equipment health pie chart
   - Emissions summary
-  - Revenue estimator (production * commodity prices)
+  - Revenue estimator (production \* commodity prices)
   - Recent alerts
   - Maintenance calendar
 - **Time Period Selector**:
@@ -482,6 +515,7 @@ app/
   - Export entire dashboard as PDF report
 
 **Components:**
+
 - `DraggableDashboard` - Drag-and-drop layout (react-grid-layout)
 - `WidgetLibrary` - Available widgets to add
 - `ProductionSummaryWidget` - Production KPIs
@@ -490,10 +524,12 @@ app/
 - `EmissionsSummaryWidget` - Emissions KPIs
 
 **State Management:**
+
 - Zustand: Dashboard layout state (widget positions, sizes)
 - LocalStorage: Persist layout per user
 
 **Data Fetching:**
+
 - React Query: `useQuery` for each widget's data
 - Stale-while-revalidate caching strategy
 
@@ -504,6 +540,7 @@ app/
 **Page**: `/alerts`
 
 **Features:**
+
 - **Alerts List**:
   - Sortable by severity, date, type
   - Filter by severity (info, warning, critical), status (new, acknowledged, resolved)
@@ -527,6 +564,7 @@ app/
   - "View All Alerts" link
 
 **Components:**
+
 - `AlertsList` - Sortable/filterable alerts table
 - `AlertCard` - Alert details card
 - `AlertSeverityBadge` - Severity indicator
@@ -534,6 +572,7 @@ app/
 - `AlertActions` - Acknowledge/dismiss buttons
 
 **Data Fetching:**
+
 - React Query: `useQuery` for alerts (`GET /alerts`)
 - React Query: `useMutation` for acknowledging alerts (`POST /alerts/:id/acknowledge`)
 - Real-time updates via polling (every 30 seconds)
@@ -545,6 +584,7 @@ app/
 **Page**: `/settings/profile`
 
 **Features:**
+
 - **Profile Information**:
   - Name, email (read-only), phone number
   - Profile photo upload
@@ -562,12 +602,14 @@ app/
   - Success/error toast notifications
 
 **Components:**
+
 - `ProfileForm` - Profile information inputs
 - `ChangePasswordForm` - Password change inputs
 - `MFASetup` - MFA configuration panel
 - `ProfilePhotoUpload` - Image upload with preview
 
 **Data Fetching:**
+
 - React Query: `useQuery` for current user (`GET /auth/me`)
 - React Query: `useMutation` for updating profile (`PATCH /users/:id`)
 
@@ -578,6 +620,7 @@ app/
 **Page**: `/settings/notifications`
 
 **Features:**
+
 - **Email Notifications**:
   - Toggle for each notification type:
     - Equipment failure predictions
@@ -597,11 +640,13 @@ app/
   - Success toast
 
 **Components:**
+
 - `NotificationPreferencesForm` - Toggle switches for each type
 - `NotificationFrequencySelect` - Dropdown (immediate, daily, weekly)
 - `SMSSetup` - Phone number input for SMS
 
 **Data Fetching:**
+
 - React Query: `useQuery` for current preferences (`GET /notification-preferences`)
 - React Query: `useMutation` for updating preferences (`PATCH /notification-preferences`)
 
@@ -612,6 +657,7 @@ app/
 **Page**: `/settings/tenant`
 
 **Features:**
+
 - **Company Information**:
   - Company name
   - Company logo upload (displayed in header)
@@ -632,12 +678,14 @@ app/
   - Success toast
 
 **Components:**
+
 - `TenantSettingsForm` - Tenant configuration inputs
 - `CompanyLogoUpload` - Logo upload with preview
 - `FeatureFlagsPanel` - Toggle switches for features
 - `IntegrationsList` - Connected integrations
 
 **Data Fetching:**
+
 - React Query: `useQuery` for tenant settings (`GET /tenant/settings`)
 - React Query: `useMutation` for updating settings (`PATCH /tenant/settings`)
 
@@ -648,6 +696,7 @@ app/
 **Page**: `/settings/users`
 
 **Features:**
+
 - **Users List**:
   - Table: Name, Email, Role, Status, Last Login, Actions
   - Search by name or email
@@ -665,12 +714,14 @@ app/
   - Admin, Manager, Field Operator, Viewer
 
 **Components:**
+
 - `UsersTable` - Users list with actions
 - `AddUserModal` - User creation modal
 - `EditUserRoleDropdown` - Inline role editor
 - `UserActionsMenu` - Dropdown menu for actions
 
 **Data Fetching:**
+
 - React Query: `useQuery` for users list (`GET /users`)
 - React Query: `useMutation` for creating user (`POST /users`)
 - React Query: `useMutation` for updating role (`PATCH /users/:id/role`)
@@ -681,11 +732,13 @@ app/
 ## Shared Components Library
 
 ### Navigation
+
 - `AppHeader` - Top navigation bar with logo, user menu, notifications bell
 - `Sidebar` - Left sidebar navigation menu
 - `Breadcrumbs` - Page breadcrumbs for navigation context
 
 ### Data Display
+
 - `DataTable` - Reusable sortable/filterable table (TanStack Table)
 - `KPICard` - Metric card with icon, value, trend indicator
 - `StatusBadge` - Color-coded status indicator
@@ -694,6 +747,7 @@ app/
 - `Skeleton` - Loading skeleton for data fetching
 
 ### Forms
+
 - `Input` - Text input with validation
 - `Select` - Dropdown select
 - `MultiSelect` - Multi-select dropdown
@@ -703,12 +757,14 @@ app/
 - `FormField` - Wrapper with label, error message
 
 ### Feedback
+
 - `Toast` - Success/error toast notifications (Sonner)
 - `AlertDialog` - Confirmation dialog
 - `Modal` - Reusable modal wrapper
 - `LoadingSpinner` - Loading indicator
 
 ### Layout
+
 - `Container` - Max-width container
 - `Card` - Content card wrapper
 - `Tabs` - Tabbed interface
@@ -719,6 +775,7 @@ app/
 ## State Management
 
 ### React Query (Data Fetching)
+
 - All API calls via React Query
 - Caching strategy: Stale-while-revalidate
 - Cache time: 5 minutes (configurable per query)
@@ -727,6 +784,7 @@ app/
 - Prefetching for anticipated navigation (e.g., prefetch well details on hover)
 
 ### Zustand (Client State)
+
 - Auth state (user, token, loading, logout)
 - Map view state (zoom, center, filters)
 - Dashboard layout state (widget positions)
@@ -734,6 +792,7 @@ app/
 - Notification preferences (cached)
 
 ### URL Query Params (Shareable State)
+
 - Filters (e.g., `/wells?status=active&lease=Smith-Ranch`)
 - Pagination (e.g., `/production?page=2&limit=50`)
 - Sorting (e.g., `/equipment?sort=-installDate`)
@@ -744,11 +803,13 @@ app/
 ## Design System
 
 ### Theming
+
 - Light mode (default)
 - Dark mode (user preference)
 - High contrast mode (accessibility)
 
 ### Colors
+
 - Primary: Blue (#0066CC) - Actions, links
 - Success: Green (#00AA44) - Operational status, positive metrics
 - Warning: Yellow (#FFAA00) - Warnings, maintenance due
@@ -756,16 +817,19 @@ app/
 - Neutral: Grays (#F5F5F5 to #111111) - Text, backgrounds
 
 ### Typography
+
 - Font family: Inter (Google Fonts)
 - Headings: Font weights 600-700
 - Body: Font weight 400
 - Small text: Font weight 400, smaller size
 
 ### Spacing
+
 - Tailwind CSS spacing scale (4px increments)
 - Consistent padding/margin throughout
 
 ### Responsive Breakpoints
+
 - Mobile: < 640px
 - Tablet: 640px - 1024px
 - Desktop: > 1024px
@@ -775,24 +839,29 @@ app/
 ## Performance Optimizations
 
 ### Code Splitting
+
 - Route-based code splitting (Next.js automatic)
 - Component lazy loading for heavy components (charts, maps)
 
 ### Image Optimization
+
 - Next.js Image component for automatic optimization
 - WebP format with fallbacks
 - Lazy loading for images below the fold
 
 ### Caching
+
 - React Query caching for API responses
 - Service Worker for offline support (future)
 - CDN caching for static assets (via Azure Front Door)
 
 ### Virtual Scrolling
+
 - Virtual scrolling for large lists (wells, production records)
 - TanStack Virtual or react-window
 
 ### Map Performance
+
 - Marker clustering for 100+ wells
 - Load markers in viewport only
 - Debounced map move events
@@ -824,11 +893,13 @@ app/
 ## Deployment
 
 ### Environment Variables
+
 - `NEXT_PUBLIC_API_URL` - API base URL
 - `NEXT_PUBLIC_MAPBOX_TOKEN` - Mapbox access token (if using Mapbox)
 - `NEXT_PUBLIC_TENANT_SLUG` - Tenant subdomain (for multi-tenant routing)
 
 ### Build & Deploy
+
 - Next.js production build: `pnpm build`
 - Static asset optimization enabled
 - Deploy to Azure Container Apps
@@ -845,6 +916,7 @@ app/
 ---
 
 **Next Steps:**
+
 1. Review UI/UX with stakeholders
 2. Create wireframes/mockups (Figma)
 3. Set up Next.js project structure

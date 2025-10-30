@@ -11,6 +11,7 @@
 The WellPulse API is the main **tenant-facing NestJS REST API** that powers all client operations. It handles production data management, field data entry sync, predictive maintenance, ESG compliance tracking, and integrations with the ML service.
 
 **Key Architecture Principles:**
+
 - Database-per-tenant (each client has dedicated PostgreSQL database)
 - Hexagonal architecture (Domain → Application → Infrastructure → Presentation)
 - Multi-tenancy via subdomain routing (`tenant.wellpulse.io`)
@@ -24,6 +25,7 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 ### 1. Authentication & Authorization
 
 **Endpoints:**
+
 - `POST /auth/register` - User registration (invite-only, admin creates accounts)
 - `POST /auth/login` - Email/password login (returns JWT + httpOnly cookie)
 - `POST /auth/logout` - Invalidate session
@@ -33,6 +35,7 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 - `GET /auth/me` - Get current user profile
 
 **Features:**
+
 - JWT-based authentication (access + refresh tokens)
 - Role-Based Access Control (RBAC):
   - **Admin**: Full access to all tenant data
@@ -45,6 +48,7 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 - Session management (Redis or in-memory cache in bootstrap phase)
 
 **Domain Entities:**
+
 - User (aggregate root)
 - Session (value object)
 - Role (enum)
@@ -55,6 +59,7 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 ### 2. Well Management
 
 **Endpoints:**
+
 - `GET /wells` - List all wells for tenant (paginated, filterable)
 - `GET /wells/:id` - Get single well details
 - `POST /wells` - Create new well
@@ -65,6 +70,7 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 - `GET /wells/:id/activities` - Get field activity log for well
 
 **Features:**
+
 - Well metadata: API number, name, location (lat/long), lease, operator, status
 - Well status tracking: Active, Inactive, Plugged & Abandoned, Drilling
 - Production allocation (wells can share equipment/batteries)
@@ -73,6 +79,7 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 - Search & filtering: By name, API number, lease, status, location
 
 **Domain Entities:**
+
 - Well (aggregate root)
 - WellLocation (value object - lat/long)
 - WellStatus (enum)
@@ -80,6 +87,7 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 - Production Allocation rules
 
 **Integration Points:**
+
 - Map interface (lat/long for visualization)
 - Equipment assignments
 - Production data linkage
@@ -89,6 +97,7 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 ### 3. Production Data Management
 
 **Endpoints:**
+
 - `GET /production` - Get production data (paginated, filterable by date/well)
 - `GET /production/:id` - Get single production record
 - `POST /production` - Create production record (manual entry)
@@ -99,6 +108,7 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 - `GET /production/summary` - Aggregated production metrics
 
 **Features:**
+
 - Daily production tracking: Oil (bbl), Gas (mcf), Water (bbl)
 - Production by well or battery
 - Run time tracking (hours/day equipment operated)
@@ -110,12 +120,14 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 - Data validation rules (reasonable ranges, required fields)
 
 **Domain Entities:**
+
 - ProductionRecord (aggregate root)
 - FluidVolumes (value object - oil/gas/water)
 - PressureReadings (value object)
 - ProductionDate (value object with validation)
 
 **Business Rules:**
+
 - Cannot enter future production data
 - Production volumes must be non-negative
 - Daily totals must reconcile across wells/batteries
@@ -126,6 +138,7 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 ### 4. Equipment Management
 
 **Endpoints:**
+
 - `GET /equipment` - List all equipment for tenant
 - `GET /equipment/:id` - Get single equipment details
 - `POST /equipment` - Create new equipment record
@@ -137,6 +150,7 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 - `GET /equipment/due-maintenance` - Get equipment due for maintenance
 
 **Features:**
+
 - Equipment types: Pump jack, compressor, separator, tank battery, meter
 - Equipment metadata: Serial number, manufacturer, install date, location
 - Equipment status: Operational, Maintenance, Failed, Decommissioned
@@ -147,6 +161,7 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 - Maintenance scheduling and tracking
 
 **Domain Entities:**
+
 - Equipment (aggregate root)
 - EquipmentType (enum)
 - EquipmentStatus (enum)
@@ -154,6 +169,7 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 - MaintenancePrediction (value object from ML service)
 
 **Integration Points:**
+
 - ML service for predictive maintenance
 - Field data entry apps (maintenance logging)
 - Alerts/notifications for maintenance due
@@ -163,6 +179,7 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 ### 5. Field Data Entry & Sync
 
 **Endpoints:**
+
 - `POST /field-data/sync` - Batch sync from Electron/Mobile apps
 - `GET /field-data/conflicts` - Get unresolved conflicts
 - `POST /field-data/conflicts/:id/resolve` - Resolve data conflict
@@ -170,6 +187,7 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 - `POST /field-data/events` - Append field event (alternative to batch sync)
 
 **Features:**
+
 - Offline-first batch sync support
 - Event sourcing for field data changes
 - Conflict resolution strategies:
@@ -183,6 +201,7 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 - Conflict dashboard for manual review
 
 **Domain Entities:**
+
 - FieldDataEvent (aggregate root)
 - SyncBatch (entity)
 - DataConflict (entity)
@@ -190,12 +209,14 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 - DeviceInfo (value object)
 
 **Business Rules:**
+
 - Events are immutable (append-only)
 - Conflicts flagged automatically based on data type
 - Safety-critical data always requires manual review
 - Sync batches processed transactionally (all or nothing)
 
 **Pattern Usage:**
+
 - Event Sourcing Pattern
 - Offline Batch Sync Pattern
 - Conflict Resolution Pattern
@@ -206,6 +227,7 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 ### 6. ESG Compliance & Emissions Tracking
 
 **Endpoints:**
+
 - `GET /emissions` - Get emissions data (paginated, filterable)
 - `GET /emissions/summary` - Aggregated emissions by period
 - `POST /emissions/calculate` - Calculate emissions from production data
@@ -216,6 +238,7 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 - `GET /emissions/alerts` - Get emissions alerts (approaching limits)
 
 **Features:**
+
 - Automated emissions calculations from production data
 - CO2, CH4 (methane), VOC tracking
 - Regulatory compliance tracking (EPA, state regulations)
@@ -226,6 +249,7 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 - Historical trend analysis
 
 **Domain Entities:**
+
 - EmissionsRecord (aggregate root)
 - EmissionType (enum - CO2, CH4, VOC)
 - ComplianceReport (aggregate root)
@@ -233,12 +257,14 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 - EmissionsCalculation (entity with business logic)
 
 **Business Rules:**
+
 - Calculations based on EPA emission factors
 - Alert when approaching 80% of regulatory thresholds
 - Reports must be immutable once generated
 - Data retention: 7 years (regulatory requirement)
 
 **Integration Points:**
+
 - Production data (source for calculations)
 - PDF generation service
 - Email notifications for alerts
@@ -248,6 +274,7 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 ### 7. Predictive Maintenance & ML Integration
 
 **Endpoints:**
+
 - `POST /ml/predict` - Request ML prediction (equipment failure, production optimization)
 - `GET /ml/predictions` - Get recent predictions
 - `GET /ml/predictions/:id` - Get single prediction details
@@ -256,6 +283,7 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 - `GET /ml/accuracy` - Get model accuracy metrics
 
 **Features:**
+
 - Integration with Python ML service (internal API call)
 - Predictive maintenance for equipment
 - Production optimization recommendations
@@ -266,18 +294,21 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 - Alert generation from predictions
 
 **Domain Entities:**
+
 - MLPrediction (aggregate root)
 - PredictionType (enum)
 - ModelVersion (value object)
 - PredictionConfidence (value object)
 
 **ML Use Cases:**
+
 1. **Equipment failure prediction**: Analyze sensor data, run time, maintenance history
 2. **Production optimization**: Identify wells underperforming vs. expected decline curve
 3. **Anomaly detection**: Flag unusual production patterns for investigation
 4. **Decline curve analysis**: Forecast future production for planning
 
 **Integration Points:**
+
 - Python ML service (`services/ml`)
 - Background job queue (Bull/BullMQ)
 - Notification service (alerts for predictions)
@@ -287,6 +318,7 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 ### 8. Analytics & Dashboards
 
 **Endpoints:**
+
 - `GET /analytics/production-summary` - Production KPIs (total oil/gas/water by period)
 - `GET /analytics/well-performance` - Well-by-well performance metrics
 - `GET /analytics/equipment-health` - Equipment health summary
@@ -296,6 +328,7 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 - `POST /analytics/custom-reports` - Create custom report
 
 **Features:**
+
 - Pre-built dashboard queries optimized for performance
 - Time-series aggregations (daily, weekly, monthly, quarterly, annual)
 - Well performance comparisons
@@ -305,11 +338,13 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 - Custom report builder (save common queries)
 
 **Domain Entities:**
+
 - DashboardMetric (value object)
 - CustomReport (aggregate root)
 - TimeSeriesData (value object)
 
 **Performance Optimizations:**
+
 - Materialized views for complex aggregations
 - Caching for frequently accessed metrics
 - Pagination for large datasets
@@ -320,6 +355,7 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 ### 9. User & Tenant Management
 
 **Endpoints:**
+
 - `GET /users` - List users in tenant (admin only)
 - `GET /users/:id` - Get user details
 - `POST /users` - Create new user (admin only)
@@ -331,6 +367,7 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 - `PATCH /tenant/settings` - Update tenant settings (admin only)
 
 **Features:**
+
 - User CRUD for tenant admins
 - Role assignment and management
 - Tenant-level settings:
@@ -342,6 +379,7 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 - User invitation workflow (email with signup link)
 
 **Domain Entities:**
+
 - TenantSettings (aggregate root)
 - UserInvitation (entity)
 - AuditLog (entity - immutable)
@@ -351,6 +389,7 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 ### 10. File Storage & Document Management
 
 **Endpoints:**
+
 - `POST /files/upload` - Upload file (equipment photos, inspection documents)
 - `GET /files/:id` - Get file metadata
 - `GET /files/:id/download` - Download file
@@ -359,6 +398,7 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 - `POST /files/:id/tags` - Add tags to file
 
 **Features:**
+
 - File upload to Azure Blob Storage (or AWS S3 if client prefers)
 - Supported file types: Images (JPG, PNG), PDFs, Excel/CSV, Videos
 - File association: Link files to wells, equipment, maintenance records
@@ -368,12 +408,14 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 - Signed URLs for secure downloads (SAS tokens)
 
 **Domain Entities:**
+
 - File (aggregate root)
 - FileType (enum)
 - FileMetadata (value object)
 - StorageProvider (enum - Azure/AWS)
 
 **Integration Points:**
+
 - Azure Blob Storage (default)
 - AWS S3 (optional, client choice)
 - Strategy Pattern for pluggable storage providers
@@ -383,6 +425,7 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 ### 11. Notifications & Alerts
 
 **Endpoints:**
+
 - `GET /notifications` - Get user notifications
 - `PATCH /notifications/:id/read` - Mark notification as read
 - `DELETE /notifications/:id` - Dismiss notification
@@ -392,6 +435,7 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 - `PATCH /notification-preferences` - Update notification settings
 
 **Features:**
+
 - Real-time alerts for:
   - Equipment predicted failures
   - Emissions approaching regulatory limits
@@ -405,12 +449,14 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 - Alert escalation (if not acknowledged within X hours)
 
 **Domain Entities:**
+
 - Notification (aggregate root)
 - Alert (aggregate root)
 - NotificationPreference (value object)
 - AlertSeverity (enum)
 
 **Integration Points:**
+
 - Email service (Nodemailer)
 - SMS service (Twilio - optional)
 - WebSocket for real-time in-app notifications (future)
@@ -420,6 +466,7 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 ### 12. Integrations & External APIs
 
 **Endpoints:**
+
 - `GET /integrations` - List configured integrations
 - `POST /integrations/:type/connect` - Connect external service
 - `DELETE /integrations/:type/disconnect` - Disconnect external service
@@ -427,6 +474,7 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 - `GET /integrations/:type/status` - Get integration health status
 
 **Features:**
+
 - Legacy system integrations (Anti-Corruption Layer pattern)
 - Import from Excel/CSV (data consolidation)
 - Export to common formats (CSV, Excel, JSON)
@@ -439,12 +487,14 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 - API rate limiting and throttling
 
 **Domain Entities:**
+
 - Integration (aggregate root)
 - IntegrationType (enum)
 - IntegrationCredential (value object - encrypted)
 - SyncStatus (value object)
 
 **Pattern Usage:**
+
 - Anti-Corruption Layer Pattern
 - Adapter Pattern
 - Circuit Breaker Pattern (for unreliable external services)
@@ -454,9 +504,11 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 ### 13. Background Jobs & Scheduled Tasks
 
 **Implementation:**
+
 - Bull/BullMQ with Redis (or in-memory queue in bootstrap phase)
 
 **Jobs:**
+
 1. **Daily Production Rollup** (midnight) - Aggregate daily production metrics
 2. **ML Prediction Refresh** (hourly) - Run predictive models on latest data
 3. **Emissions Calculation** (daily) - Calculate emissions from production data
@@ -469,6 +521,7 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 10. **Cleanup Old Sessions** (daily) - Remove expired JWT refresh tokens
 
 **Queue Configuration:**
+
 - Separate queues for priority levels (high, medium, low)
 - Retry logic with exponential backoff
 - Dead letter queue for failed jobs
@@ -480,6 +533,7 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 ## API Design Standards
 
 ### RESTful Conventions
+
 - `GET` - Retrieve resources
 - `POST` - Create resources
 - `PATCH` - Partial update (preferred over PUT)
@@ -488,9 +542,12 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 ### Response Formats
 
 **Success Response (200, 201):**
+
 ```json
 {
-  "data": { /* resource or array of resources */ },
+  "data": {
+    /* resource or array of resources */
+  },
   "meta": {
     "pagination": {
       "page": 1,
@@ -503,34 +560,37 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 ```
 
 **Error Response (400, 401, 403, 404, 500):**
+
 ```json
 {
   "error": {
     "code": "VALIDATION_ERROR",
     "message": "Well name is required",
-    "details": [
-      { "field": "name", "message": "Name is required" }
-    ]
+    "details": [{ "field": "name", "message": "Name is required" }]
   }
 }
 ```
 
 ### Pagination
+
 - Default limit: 20
 - Max limit: 100
 - Query params: `?page=1&limit=20`
 - Cursor-based pagination for time-series data (production records)
 
 ### Filtering
+
 - Query params: `?status=active&lease=Smith-Ranch`
 - Supported operators: `eq`, `gt`, `lt`, `gte`, `lte`, `like`, `in`
 - Example: `?status=in:active,drilling&createdAt=gte:2025-01-01`
 
 ### Sorting
+
 - Query param: `?sort=-createdAt,name` (- prefix for descending)
 - Multiple fields supported
 
 ### Field Selection (Sparse Fieldsets)
+
 - Query param: `?fields=id,name,status` (reduce payload size)
 
 ---
@@ -538,26 +598,31 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 ## Security & Validation
 
 ### Input Validation
+
 - DTO validation with `class-validator`
 - Whitelist approach (strip unknown properties)
 - Sanitize inputs (prevent SQL injection, XSS)
 
 ### Authorization
+
 - Role-based access control (RBAC)
 - Tenant isolation (all queries scoped to tenant)
 - Resource-level permissions (e.g., field operators can only edit their own entries)
 
 ### Rate Limiting
+
 - Per-tenant rate limits: 1000 requests/hour
 - Per-user rate limits: 100 requests/minute
 - Burst allowance for batch operations
 
 ### Audit Logging
+
 - Log all mutations (create, update, delete)
 - Track user, timestamp, IP address, changed fields
 - Immutable audit log table
 
 ### Data Encryption
+
 - Encryption at rest (PostgreSQL native encryption)
 - Encryption in transit (TLS 1.2+)
 - Sensitive fields encrypted (database connection strings, API keys)
@@ -588,6 +653,7 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 ## Deployment & Operations
 
 ### Environment Variables
+
 - `DATABASE_URL_MASTER` - Master database connection
 - `JWT_SECRET` - JWT signing key
 - `JWT_REFRESH_SECRET` - JWT refresh token signing key
@@ -598,6 +664,7 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 - `LOG_LEVEL` - Logging verbosity (debug, info, warn, error)
 
 ### Health Checks
+
 - `GET /health` - Basic health check
 - `GET /health/db` - Database connectivity check
 - `GET /health/redis` - Redis connectivity check (if enabled)
@@ -605,6 +672,7 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 - `GET /health/ml` - ML service connectivity check
 
 ### Monitoring
+
 - Application Insights integration (Azure)
 - Structured logging (JSON format)
 - Performance metrics (response times, throughput)
@@ -625,6 +693,7 @@ The WellPulse API is the main **tenant-facing NestJS REST API** that powers all 
 ---
 
 **Next Steps:**
+
 1. Review API specification with stakeholders
 2. Create OpenAPI (Swagger) documentation
 3. Set up database schema (Drizzle ORM)

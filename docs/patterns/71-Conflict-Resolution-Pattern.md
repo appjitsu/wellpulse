@@ -18,6 +18,7 @@ The Conflict Resolution pattern provides strategies for resolving data conflicts
 - **Operator trust**: Field workers understand how conflicts are handled
 
 This pattern is critical for WellPulse because:
+
 1. **Multiple operators visit the same well** on the same day (shift changes, inspections)
 2. **Internet connectivity is unreliable** (conflicts only detected during sync)
 3. **Data accuracy matters** (incorrect production volumes = financial/regulatory issues)
@@ -41,6 +42,7 @@ This pattern is critical for WellPulse because:
 ```
 
 **The Conflict**:
+
 - **Cloud database** (from Operator A): Well #42 produced 120 barrels today
 - **Operator B's device**: Well #42 produced 125 barrels today
 - **Question**: Which value is correct? Or are both valid?
@@ -49,9 +51,7 @@ This pattern is critical for WellPulse because:
 
 ```typescript
 // ❌ BAD: Last-write-wins (Operator B overwrites A)
-await db.update(productionData)
-  .set({ volume: 125 })
-  .where(eq(productionData.wellId, 'well-42'));
+await db.update(productionData).set({ volume: 125 }).where(eq(productionData.wellId, 'well-42'));
 // Result: Operator A's data is lost!
 
 // ❌ BAD: First-write-wins (Ignore Operator B)
@@ -73,14 +73,14 @@ const avgVolume = (120 + 125) / 2; // 122.5 barrels
 
 Different types of conflicts require different resolution strategies:
 
-| Conflict Type | Strategy | Rationale |
-|---------------|----------|-----------|
-| **Sensor Readings** | NEWEST_WINS | Latest reading is most accurate |
-| **Production Volumes** | HIGHEST_VALUE | Never underreport production (financial/regulatory) |
-| **Equipment Inspections** | MANUAL_REVIEW | Safety-critical, must be reviewed by supervisor |
-| **Notes/Comments** | MERGE | Append both, preserve all operator observations |
-| **Equipment Repairs** | MANUAL_REVIEW | Safety-critical, need full context |
-| **Photo Attachments** | KEEP_BOTH | Both photos may be valuable |
+| Conflict Type             | Strategy      | Rationale                                           |
+| ------------------------- | ------------- | --------------------------------------------------- |
+| **Sensor Readings**       | NEWEST_WINS   | Latest reading is most accurate                     |
+| **Production Volumes**    | HIGHEST_VALUE | Never underreport production (financial/regulatory) |
+| **Equipment Inspections** | MANUAL_REVIEW | Safety-critical, must be reviewed by supervisor     |
+| **Notes/Comments**        | MERGE         | Append both, preserve all operator observations     |
+| **Equipment Repairs**     | MANUAL_REVIEW | Safety-critical, need full context                  |
+| **Photo Attachments**     | KEEP_BOTH     | Both photos may be valuable                         |
 
 ---
 
@@ -118,10 +118,7 @@ export class ConflictDetectorService {
   /**
    * Detect if an incoming event conflicts with existing data.
    */
-  async detectConflict(
-    db: NodePgDatabase,
-    event: any,
-  ): Promise<Conflict | null> {
+  async detectConflict(db: NodePgDatabase, event: any): Promise<Conflict | null> {
     switch (event.type) {
       case 'PRODUCTION_LOGGED':
         return this.detectProductionConflict(db, event);
@@ -140,10 +137,7 @@ export class ConflictDetectorService {
     }
   }
 
-  private async detectProductionConflict(
-    db: NodePgDatabase,
-    event: any,
-  ): Promise<Conflict | null> {
+  private async detectProductionConflict(db: NodePgDatabase, event: any): Promise<Conflict | null> {
     const { wellId, recordedAt } = event.payload;
 
     // Check if production data already exists for this well + date
@@ -153,8 +147,8 @@ export class ConflictDetectorService {
       .where(
         and(
           eq(productionDataTable.wellId, wellId),
-          eq(productionDataTable.recordedAt, new Date(recordedAt))
-        )
+          eq(productionDataTable.recordedAt, new Date(recordedAt)),
+        ),
       )
       .limit(1);
 
@@ -173,10 +167,7 @@ export class ConflictDetectorService {
     };
   }
 
-  private async detectInspectionConflict(
-    db: NodePgDatabase,
-    event: any,
-  ): Promise<Conflict | null> {
+  private async detectInspectionConflict(db: NodePgDatabase, event: any): Promise<Conflict | null> {
     const { wellId, equipmentId, inspectedAt } = event.payload;
 
     // Check if inspection already exists for same equipment on same day
@@ -194,8 +185,8 @@ export class ConflictDetectorService {
           eq(equipmentInspectionsTable.wellId, wellId),
           eq(equipmentInspectionsTable.equipmentId, equipmentId),
           gte(equipmentInspectionsTable.inspectedAt, dayStart),
-          lte(equipmentInspectionsTable.inspectedAt, dayEnd)
-        )
+          lte(equipmentInspectionsTable.inspectedAt, dayEnd),
+        ),
       )
       .limit(1);
 
@@ -214,19 +205,13 @@ export class ConflictDetectorService {
     };
   }
 
-  private async detectReadingConflict(
-    db: NodePgDatabase,
-    event: any,
-  ): Promise<Conflict | null> {
+  private async detectReadingConflict(db: NodePgDatabase, event: any): Promise<Conflict | null> {
     // Sensor readings: NEWEST_WINS (latest reading is most accurate)
     // We still detect conflict but auto-resolve in favor of newest
     // ... implementation
   }
 
-  private async detectNotesConflict(
-    db: NodePgDatabase,
-    event: any,
-  ): Promise<Conflict | null> {
+  private async detectNotesConflict(db: NodePgDatabase, event: any): Promise<Conflict | null> {
     // Notes: MERGE (append both operators' notes)
     // ... implementation
   }
@@ -258,7 +243,7 @@ export class ConflictResolverService {
     tenantId: string,
   ): Promise<ConflictResolution> {
     this.logger.log(
-      `Resolving conflict: ${conflict.eventType} (strategy: ${conflict.recommendedResolution})`
+      `Resolving conflict: ${conflict.eventType} (strategy: ${conflict.recommendedResolution})`,
     );
 
     switch (conflict.recommendedResolution) {
@@ -291,7 +276,9 @@ export class ConflictResolverService {
     conflict: Conflict,
   ): Promise<ConflictResolution> {
     const localTimestamp = new Date(conflict.localData.recordedAt || conflict.localData.timestamp);
-    const serverTimestamp = new Date(conflict.serverData.recorded_at || conflict.serverData.timestamp);
+    const serverTimestamp = new Date(
+      conflict.serverData.recorded_at || conflict.serverData.timestamp,
+    );
 
     if (localTimestamp > serverTimestamp) {
       // Local data is newer - update server
@@ -384,10 +371,7 @@ export class ConflictResolverService {
   /**
    * MERGE: Combine both values (for notes/comments).
    */
-  private async resolveMerge(
-    db: NodePgDatabase,
-    conflict: Conflict,
-  ): Promise<ConflictResolution> {
+  private async resolveMerge(db: NodePgDatabase, conflict: Conflict): Promise<ConflictResolution> {
     const mergedNotes = `${conflict.serverData.notes}\n\n---\n\n${conflict.localData.notes}`;
 
     this.logger.log('Merging notes from both operators');
@@ -450,7 +434,7 @@ export const conflictsTable = pgTable('conflicts', {
 
   // Resolution tracking
   status: varchar('status', { length: 50 }).notNull().default('PENDING_REVIEW'),
-    // "PENDING_REVIEW" | "RESOLVED" | "IGNORED"
+  // "PENDING_REVIEW" | "RESOLVED" | "IGNORED"
   resolvedAt: timestamp('resolved_at'),
   resolvedBy: varchar('resolved_by', { length: 255 }),
   resolution: jsonb('resolution'), // How it was resolved
@@ -638,15 +622,15 @@ export default function ConflictsPage() {
 
 ## Resolution Strategy Matrix
 
-| Data Type | Example | Strategy | Auto-Resolve? | Reason |
-|-----------|---------|----------|---------------|--------|
-| **Sensor Reading** | Temperature: 180°F vs 185°F | NEWEST_WINS | ✅ Yes | Latest reading is most accurate |
-| **Production Volume** | 120 bbl vs 125 bbl | HIGHEST_VALUE | ✅ Yes | Regulatory compliance (never underreport) |
-| **Equipment Inspection** | PASS vs FAIL | MANUAL_REVIEW | ❌ No | Safety-critical, needs supervisor |
-| **Equipment Repair** | "Fixed pump" vs "Replaced pump" | MANUAL_REVIEW | ❌ No | Different actions, need full context |
-| **Notes/Comments** | "Leak detected" vs "Vibration issue" | MERGE | ✅ Yes | Both observations valuable |
-| **Photo Attachment** | photo_1.jpg vs photo_2.jpg | KEEP_BOTH | ✅ Yes | Both photos may show different angles |
-| **Well Status** | ACTIVE vs SHUT_IN | MANUAL_REVIEW | ❌ No | Business-critical status change |
+| Data Type                | Example                              | Strategy      | Auto-Resolve? | Reason                                    |
+| ------------------------ | ------------------------------------ | ------------- | ------------- | ----------------------------------------- |
+| **Sensor Reading**       | Temperature: 180°F vs 185°F          | NEWEST_WINS   | ✅ Yes        | Latest reading is most accurate           |
+| **Production Volume**    | 120 bbl vs 125 bbl                   | HIGHEST_VALUE | ✅ Yes        | Regulatory compliance (never underreport) |
+| **Equipment Inspection** | PASS vs FAIL                         | MANUAL_REVIEW | ❌ No         | Safety-critical, needs supervisor         |
+| **Equipment Repair**     | "Fixed pump" vs "Replaced pump"      | MANUAL_REVIEW | ❌ No         | Different actions, need full context      |
+| **Notes/Comments**       | "Leak detected" vs "Vibration issue" | MERGE         | ✅ Yes        | Both observations valuable                |
+| **Photo Attachment**     | photo_1.jpg vs photo_2.jpg           | KEEP_BOTH     | ✅ Yes        | Both photos may show different angles     |
+| **Well Status**          | ACTIVE vs SHUT_IN                    | MANUAL_REVIEW | ❌ No         | Business-critical status change           |
 
 ---
 
@@ -856,6 +840,7 @@ The **Conflict Resolution Pattern** provides:
 5. **Operator trust** (field workers know their data is protected)
 
 **Critical Implementation Points**:
+
 - Detect conflicts on server side during sync
 - Choose resolution strategy based on data type
 - Never auto-resolve safety-critical data
@@ -868,6 +853,7 @@ This pattern is essential for WellPulse because oil & gas operations involve mul
 ---
 
 **Related Documentation**:
+
 - [Database-Per-Tenant Multi-Tenancy Pattern](./69-Database-Per-Tenant-Multi-Tenancy-Pattern.md)
 - [Offline Batch Sync Pattern](./70-Offline-Batch-Sync-Pattern.md)
 - [Azure Production Architecture](../deployment/azure-production-architecture.md)

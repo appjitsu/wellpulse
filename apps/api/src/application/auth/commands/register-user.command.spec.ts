@@ -34,6 +34,7 @@ describe('RegisterUserHandler', () => {
     // Create mock repository
     mockRepository = {
       findByEmail: jest.fn(),
+      findByAzureObjectId: jest.fn(),
       count: jest.fn(),
       save: jest.fn(),
       findById: jest.fn(),

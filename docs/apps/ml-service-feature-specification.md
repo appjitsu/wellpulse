@@ -44,6 +44,7 @@ The WellPulse ML Service is an **internal microservice** that provides machine l
 ```
 
 **Deployment:**
+
 - **Development**: `http://localhost:8000`
 - **Production**: Internal-only endpoint (not exposed to internet)
   - Azure Container Apps with internal ingress
@@ -58,6 +59,7 @@ The WellPulse ML Service is an **internal microservice** that provides machine l
 **Goal**: Predict equipment failures 7-30 days in advance
 
 **Input Features:**
+
 - Equipment age (days since installation)
 - Runtime hours (cumulative)
 - Maintenance history (days since last maintenance, # of past failures)
@@ -66,6 +68,7 @@ The WellPulse ML Service is an **internal microservice** that provides machine l
 - Environmental data: Temperature, humidity (from weather API)
 
 **Output:**
+
 - **Failure probability**: 0-100% (next 30 days)
 - **Risk score**: Low/Medium/High/Critical
 - **Predicted failure date**: Estimated date if no action taken
@@ -77,6 +80,7 @@ The WellPulse ML Service is an **internal microservice** that provides machine l
 **Algorithm**: Random Forest Classifier + Gradient Boosting Regressor
 
 **Training Data:**
+
 - Historical equipment data (all tenants, anonymized)
 - Failure events (past equipment failures with conditions leading up to failure)
 - Minimum dataset size: 1,000 equipment-months (e.g., 100 pieces of equipment × 10 months)
@@ -90,6 +94,7 @@ The WellPulse ML Service is an **internal microservice** that provides machine l
 **Goal**: Identify wells producing below expected decline curve
 
 **Input Features:**
+
 - Well metadata: Age, type (oil/gas), depth, formation
 - Historical production data: Daily oil/gas/water volumes (last 365 days)
 - Equipment configuration: Pump size, compressor capacity
@@ -97,6 +102,7 @@ The WellPulse ML Service is an **internal microservice** that provides machine l
 - Nearby well performance (offset wells)
 
 **Output:**
+
 - **Expected production**: Predicted oil/gas volumes based on decline curve
 - **Actual vs. expected**: Percentage deviation (e.g., "20% below expected")
 - **Anomaly flag**: Boolean (is well underperforming?)
@@ -106,11 +112,13 @@ The WellPulse ML Service is an **internal microservice** that provides machine l
 **Model Type**: Regression (forecasting production) + anomaly detection
 
 **Algorithm**:
+
 - Decline curve fitting (Arps hyperbolic decline)
 - ARIMA/Prophet for time-series forecasting
 - Isolation Forest for anomaly detection
 
 **Training Data:**
+
 - Historical production data (all wells, all tenants)
 - Minimum: 500 wells × 12 months of production data
 
@@ -123,11 +131,13 @@ The WellPulse ML Service is an **internal microservice** that provides machine l
 **Goal**: Flag unusual production patterns for investigation
 
 **Input Features:**
+
 - Daily production data: Oil, gas, water (last 90 days)
 - Runtime hours
 - Pressure readings
 
 **Output:**
+
 - **Anomaly score**: 0-100 (higher = more anomalous)
 - **Anomaly type**: "Sudden drop", "Spike", "Trend change", "Missing data"
 - **Severity**: Info/Warning/Critical
@@ -138,6 +148,7 @@ The WellPulse ML Service is an **internal microservice** that provides machine l
 **Algorithm**: Isolation Forest or Autoencoders
 
 **Training Data:**
+
 - Normal production patterns (last 12 months, all wells)
 - Minimum: 10,000 daily production records
 
@@ -150,11 +161,13 @@ The WellPulse ML Service is an **internal microservice** that provides machine l
 **Goal**: Forecast future production for planning and economics
 
 **Input Features:**
+
 - Historical production data (daily oil/gas volumes)
 - Well age (days since first production)
 - Cumulative production to date
 
 **Output:**
+
 - **Forecasted production**: Oil/gas volumes for next 12 months (monthly aggregation)
 - **Decline rate**: Percentage decline per year
 - **Estimated ultimate recovery (EUR)**: Total barrels expected over well life
@@ -163,10 +176,12 @@ The WellPulse ML Service is an **internal microservice** that provides machine l
 **Model Type**: Regression (time-series forecasting)
 
 **Algorithm**:
+
 - Arps Decline Curve (exponential, hyperbolic, harmonic)
 - Prophet (Facebook's time-series forecasting)
 
 **Training Data:**
+
 - Historical production data for mature wells (2+ years of production)
 - Minimum: 100 wells with complete production history
 
@@ -179,12 +194,14 @@ The WellPulse ML Service is an **internal microservice** that provides machine l
 **Goal**: Predict emissions for upcoming month (for proactive compliance)
 
 **Input Features:**
+
 - Forecasted production (from decline curve analysis)
 - Equipment type and configuration
 - Historical emissions data
 - Maintenance schedule (downtime affects emissions)
 
 **Output:**
+
 - **Predicted CO2 emissions**: Tons for next 30 days
 - **Predicted CH4 emissions**: Tons for next 30 days
 - **Predicted VOC emissions**: Tons for next 30 days
@@ -195,6 +212,7 @@ The WellPulse ML Service is an **internal microservice** that provides machine l
 **Algorithm**: Gradient Boosting Regressor
 
 **Training Data:**
+
 - Historical production + emissions data (all tenants)
 - Minimum: 6 months of emissions data
 
@@ -422,6 +440,7 @@ Response:
 ### Model Versioning
 
 **Storage Location:**
+
 ```
 services/ml/models/
 ├── predictive_maintenance/
@@ -437,6 +456,7 @@ services/ml/models/
 ```
 
 **Model Metadata:**
+
 ```json
 {
   "modelName": "predictive_maintenance",
@@ -453,11 +473,13 @@ services/ml/models/
 ### Model Loading
 
 **On Startup:**
+
 - Load all current models into memory (for fast inference)
 - Validate models (check file integrity, compatibility)
 - Log model versions to console
 
 **On Model Update:**
+
 - Download new model from Azure Blob Storage
 - Load new model into memory
 - Perform A/B test (compare old vs. new model predictions)
@@ -472,6 +494,7 @@ services/ml/models/
 **Source**: NestJS API fetches training data from all tenant databases (anonymized)
 
 **Process**:
+
 1. NestJS API aggregates data across tenants (scheduled task)
 2. Anonymize data (remove tenant IDs, well names)
 3. Export to CSV or Parquet format
@@ -484,6 +507,7 @@ services/ml/models/
 ### Retraining Schedule
 
 **Automated Retraining:**
+
 - **Predictive Maintenance**: Monthly (1st of every month, 2 AM)
 - **Production Optimization**: Quarterly (1st of Jan/Apr/Jul/Oct, 2 AM)
 - **Anomaly Detection**: Monthly
@@ -491,6 +515,7 @@ services/ml/models/
 - **Emissions Prediction**: Quarterly
 
 **Manual Retraining:**
+
 - Admin can trigger retraining via admin portal
 - Useful after adding new tenants or major data updates
 
@@ -499,16 +524,19 @@ services/ml/models/
 ## Performance
 
 ### Latency Targets
+
 - **Single prediction**: < 200ms
 - **Batch predictions** (100 wells): < 5 seconds
 - **Model loading**: < 5 seconds on startup
 
 ### Scalability
+
 - **Concurrent requests**: Handle 100 requests/second
 - **Memory usage**: < 2GB per container
 - **Horizontal scaling**: Add more ML service containers (stateless)
 
 ### Caching (NestJS API Layer)
+
 - Cache predictions for 1 hour (reduce redundant ML calls)
 - Cache key: `ml:predict:equipment-failure:equipment-123`
 - Use Redis for caching
@@ -518,15 +546,18 @@ services/ml/models/
 ## Security
 
 ### Internal-Only Access
+
 - ML service **not exposed to public internet**
 - Only accessible from NestJS API container
 - Azure Container Apps internal ingress
 
 ### Authentication
+
 - API key authentication (shared secret between NestJS API and ML service)
 - Header: `X-API-Key: <secret>`
 
 ### Data Privacy
+
 - Training data anonymized (no tenant-identifiable information)
 - Models trained on aggregate data (all tenants combined)
 - Individual predictions do NOT expose other tenant data
@@ -536,17 +567,20 @@ services/ml/models/
 ## Monitoring & Observability
 
 ### Metrics
+
 - **Request count**: Total predictions made
 - **Latency**: p50, p95, p99 response times
 - **Model performance**: Accuracy, F1 score (tracked over time)
 - **Error rate**: Failed predictions (e.g., invalid input data)
 
 ### Logging
+
 - **Structured logs** (JSON format)
 - **Log levels**: DEBUG, INFO, WARNING, ERROR
 - **Log to**: Azure Application Insights
 
 **Example Log:**
+
 ```json
 {
   "timestamp": "2025-10-23T14:30:00Z",
@@ -561,6 +595,7 @@ services/ml/models/
 ```
 
 ### Alerts
+
 - Alert if ML service unavailable (health check fails)
 - Alert if prediction latency > 500ms (p95)
 - Alert if model training fails
@@ -572,6 +607,7 @@ services/ml/models/
 ### Docker Container
 
 **Dockerfile:**
+
 ```dockerfile
 FROM python:3.11-slim
 
@@ -624,16 +660,19 @@ Configuration:
 ## Testing
 
 ### Unit Tests
+
 - Test feature engineering functions
 - Test model inference logic (mock models)
 - Test input validation
 
 ### Integration Tests
+
 - Test end-to-end prediction flow
 - Test model loading from disk
 - Test API endpoints (FastAPI TestClient)
 
 ### Model Validation Tests
+
 - Test model accuracy on holdout dataset
 - Test prediction consistency (same input → same output)
 - Test edge cases (missing data, extreme values)
@@ -643,6 +682,7 @@ Configuration:
 ## Dependencies
 
 **requirements.txt:**
+
 ```txt
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
@@ -667,6 +707,7 @@ python-multipart==0.0.6
 ---
 
 **Next Steps:**
+
 1. Set up Python FastAPI project structure
 2. Implement predictive maintenance model (highest priority)
 3. Create training pipeline for data collection

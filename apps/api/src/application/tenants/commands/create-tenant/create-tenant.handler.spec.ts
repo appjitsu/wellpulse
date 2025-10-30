@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 /**
  * CreateTenantHandler Tests
  *
@@ -27,6 +28,7 @@ describe('CreateTenantHandler', () => {
   let handler: CreateTenantHandler;
   let mockRepository: jest.Mocked<ITenantRepository>;
   let mockProvisioningService: jest.Mocked<TenantProvisioningService>;
+  let mockSlackNotificationService: jest.Mocked<any>;
 
   // Mock environment variables
   const originalEnv = process.env;
@@ -49,6 +51,7 @@ describe('CreateTenantHandler', () => {
       findById: jest.fn(),
       findBySlug: jest.fn(),
       findBySubdomain: jest.fn(),
+      findByTenantId: jest.fn(),
       findAll: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
@@ -65,8 +68,18 @@ describe('CreateTenantHandler', () => {
       deprovisionTenantDatabase: jest.fn(),
     } as any;
 
+    // Create mock Slack notification service
+    mockSlackNotificationService = {
+      notifyTenantCreated: jest.fn().mockResolvedValue(undefined),
+      isEnabled: jest.fn().mockReturnValue(false), // Disabled by default in tests
+    };
+
     // Initialize handler with mocks
-    handler = new CreateTenantHandler(mockRepository, mockProvisioningService);
+    handler = new CreateTenantHandler(
+      mockRepository,
+      mockProvisioningService,
+      mockSlackNotificationService,
+    );
   });
 
   afterEach(() => {

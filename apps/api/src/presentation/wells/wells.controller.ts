@@ -31,6 +31,10 @@ import { RolesGuard } from '../guards/roles.guard';
 import { Roles } from '../decorators/roles.decorator';
 import { CurrentUser } from '../decorators/current-user.decorator';
 import { TenantId } from '../decorators/tenant-id.decorator';
+import {
+  TenantContext,
+  TenantContextDto,
+} from '../../infrastructure/decorators/tenant-context.decorator';
 import { CreateWellDto } from './dto/create-well.dto';
 import { UpdateWellDto } from './dto/update-well.dto';
 import { GetWellsQueryDto } from './dto/get-wells-query.dto';
@@ -52,6 +56,10 @@ import {
   GetWellByIdQuery,
   WellDto as GetWellByIdResult,
 } from '../../application/wells/queries/get-well-by-id.query';
+import {
+  GetWellByApiNumberQuery,
+  WellDto as GetWellByApiNumberResult,
+} from '../../application/wells/queries/get-well-by-api-number.query';
 
 @ApiTags('wells')
 @ApiBearerAuth('access-token')
@@ -115,6 +123,42 @@ export class WellsController {
     return this.queryBus.execute<GetWellsQuery, GetWellsResult>(
       new GetWellsQuery(tenantId, query),
     );
+  }
+
+  /**
+   * Lookup well by barcode/API number
+   * GET /wells/barcode/:code
+   *
+   * Used by mobile app barcode scanner to find well by API number or barcode.
+   * All authenticated users (especially Consultants with mobile devices) can lookup wells.
+   */
+  @Get('barcode/:code')
+  @ApiOperation({ summary: 'Lookup well by barcode or API number' })
+  @ApiResponse({
+    status: 200,
+    description: 'Well found',
+    type: WellDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Well with this barcode/API number not found',
+  })
+  async lookupByBarcode(
+    @TenantContext() tenant: TenantContextDto,
+    @Param('code') code: string,
+  ): Promise<WellDto> {
+    const well = await this.queryBus.execute<
+      GetWellByApiNumberQuery,
+      GetWellByApiNumberResult | null
+    >(new GetWellByApiNumberQuery(tenant.id, code, tenant.databaseName));
+
+    if (!well) {
+      throw new NotFoundException(
+        `Well with barcode/API number "${code}" not found`,
+      );
+    }
+
+    return well;
   }
 
   /**

@@ -7,7 +7,7 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Activity, Building2, Users, TrendingUp, Database, Zap } from 'lucide-react';
+import { Activity, Building2, Database, TrendingUp, Users, Zap } from 'lucide-react';
 import Link from 'next/link';
 
 export default function DashboardOverviewPage() {
@@ -203,7 +203,7 @@ export default function DashboardOverviewPage() {
               Mailpit (Email) →
             </a>
             <a
-              href="http://localhost:3000"
+              href="http://localhost:4001"
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-blue-600 hover:underline dark:text-blue-400"

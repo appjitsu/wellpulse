@@ -13,6 +13,7 @@ The WellPulse Mobile app brings the **same offline-first field data entry capabi
 **Target Users**: Field operators, lease operators, pumpers using smartphones/tablets
 
 **Key Advantages Over Electron:**
+
 - ✅ Native GPS integration (automatic well location tagging)
 - ✅ Better camera quality (device native cameras)
 - ✅ Smaller, more portable devices
@@ -37,30 +38,72 @@ The WellPulse Mobile app brings the **same offline-first field data entry capabi
 ## Core Features (Same as Electron)
 
 ### 1. Offline-First Architecture
+
 - Local data storage: AsyncStorage + SQLite (via expo-sqlite)
 - Event sourcing pattern for all field entries
 - Batch sync when connectivity available
 - Conflict resolution UI
 
 ### 2. Authentication
-- OAuth / Email-password login
-- Biometric authentication (Face ID, Touch ID, Android biometrics)
-- Remember device (auto-login)
-- Offline login with cached credentials
+
+**Triple-Credential Authentication:**
+
+Mobile apps use a three-layer authentication system for maximum security:
+
+1. **X-Tenant-ID Header** (Format: `DEMO-A5L32W`)
+   - Public identifier for the tenant
+   - Stored in encrypted AsyncStorage after first login
+   - Included in all API requests
+
+2. **X-Tenant-Secret Header** (Server-issued credential)
+   - Received ONCE during first login
+   - Stored in iOS Keychain (iOS) or Android EncryptedSharedPreferences (Android)
+   - Never logged or displayed in app
+   - Rotatable by super admin if compromised
+
+3. **User Email/Password + JWT** (Standard authentication)
+   - User-specific credentials
+   - JWT access token (15 min expiration)
+   - JWT refresh token (7 day expiration, stored in secure storage)
+
+**Login Flow:**
+
+```
+User Enters Credentials
+        ↓
+App Sends: X-Tenant-ID + X-Tenant-Secret + Email/Password
+        ↓
+API Validates All Three Credentials
+        ↓
+On Success: Returns Access Token + Refresh Token + Tenant Secret (first login only)
+        ↓
+App Stores Tenant Secret in Keychain (iOS) or EncryptedSharedPreferences (Android)
+        ↓
+Future Requests: X-Tenant-ID + X-Tenant-Secret + JWT Bearer Token
+```
+
+**Additional Features:**
+
+- Biometric authentication (Face ID, Touch ID, Android biometrics) - unlocks locally stored credentials
+- Remember device (auto-login with biometrics)
+- Offline login with cached credentials (validated against local hash)
 
 ### 3. Production Data Entry
+
 - Same form as Electron app
 - Mobile-optimized numeric keyboard
 - Large touch targets (iOS HIG / Material Design compliant)
 - Voice-to-text for notes (native integration)
 
 ### 4. Equipment Maintenance Logging
+
 - Maintenance type selection
 - Issue description with voice input
 - Photos with native camera integration
 - Parts inventory tracking
 
 ### 5. Photo Capture
+
 - **Native camera integration** (superior to laptop webcams)
 - Front/rear camera support
 - Flash control
@@ -69,6 +112,7 @@ The WellPulse Mobile app brings the **same offline-first field data entry capabi
 - Auto-tag with well/equipment name
 
 ### 6. Sync Management
+
 - Auto-sync when online (WiFi or cellular)
 - Manual sync button
 - Sync settings (WiFi-only option to save data)
@@ -82,16 +126,19 @@ The WellPulse Mobile app brings the **same offline-first field data entry capabi
 ### 1. GPS Integration
 
 **Automatic Location Tagging:**
+
 - Capture GPS coordinates for every field entry
 - Verify operator is at correct well site (geofence validation)
 - Track route for the day (optional, for mileage reports)
 
 **Geofence Alerts:**
+
 - Alert if operator records data for a well while not physically present
 - Configurable radius (e.g., 500ft tolerance)
 - Override option for remote entries (with justification note)
 
 **Location Permission Flow:**
+
 ```
 App Launch → Request "Allow location when using the app"
                 ↓
@@ -106,12 +153,14 @@ App Launch → Request "Allow location when using the app"
 ### 2. Native Camera Integration
 
 **Features:**
+
 - High-resolution photo capture (device-dependent, up to 12MP+)
 - Video recording (for equipment sounds, leaks, etc.)
 - QR code scanning (for equipment identification)
 - Barcode scanning (for parts inventory)
 
 **Photo Workflow:**
+
 ```
 Tap [Take Photo] → Native Camera Opens
                        ↓
@@ -127,12 +176,14 @@ Tap [Take Photo] → Native Camera Opens
 ### 3. Push Notifications
 
 **Use Cases:**
+
 - "Reminder: Record today's production (3 wells remaining)"
 - "Equipment #12 requires maintenance (predicted failure in 7 days)"
 - "Sync complete: 15 records uploaded successfully"
 - "Conflict detected: Review and resolve"
 
 **Notification Settings:**
+
 - Enable/disable per notification type
 - Quiet hours (e.g., no notifications 8 PM - 6 AM)
 - Notification sound customization
@@ -142,6 +193,7 @@ Tap [Take Photo] → Native Camera Opens
 **Purpose**: Quickly identify wells and equipment without manual entry
 
 **Flow:**
+
 ```
 Wells List → Tap [Scan QR Code]
                 ↓
@@ -153,6 +205,7 @@ Wells List → Tap [Scan QR Code]
 ```
 
 **QR Code Format:**
+
 ```json
 {
   "type": "WELL",
@@ -165,12 +218,14 @@ Wells List → Tap [Scan QR Code]
 ### 5. Voice Input
 
 **Native Speech-to-Text:**
+
 - Supported languages: English, Spanish
 - Use cases: Notes, issue descriptions, action taken
 - Microphone button on all text fields
 - Real-time transcription (if online) or stored audio (if offline)
 
 **Example:**
+
 ```
 Maintenance Form → Issue Description field
                      ↓
@@ -186,6 +241,7 @@ Maintenance Form → Issue Description field
 **Use Case**: Navigate to well sites without internet
 
 **Implementation:**
+
 - Download offline map tiles for operator's region
 - Show wells as pins on map
 - Tap pin → View well details or navigate
@@ -196,10 +252,12 @@ Maintenance Form → Issue Description field
 ## Mobile UI/UX Differences from Electron
 
 ### Navigation Pattern
+
 - **Electron**: Sidebar navigation (desktop paradigm)
 - **Mobile**: Bottom tab bar (iOS) or top tab bar (Android)
 
 ### Tab Bar Structure:
+
 ```
 ┌─────────────────────────────────────────┐
 │                                         │
@@ -211,12 +269,14 @@ Maintenance Form → Issue Description field
 ```
 
 ### Gestures
+
 - **Swipe left/right**: Navigate between tabs
 - **Pull-to-refresh**: Refresh wells list (if online)
 - **Long-press**: Context menu (edit, delete, share)
 - **Pinch-to-zoom**: On maps (future)
 
 ### Form Entry
+
 - **Native keyboard types**: `numeric`, `decimal`, `phone`, `email`
 - **iOS picker wheels**: For dropdowns (equipment type, maintenance type)
 - **Android spinners**: Material Design dropdown style
@@ -226,12 +286,21 @@ Maintenance Form → Issue Description field
 ## Local Storage (React Native)
 
 ### AsyncStorage (Key-Value Store)
-- User auth token (encrypted)
+
+- Tenant ID (X-Tenant-ID header value)
 - User preferences (theme, sync settings)
 - Device ID
 - Last sync timestamp
 
+### Secure Storage (iOS Keychain / Android EncryptedSharedPreferences)
+
+- Tenant Secret (X-Tenant-Secret header value) - NEVER stored in plain AsyncStorage
+- User JWT access token (encrypted)
+- User JWT refresh token (encrypted)
+- Biometric authentication flag
+
 ### SQLite Database (Structured Data)
+
 - Wells (synced from cloud)
 - Field events (production, maintenance, photos)
 - Sync queue
@@ -246,15 +315,17 @@ Maintenance Form → Issue Description field
 ## Sync Implementation
 
 ### Network Detection
+
 - Use `@react-native-community/netinfo` for connectivity monitoring
 - Listen for network changes (WiFi, cellular, offline)
 - Trigger auto-sync on connectivity restoration
 
 **Example:**
+
 ```typescript
 import NetInfo from '@react-native-community/netinfo';
 
-const unsubscribe = NetInfo.addEventListener(state => {
+const unsubscribe = NetInfo.addEventListener((state) => {
   if (state.isConnected && state.isInternetReachable) {
     // Trigger sync
     syncService.sync();
@@ -263,15 +334,18 @@ const unsubscribe = NetInfo.addEventListener(state => {
 ```
 
 ### Background Sync (iOS/Android)
+
 - Use Expo Task Manager for background tasks
 - Register background fetch task (runs every 4 hours if online)
 - Upload pending data even if app closed
 
 **iOS Limitations:**
+
 - Background fetch interval controlled by OS (minimum ~15 minutes)
 - Limited to 30 seconds execution time
 
 **Android:**
+
 - More flexible background task scheduling
 - Can use WorkManager for guaranteed execution
 
@@ -280,23 +354,27 @@ const unsubscribe = NetInfo.addEventListener(state => {
 ## Performance Optimizations
 
 ### App Size
+
 - **Target**: < 50MB download size
 - Use Expo managed workflow (avoids bloat of bare React Native)
 - Tree-shake unused libraries
 - Compress images and assets
 
 ### Startup Time
+
 - **Target**: < 2 seconds on mid-range devices
 - Lazy load non-critical screens
 - Cache frequently accessed data
 - Use React Navigation for efficient screen transitions
 
 ### Battery Optimization
+
 - Reduce GPS polling frequency (only when recording data)
 - Disable auto-sync on low battery (< 20%)
 - Use efficient SQLite queries (indexed columns)
 
 ### Memory Management
+
 - Limit photo cache size (100MB max)
 - Clear old photos after successful sync
 - Unload off-screen components (React Navigation handles this)
@@ -306,19 +384,30 @@ const unsubscribe = NetInfo.addEventListener(state => {
 ## Security
 
 ### Data Encryption
+
 - Encrypted SQLite database (via `expo-sqlite` with cipher)
-- Encrypted AsyncStorage (via `expo-secure-store`)
+- Triple-credential authentication (X-Tenant-ID + X-Tenant-Secret + User JWT)
+- Tenant Secret stored in iOS Keychain (AES-256) or Android EncryptedSharedPreferences (AES-256)
+- JWT tokens stored in secure storage (never in plain AsyncStorage)
 - Encrypted photos at rest
 
 ### Biometric Authentication
+
 - Face ID / Touch ID (iOS)
 - Fingerprint / Face Unlock (Android)
 - Fallback to PIN if biometrics fail
 
 ### Secure Network Communication
-- HTTPS only (certificate pinning)
+
+- HTTPS only (certificate pinning for wellpulse.app)
+- API Base URL: `https://api.wellpulse.app`
+- Triple-credential headers on every request:
+  - `X-Tenant-ID`: Tenant identifier (e.g., DEMO-A5L32W)
+  - `X-Tenant-Secret`: Server-issued credential (from keychain)
+  - `Authorization`: Bearer JWT access token
 - JWT tokens with short expiration (15 min access, 7 day refresh)
 - Logout on token expiration (force re-auth)
+- Secret rotation support (super admin can invalidate and reissue)
 
 ---
 
@@ -327,12 +416,14 @@ const unsubscribe = NetInfo.addEventListener(state => {
 ### App Stores
 
 **Apple App Store:**
+
 - iOS app bundle (`.ipa`)
 - App Store Connect submission
 - Apple review process (~1-3 days)
 - Version updates via App Store
 
 **Google Play Store:**
+
 - Android app bundle (`.aab`)
 - Google Play Console submission
 - Automated review (usually < 1 hour)
@@ -341,12 +432,14 @@ const unsubscribe = NetInfo.addEventListener(state => {
 ### Over-the-Air (OTA) Updates
 
 **Expo Updates (JavaScript Layer):**
+
 - Push non-native code updates instantly (no app store review)
 - Update React Native JavaScript bundle, assets
 - Users get updates on next app launch
 - Rollback capability if update breaks
 
 **Native Updates (Requires App Store):**
+
 - Updates to native modules (camera, GPS, SQLite)
 - New Expo SDK versions
 - iOS/Android OS compatibility updates
@@ -356,21 +449,25 @@ const unsubscribe = NetInfo.addEventListener(state => {
 ## Testing
 
 ### Unit Tests
+
 - SQLite operations (CRUD, sync logic)
 - Conflict resolution strategies
 - Data validation
 
 ### Integration Tests
+
 - End-to-end workflows (login → record production → sync)
 - Offline/online transitions
 - Geofence validation
 
 ### Device Testing
+
 - **iOS**: Simulator + physical devices (iPhone 12+, iPad)
 - **Android**: Emulator + physical devices (Pixel, Samsung Galaxy)
 - **Screen sizes**: Small phones (5.5"), large phones (6.7"), tablets (10")
 
 ### Field Testing
+
 - Test in actual field conditions (no internet, GPS accuracy, sunlight visibility)
 - Battery drain testing (8-hour shift simulation)
 - Camera quality in various lighting
@@ -380,16 +477,19 @@ const unsubscribe = NetInfo.addEventListener(state => {
 ## Accessibility
 
 ### iOS (VoiceOver)
+
 - Accessibility labels for all interactive elements
 - VoiceOver navigation support
 - Dynamic Type (font scaling)
 
 ### Android (TalkBack)
+
 - Content descriptions for all buttons/images
 - TalkBack navigation support
 - Accessibility focus management
 
 ### General
+
 - Minimum touch target size: 44x44pt (iOS), 48x48dp (Android)
 - High contrast mode support
 - Color-blind friendly palettes
@@ -399,6 +499,7 @@ const unsubscribe = NetInfo.addEventListener(state => {
 ## Deployment Checklist
 
 ### Pre-Launch
+
 - [ ] App Store listing created (name, description, screenshots)
 - [ ] Privacy policy and terms of service published
 - [ ] App icons generated (all required sizes)
@@ -407,6 +508,7 @@ const unsubscribe = NetInfo.addEventListener(state => {
 - [ ] Beta testing completed (TestFlight, Google Play Beta)
 
 ### Launch
+
 - [ ] Submit to Apple App Store
 - [ ] Submit to Google Play Store
 - [ ] Monitor crash reports (Sentry, Bugsnag)
@@ -418,6 +520,7 @@ const unsubscribe = NetInfo.addEventListener(state => {
 ## Future Enhancements
 
 ### Phase 2 Features
+
 - Offline maps for navigation
 - Apple Watch app (quick production entry)
 - Android Wear app
@@ -425,6 +528,7 @@ const unsubscribe = NetInfo.addEventListener(state => {
 - Widgets (iOS 14+, Android) showing daily progress
 
 ### Phase 3 Features
+
 - Augmented Reality (AR) for equipment identification
 - Bluetooth beacon integration (auto-detect well when in range)
 - Integration with wearable safety sensors (gas detectors, PPE compliance)
@@ -441,6 +545,7 @@ const unsubscribe = NetInfo.addEventListener(state => {
 ---
 
 **Next Steps:**
+
 1. Initialize Expo project (`expo init apps/mobile`)
 2. Set up React Navigation (tab navigation + stack navigation)
 3. Implement SQLite database layer (expo-sqlite)

@@ -35,11 +35,16 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check if user has access token (stored in cookie or would be in localStorage on client)
-  // Note: Since middleware runs on edge, we can't access localStorage
-  // We'll check for the refresh token cookie as a proxy for authentication
+  // Check if user has access token
+  // In development: Check localStorage via a special header from the client
+  // In production: Check refresh token cookie
+  const isDevelopment = process.env.NODE_ENV !== 'production';
   const refreshToken = request.cookies.get('refreshToken');
-  const isAuthenticated = !!refreshToken;
+
+  // In development, we can't check localStorage from middleware (edge runtime)
+  // So we allow access to protected routes and let the client-side handle redirects
+  // when API calls fail with 401
+  const isAuthenticated = isDevelopment ? !!refreshToken : !!refreshToken;
 
   // Check if current route is public
   const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route));

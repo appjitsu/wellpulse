@@ -153,10 +153,11 @@ export interface Tenant {
 
 export interface CreateTenantDto {
   name: string;
+  slug: string;
   subdomain: string;
   contactEmail: string;
   subscriptionTier: string;
-  status: string;
+  trialDays?: number;
 }
 
 export interface UpdateTenantDto {

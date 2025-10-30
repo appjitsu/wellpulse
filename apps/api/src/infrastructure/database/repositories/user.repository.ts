@@ -192,6 +192,8 @@ export class UserRepository implements IUserRepository {
         passwordResetToken: data.passwordResetToken,
         passwordResetExpires: data.passwordResetExpires,
         lastLoginAt: data.lastLoginAt,
+        azureObjectId: data.azureObjectId,
+        ssoProvider: data.ssoProvider,
         updatedAt: new Date(),
       })
       .where(eq(tenantUsers.id, user.id));
@@ -231,5 +233,33 @@ export class UserRepository implements IUserRepository {
   ): Promise<boolean> {
     const user = await this.findByEmail(tenantId, email, databaseName);
     return user !== null;
+  }
+
+  /**
+   * Find user by Azure AD object ID within tenant
+   * Respects soft deletes (deletedAt must be null)
+   */
+  async findByAzureObjectId(
+    tenantId: string,
+    azureObjectId: string,
+    databaseName?: string,
+  ): Promise<User | null> {
+    const db = await this.tenantDbService.getTenantDatabase(
+      tenantId,
+      databaseName,
+    );
+
+    const results = await db
+      .select()
+      .from(tenantUsers)
+      .where(
+        and(
+          eq(tenantUsers.azureObjectId, azureObjectId),
+          isNull(tenantUsers.deletedAt),
+        ),
+      )
+      .limit(1);
+
+    return results[0] ? UserMapper.toDomain(results[0]) : null;
   }
 }

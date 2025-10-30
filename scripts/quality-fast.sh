@@ -1,7 +1,8 @@
 #!/bin/bash
 # Fast Quality Checks with Maximum Parallelism
 
-set -e
+# Don't exit on error - we want all checks to run
+set +e
 
 echo "🚀 Running ALL quality checks in PARALLEL..."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -34,7 +35,7 @@ echo "Starting parallel tasks..."
 # Tests (all workspaces)
 (
   echo "🧪 Testing..."
-  pnpm test:max > /tmp/test.log 2>&1 && echo "✅ Tests: PASSED" || echo "❌ Tests: FAILED"
+  pnpm test > /tmp/test.log 2>&1 && echo "✅ Tests: PASSED" || echo "❌ Tests: FAILED"
 ) &
 
 # Build (all workspaces)

@@ -23,6 +23,7 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import {
@@ -31,10 +32,15 @@ import {
   ApiOperation,
   ApiResponse,
 } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { RolesGuard } from '../guards/roles.guard';
+import { Roles } from '../decorators/roles.decorator';
 
 @ApiTags('admin-tenants')
 @ApiBearerAuth('access-token')
 @Controller('admin/tenants')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ADMIN')
 export class AdminTenantsController {
   constructor(
     private readonly commandBus: CommandBus,
@@ -187,10 +193,44 @@ export class AdminTenantsController {
       storageQuotaGb?: number;
       trialDays?: number;
     },
-  ): Promise<{ id: string; message: string }> {
-    // TODO: Implement CreateTenantCommand (already exists, need to wire up)
+  ): Promise<{
+    id: string;
+    message: string;
+    tenantId?: string;
+    subdomain?: string;
+  }> {
+    const { CreateTenantCommand } = await import(
+      '../../application/tenants/commands/create-tenant/create-tenant.command'
+    );
+
+    const command = new CreateTenantCommand(
+      dto.slug,
+      dto.subdomain,
+      dto.name,
+      dto.contactEmail,
+      dto.subscriptionTier,
+      dto.databaseType || 'POSTGRESQL',
+      dto.contactPhone,
+      dto.billingEmail,
+      dto.maxWells,
+      dto.maxUsers,
+      dto.storageQuotaGb,
+      dto.trialDays,
+      'admin', // createdBy
+    );
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const result = await this.commandBus.execute(command);
+    const tenant = result as {
+      id: string;
+      tenantId: string;
+      subdomain: string;
+    };
+
     return {
-      id: 'new-tenant-id',
+      id: tenant.id,
+      tenantId: tenant.tenantId,
+      subdomain: tenant.subdomain,
       message: 'Tenant created successfully',
     };
   }

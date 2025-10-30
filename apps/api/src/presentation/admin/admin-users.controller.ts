@@ -23,6 +23,7 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import {
@@ -31,10 +32,16 @@ import {
   ApiOperation,
   ApiResponse,
 } from '@nestjs/swagger';
+import { GetAllUsersQuery } from '../../application/admin/queries/get-all-users/get-all-users.query';
+import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { RolesGuard } from '../guards/roles.guard';
+import { Roles } from '../decorators/roles.decorator';
 
 @ApiTags('admin-users')
 @ApiBearerAuth('access-token')
 @Controller('admin/users')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ADMIN')
 export class AdminUsersController {
   constructor(
     private readonly commandBus: CommandBus,
@@ -55,10 +62,10 @@ export class AdminUsersController {
   async getAllUsers(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
-    @Query('search') _search?: string,
-    @Query('tenantId') _tenantId?: string,
-    @Query('role') _role?: string,
-    @Query('status') _status?: string,
+    @Query('search') search?: string,
+    @Query('tenantId') tenantId?: string,
+    @Query('role') role?: string,
+    @Query('status') status?: string,
   ): Promise<{
     users: Array<{
       id: string;
@@ -77,28 +84,16 @@ export class AdminUsersController {
     page: number;
     limit: number;
   }> {
-    // TODO: Implement GetAllUsersQuery
-    // This is a placeholder that returns mock data
-    return {
-      users: [
-        {
-          id: '1',
-          email: 'john@acme.com',
-          firstName: 'John',
-          lastName: 'Doe',
-          tenantId: 'acme-id',
-          tenantName: 'ACME Oil',
-          role: 'ADMIN',
-          status: 'ACTIVE',
-          emailVerified: true,
-          lastLoginAt: new Date(Date.now() - 120000),
-          createdAt: new Date(Date.now() - 86400000 * 30),
-        },
-      ],
-      total: 1,
-      page: parseInt(page || '1', 10),
-      limit: parseInt(limit || '10', 10),
-    };
+    const query = new GetAllUsersQuery(
+      parseInt(page || '1', 10),
+      parseInt(limit || '10', 10),
+      search,
+      tenantId,
+      role,
+      status,
+    );
+
+    return this.queryBus.execute(query);
   }
 
   /**
