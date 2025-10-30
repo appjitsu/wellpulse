@@ -32,6 +32,7 @@ describe('ResetPasswordHandler', () => {
     // Create mock repository
     mockRepository = {
       findAll: jest.fn(),
+      findByAzureObjectId: jest.fn(),
       update: jest.fn(),
       findByEmail: jest.fn(),
       findById: jest.fn(),

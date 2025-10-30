@@ -13,12 +13,11 @@
 
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
 
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
-import * as cookieParser from 'cookie-parser';
+import request from 'supertest';
+import cookieParser from 'cookie-parser';
 import { AppModule } from '../../src/app.module';
 
 describe('Authentication (e2e)', () => {
@@ -167,7 +166,9 @@ describe('Authentication (e2e)', () => {
       accessToken = response.body.accessToken;
 
       // Extract refresh token from cookie
-      const cookies = response.headers['set-cookie'] as string[] | undefined;
+      const cookies = response.headers['set-cookie'] as unknown as
+        | string[]
+        | undefined;
       expect(cookies).toBeDefined();
       refreshTokenCookie =
         cookies?.find((cookie: string) => cookie.startsWith('refreshToken=')) ||
@@ -241,7 +242,9 @@ describe('Authentication (e2e)', () => {
       expect(newAccessToken).not.toBe(accessToken);
 
       // Should receive new refresh token (rotation)
-      const cookies = response.headers['set-cookie'] as string[] | undefined;
+      const cookies = response.headers['set-cookie'] as unknown as
+        | string[]
+        | undefined;
       expect(cookies).toBeDefined();
       const newRefreshCookie = cookies?.find((cookie: string) =>
         cookie.startsWith('refreshToken='),
@@ -331,7 +334,9 @@ describe('Authentication (e2e)', () => {
       expect(response.body.message).toBe('Logout successful');
 
       // Should clear refresh token cookie
-      const cookies = response.headers['set-cookie'] as string[] | undefined;
+      const cookies = response.headers['set-cookie'] as unknown as
+        | string[]
+        | undefined;
       expect(cookies).toBeDefined();
       const clearedCookie = cookies?.find((cookie: string) =>
         cookie.startsWith('refreshToken='),

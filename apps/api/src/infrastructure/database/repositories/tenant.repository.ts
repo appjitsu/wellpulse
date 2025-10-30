@@ -3,6 +3,10 @@
  *
  * Drizzle ORM implementation of ITenantRepository.
  * Handles conversion between domain entities and database records.
+ *
+ * Security:
+ * - Database URLs are encrypted before storage using AES-256-GCM
+ * - Database URLs are decrypted when loading from storage
  */
 
 import { Injectable } from '@nestjs/common';
@@ -14,12 +18,17 @@ import { Tenant } from '../../../domain/tenants/tenant.entity';
 import { TenantStatus } from '../../../domain/tenants/value-objects/tenant-status.vo';
 import { SubscriptionTier } from '../../../domain/tenants/value-objects/subscription-tier.vo';
 import { DatabaseConfig } from '../../../domain/tenants/value-objects/database-config.vo';
+import { EncryptionService } from '../../services/encryption.service';
 
 @Injectable()
 export class TenantRepository implements ITenantRepository {
+  constructor(private readonly encryptionService: EncryptionService) {}
   async create(tenant: Tenant): Promise<Tenant> {
     const props = tenant.toPersistence();
     const dbConfig = props.databaseConfig.toPersistence();
+
+    // Encrypt database URL before storing in master database
+    const encryptedUrl = this.encryptionService.encrypt(dbConfig.url);
 
     const [created] = await masterDb
       .insert(tenants)
@@ -27,9 +36,12 @@ export class TenantRepository implements ITenantRepository {
         id: props.id,
         slug: props.slug,
         subdomain: props.subdomain,
+        tenantId: props.tenantId,
+        secretKeyHash: props.secretKeyHash,
+        secretRotatedAt: props.secretRotatedAt,
         name: props.name,
         databaseType: dbConfig.type,
-        databaseUrl: dbConfig.url, // Should be encrypted before storage
+        databaseUrl: encryptedUrl,
         databaseName: dbConfig.name,
         databaseHost: dbConfig.host,
         databasePort: dbConfig.port,
@@ -71,6 +83,14 @@ export class TenantRepository implements ITenantRepository {
   async findBySubdomain(subdomain: string): Promise<Tenant | null> {
     const result = await masterDb.query.tenants.findFirst({
       where: and(eq(tenants.subdomain, subdomain), isNull(tenants.deletedAt)),
+    });
+
+    return result ? this.toDomain(result) : null;
+  }
+
+  async findByTenantId(tenantId: string): Promise<Tenant | null> {
+    const result = await masterDb.query.tenants.findFirst({
+      where: and(eq(tenants.tenantId, tenantId), isNull(tenants.deletedAt)),
     });
 
     return result ? this.toDomain(result) : null;
@@ -119,12 +139,17 @@ export class TenantRepository implements ITenantRepository {
     const props = tenant.toPersistence();
     const dbConfig = props.databaseConfig.toPersistence();
 
+    // Encrypt database URL before storing (handles both plaintext and already-encrypted URLs)
+    const encryptedUrl = this.encryptionService.encryptIfNeeded(dbConfig.url);
+
     const [updated] = await masterDb
       .update(tenants)
       .set({
+        secretKeyHash: props.secretKeyHash,
+        secretRotatedAt: props.secretRotatedAt,
         name: props.name,
         databaseType: dbConfig.type,
-        databaseUrl: dbConfig.url,
+        databaseUrl: encryptedUrl,
         databaseName: dbConfig.name,
         databaseHost: dbConfig.host,
         databasePort: dbConfig.port,
@@ -202,9 +227,14 @@ export class TenantRepository implements ITenantRepository {
    * Convert database record to domain entity
    */
   private toDomain(record: typeof tenants.$inferSelect): Tenant {
+    // Decrypt database URL when loading from storage (backward compatible with plaintext URLs)
+    const decryptedUrl = this.encryptionService.decryptIfNeeded(
+      record.databaseUrl,
+    );
+
     const databaseConfig = DatabaseConfig.create({
       type: record.databaseType as never,
-      url: record.databaseUrl,
+      url: decryptedUrl,
       name: record.databaseName,
       host: record.databaseHost ?? undefined,
       port: record.databasePort ?? undefined,
@@ -215,6 +245,9 @@ export class TenantRepository implements ITenantRepository {
       id: record.id,
       slug: record.slug,
       subdomain: record.subdomain,
+      tenantId: record.tenantId,
+      secretKeyHash: record.secretKeyHash,
+      secretRotatedAt: record.secretRotatedAt ?? undefined,
       name: record.name,
       databaseConfig,
       subscriptionTier: SubscriptionTier.fromString(record.subscriptionTier),

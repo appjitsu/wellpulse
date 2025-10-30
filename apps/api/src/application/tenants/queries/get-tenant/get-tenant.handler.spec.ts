@@ -39,6 +39,8 @@ describe('GetTenantHandler', () => {
       id: overrides?.id || 'tenant-123',
       slug: overrides?.slug || 'acme-oil-gas',
       subdomain: overrides?.subdomain || 'acme',
+      tenantId: 'ACME-A5L32W',
+      secretKeyHash: 'hashed_secret_key_placeholder',
       name: overrides?.name || 'ACME Oil & Gas',
       databaseConfig: DatabaseConfig.create({
         type: 'POSTGRESQL',
@@ -72,6 +74,7 @@ describe('GetTenantHandler', () => {
       findById: jest.fn(),
       findBySlug: jest.fn(),
       findBySubdomain: jest.fn(),
+      findByTenantId: jest.fn(),
       findAll: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
@@ -184,6 +187,8 @@ describe('GetTenantHandler', () => {
           id: 'trial-tenant',
           slug: 'trial-tenant',
           subdomain: 'trial',
+          tenantId: 'TRIAL-T5L32W',
+          secretKeyHash: 'hashed_secret_key_placeholder',
           name: 'Trial Tenant',
           databaseConfig: DatabaseConfig.create({
             type: 'POSTGRESQL',

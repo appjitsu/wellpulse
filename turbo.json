@@ -18,6 +18,10 @@
       "cache": true,
       "outputs": []
     },
+    "format:check": {
+      "cache": true,
+      "outputs": []
+    },
     "type-check": {
       "cache": true,
       "outputs": []

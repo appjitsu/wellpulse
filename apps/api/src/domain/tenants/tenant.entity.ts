@@ -7,11 +7,14 @@
  * Business Rules:
  * - Slug must be URL-friendly (lowercase, hyphens only)
  * - Subdomain must be unique across all tenants
+ * - Tenant ID format: COMPANY-XXXXXX (1-8 letters + dash + 6 alphanumeric)
+ * - Secret key is server-generated, hashed, and can be rotated by super admin
  * - Cannot delete tenant with active subscription
  * - Trial tenants must have trialEndsAt date
  * - Database URL must be encrypted before storage
  */
 
+import * as crypto from 'crypto';
 import { TenantStatus } from './value-objects/tenant-status.vo';
 import { SubscriptionTier } from './value-objects/subscription-tier.vo';
 import { DatabaseConfig } from './value-objects/database-config.vo';
@@ -20,6 +23,9 @@ export interface TenantProps {
   id: string;
   slug: string;
   subdomain: string;
+  tenantId: string; // Format: COMPANY-XXXXXX (e.g., DEMO-A5L32W)
+  secretKeyHash: string; // Hashed secret key for triple-credential auth
+  secretRotatedAt?: Date; // Track when secret was last rotated
   name: string;
   databaseConfig: DatabaseConfig;
   subscriptionTier: SubscriptionTier;
@@ -91,6 +97,18 @@ export class Tenant {
       throw new Error('Tenant subdomain must be between 2 and 30 characters');
     }
 
+    // Tenant ID validation (format: COMPANY-XXXXXX)
+    if (!/^[A-Z]{1,8}-[A-Z0-9]{6}$/.test(this.props.tenantId)) {
+      throw new Error(
+        'Tenant ID must follow format: COMPANY-XXXXXX (1-8 uppercase letters, dash, 6 alphanumeric)',
+      );
+    }
+
+    // Secret key hash validation
+    if (!this.props.secretKeyHash || this.props.secretKeyHash.length === 0) {
+      throw new Error('Secret key hash is required');
+    }
+
     // Name validation
     if (!this.props.name || this.props.name.trim().length === 0) {
       throw new Error('Tenant name is required');
@@ -140,6 +158,18 @@ export class Tenant {
 
   get subdomain(): string {
     return this.props.subdomain;
+  }
+
+  get tenantId(): string {
+    return this.props.tenantId;
+  }
+
+  get secretKeyHash(): string {
+    return this.props.secretKeyHash;
+  }
+
+  get secretRotatedAt(): Date | undefined {
+    return this.props.secretRotatedAt;
   }
 
   get name(): string {
@@ -394,6 +424,92 @@ export class Tenant {
     }
 
     return new Date() > this.props.trialEndsAt;
+  }
+
+  /**
+   * Generate a unique tenant ID from company name
+   * Format: COMPANY-XXXXXX (1-8 uppercase letters + dash + 6 random alphanumeric)
+   * @param companyName - Company name to derive prefix from
+   * @returns Generated tenant ID (e.g., DEMO-A5L32W, ACMEOIL-9K2P4H)
+   */
+  static generateTenantId(companyName: string): string {
+    // Extract company code (first 8 letters, uppercase, remove spaces/special chars)
+    const companyCode = companyName
+      .replace(/[^a-zA-Z]/g, '')
+      .toUpperCase()
+      .substring(0, 8);
+
+    if (companyCode.length === 0) {
+      throw new Error('Company name must contain at least one letter');
+    }
+
+    // Generate 6-character random suffix (alphanumeric, uppercase)
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let randomSuffix = '';
+    for (let i = 0; i < 6; i++) {
+      randomSuffix += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+
+    return `${companyCode}-${randomSuffix}`;
+  }
+
+  /**
+   * Generate a cryptographically secure secret key
+   * @returns Object with plaintext secret (show once to user) and hash (store in DB)
+   */
+  static generateSecretKey(): { secret: string; hash: string } {
+    // Generate 32-byte (256-bit) random secret
+    const secret = crypto.randomBytes(32).toString('base64');
+
+    // Hash the secret using SHA-256 for storage
+    const hash = crypto.createHash('sha256').update(secret).digest('hex');
+
+    return { secret, hash };
+  }
+
+  /**
+   * Validate a provided secret key against stored hash
+   * Uses constant-time comparison to prevent timing attacks
+   * @param providedSecret - Secret key provided by mobile app
+   * @returns True if secret is valid
+   */
+  validateSecretKey(providedSecret: string): boolean {
+    try {
+      // Hash the provided secret
+      const providedHash = crypto
+        .createHash('sha256')
+        .update(providedSecret)
+        .digest('hex');
+
+      // Convert to buffers for constant-time comparison
+      const storedBuffer = Buffer.from(this.props.secretKeyHash, 'hex');
+      const providedBuffer = Buffer.from(providedHash, 'hex');
+
+      // Constant-time comparison to prevent timing attacks
+      return crypto.timingSafeEqual(storedBuffer, providedBuffer);
+    } catch {
+      // timingSafeEqual throws if buffer lengths don't match
+      return false;
+    }
+  }
+
+  /**
+   * Rotate secret key (invalidate old one, generate new one)
+   * Used when secret is compromised or for periodic security rotation
+   * @returns Object with new plaintext secret (show once to user) and updated tenant
+   */
+  rotateSecretKey(): { newSecret: string; tenant: Tenant } {
+    if (this.props.status.isDeleted()) {
+      throw new Error('Cannot rotate secret for deleted tenant');
+    }
+
+    const { secret, hash } = Tenant.generateSecretKey();
+
+    this.props.secretKeyHash = hash;
+    this.props.secretRotatedAt = new Date();
+    this.props.updatedAt = new Date();
+
+    return { newSecret: secret, tenant: this };
   }
 
   /**

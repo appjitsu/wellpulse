@@ -25,7 +25,9 @@ import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
+import { eq } from 'drizzle-orm';
 import * as tenantSchema from './schema/tenant';
+import * as masterSchema from './master/schema';
 
 /**
  * Connection pool configuration per tenant
@@ -50,6 +52,9 @@ export class TenantDatabaseService implements OnModuleDestroy {
   // Map of tenantId -> connection pool
   private readonly connections = new Map<string, TenantConnection>();
 
+  // Master database connection for looking up tenant metadata
+  private readonly masterDb: NodePgDatabase<typeof masterSchema>;
+
   // Default connection pool configuration
   private readonly defaultPoolConfig: PoolConfig = {
     max: 10, // Max 10 connections per tenant
@@ -58,7 +63,15 @@ export class TenantDatabaseService implements OnModuleDestroy {
     connectionTimeoutMillis: 5000, // 5 second timeout for acquiring connection
   };
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(private readonly configService: ConfigService) {
+    // Initialize master database connection
+    const masterDbUrl = this.configService.get<string>('MASTER_DATABASE_URL');
+    if (!masterDbUrl) {
+      throw new Error('MASTER_DATABASE_URL not configured');
+    }
+    const masterPool = new Pool({ connectionString: masterDbUrl });
+    this.masterDb = drizzle(masterPool, { schema: masterSchema });
+  }
 
   /**
    * Get database connection for a tenant
@@ -84,6 +97,26 @@ export class TenantDatabaseService implements OnModuleDestroy {
   }
 
   /**
+   * Look up tenant's database name from master database
+   *
+   * @param tenantId - Unique tenant identifier
+   * @returns Database name from tenant record
+   */
+  private async lookupDatabaseName(tenantId: string): Promise<string> {
+    const tenant = await this.masterDb
+      .select()
+      .from(masterSchema.tenants)
+      .where(eq(masterSchema.tenants.id, tenantId))
+      .limit(1);
+
+    if (!tenant || tenant.length === 0) {
+      throw new Error(`Tenant '${tenantId}' not found in master database`);
+    }
+
+    return tenant[0].databaseName;
+  }
+
+  /**
    * Create a new database connection for a tenant
    *
    * @param tenantId - Unique tenant identifier
@@ -101,9 +134,9 @@ export class TenantDatabaseService implements OnModuleDestroy {
     const password =
       this.configService.get<string>('POSTGRES_PASSWORD') || 'wellpulse';
 
-    // Use provided database name, or fall back to convention-based naming
-    // Convention: {slug}_wellpulse (e.g., 'acme_wellpulse')
-    const database = databaseName || `${tenantId.replace(/-/g, '_')}_wellpulse`;
+    // If database name not provided, look it up from master database
+    // This ensures we always use the correct database name from the tenant record
+    const database = databaseName || (await this.lookupDatabaseName(tenantId));
 
     // Create PostgreSQL connection pool
     const pool = new Pool({

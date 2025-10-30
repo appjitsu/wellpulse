@@ -51,6 +51,7 @@ A comprehensive collection of architectural, design, and implementation patterns
 - **[34 - Frontend Template Method Pattern](./34-Frontend-Template-Method-Pattern.md)** - Algorithm structure definition
 - **[35 - Frontend Visitor Pattern](./35-Frontend-Visitor-Pattern.md)** - Operation separation from objects
 - **[36 - Frontend Patterns Integration Architecture](./36-Frontend-Patterns-Integration-Architecture.md)** ⭐ - Frontend pattern combination guide
+- **[77 - Form Field Auto-Generation Pattern](./77-Form-Field-Auto-Generation-Pattern.md)** 🆕 📝 - Cascading form field auto-generation with React Hook Form
 
 ---
 
@@ -83,6 +84,9 @@ A comprehensive collection of architectural, design, and implementation patterns
 - **[51 - Feature Flags Pattern](./51-Feature-Flags-Pattern.md)** - Progressive feature rollout
 - **[73 - Custom Metrics Dashboard Pattern](./73-Custom-Metrics-Dashboard-Pattern.md)** 🆕 💰 - Cost-saving alternative to Grafana on Azure
 - **[74 - Stress Testing and Load Testing Pattern](./74-Stress-Testing-And-Load-Testing-Pattern.md)** 🆕 ⚡ - Artillery & custom scripts for performance testing
+- **[75 - Database Provisioning Automation Pattern](./75-Database-Provisioning-Automation-Pattern.md)** 🆕 🗄️ - Automated database lifecycle management with Bash scripts
+- **[76 - Cross-Platform Code Reuse Pattern](./76-Cross-Platform-Code-Reuse-Pattern.md)** 🆕 📱 - React Native monorepo for iOS/Android/macOS/Windows with 75-85% code sharing
+- **[78 - Backend Communication Template Pattern](./78-Backend-Communication-Template-Pattern.md)** 🆕 📧 - Email/SMS template management with type-safe rendering
 
 ---
 
@@ -102,6 +106,7 @@ A comprehensive collection of architectural, design, and implementation patterns
 - **[61 - Value Object Layer Boundary Pattern](./61-Value-Object-Layer-Boundary-Pattern.md)** 🆕 - Accessing value objects across architectural layers
 - **[62 - React Query Cache Invalidation Pattern](./62-React-Query-Cache-Invalidation-Pattern.md)** 🆕 - Proper cache invalidation to avoid race conditions
 - **[63 - PostgreSQL JSONB Undefined Value Handling](./63-PostgreSQL-JSONB-Undefined-Value-Handling.md)** 🆕 - Handling undefined values in JSONB columns
+- **[79 - Statistical Test Data Generation Pattern](./79-Statistical-Test-Data-Generation-Pattern.md)** 🆕 🎲 - Probability-based test data generation with intentional outliers
 
 ---
 
@@ -281,13 +286,13 @@ Apply PSA-specific patterns:
 
 ## 📊 Pattern Statistics
 
-- **Total Patterns:** 65
+- **Total Patterns:** 67
 - **Architectural Patterns:** 17
-- **Frontend Patterns:** 19
+- **Frontend Patterns:** 20
 - **Backend Patterns:** 5
-- **Integration Patterns:** 12 (includes #74 Stress Testing)
+- **Integration Patterns:** 13 (includes #73, #74, #75)
 - **Implementation Patterns:** 12
-- **New Patterns (October 2025):** 8 (58, 59, 60, 61, 62, 63, 73, 74)
+- **New Patterns (October 2025):** 10 (58, 59, 60, 61, 62, 63, 73, 74, 75, 77)
 
 ---
 
@@ -328,6 +333,6 @@ Apply PSA-specific patterns:
 
 ---
 
-**Last Updated:** October 24, 2025
-**Pattern Count:** 65 patterns
-**Version:** 2.5 (Sprint 8A + Custom Metrics Dashboard + Stress Testing)
+**Last Updated:** October 25, 2025
+**Pattern Count:** 67 patterns
+**Version:** 2.7 (Sprint 3-C + Database Provisioning Automation + Form Auto-Generation)

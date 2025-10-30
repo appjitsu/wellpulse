@@ -28,12 +28,14 @@ The Database-Agnostic Multi-Tenant Pattern extends the Database-Per-Tenant archi
 ## The Problem
 
 **Scenario**: WellPulse onboards Texas Energy Co., a mid-sized operator who:
+
 - Has 10 years of production data in **Microsoft SQL Server**
 - Uses SQL Server Analysis Services for reporting
 - IT team experienced with SQL Server, unfamiliar with PostgreSQL
 - Wants to keep SQL Server as their source of truth
 
 **Current Architecture Limitation**:
+
 ```typescript
 // Drizzle ORM is PostgreSQL-specific
 const db = drizzle(pool); // Only works with PostgreSQL
@@ -55,6 +57,7 @@ await db.select().from(wellsTable).where(...); // PostgreSQL syntax
 **Implementation**: No changes needed (current architecture works as-is)
 
 **Advantages**:
+
 - ✅ Zero complexity
 - ✅ Fastest performance (direct Drizzle ORM queries)
 - ✅ Full feature support (ML, real-time sync, etc.)
@@ -142,12 +145,7 @@ export class PostgresWellRepository implements IWellRepository {
     const results = await db
       .select()
       .from(wellsTable)
-      .where(
-        and(
-          eq(wellsTable.id, wellId),
-          eq(wellsTable.deletedAt, null)
-        )
-      )
+      .where(and(eq(wellsTable.id, wellId), eq(wellsTable.deletedAt, null)))
       .limit(1);
 
     return results[0] ? this.toDomain(results[0]) : null;
@@ -191,10 +189,7 @@ export class PostgresWellRepository implements IWellRepository {
   async delete(tenantId: string, wellId: string): Promise<void> {
     const db = await this.tenantDbService.getTenantDatabase(tenantId);
 
-    await db
-      .update(wellsTable)
-      .set({ deletedAt: new Date() })
-      .where(eq(wellsTable.id, wellId));
+    await db.update(wellsTable).set({ deletedAt: new Date() }).where(eq(wellsTable.id, wellId));
   }
 
   async count(tenantId: string): Promise<number> {
@@ -218,7 +213,7 @@ export class PostgresWellRepository implements IWellRepository {
         lease: row.lease,
         createdAt: row.created_at,
       },
-      row.id
+      row.id,
     );
   }
 
@@ -255,10 +250,7 @@ export class SqlServerWellRepository implements IWellRepository {
   async findById(tenantId: string, wellId: string): Promise<Well | null> {
     const pool = await this.tenantDbService.getSqlServerPool(tenantId);
 
-    const result = await pool
-      .request()
-      .input('wellId', mssql.VarChar, wellId)
-      .query(`
+    const result = await pool.request().input('wellId', mssql.VarChar, wellId).query(`
         SELECT id, name, api_number, latitude, longitude, status, lease, created_at
         FROM wells
         WHERE id = @wellId AND deleted_at IS NULL
@@ -310,8 +302,7 @@ export class SqlServerWellRepository implements IWellRepository {
       .input('longitude', mssql.Float, well.location.longitude)
       .input('status', mssql.VarChar, well.status)
       .input('lease', mssql.VarChar, well.lease)
-      .input('updated_at', mssql.DateTime, new Date())
-      .query(`
+      .input('updated_at', mssql.DateTime, new Date()).query(`
         MERGE INTO wells AS target
         USING (SELECT @id AS id) AS source
         ON target.id = source.id
@@ -336,8 +327,7 @@ export class SqlServerWellRepository implements IWellRepository {
     await pool
       .request()
       .input('wellId', mssql.VarChar, wellId)
-      .input('deletedAt', mssql.DateTime, new Date())
-      .query(`
+      .input('deletedAt', mssql.DateTime, new Date()).query(`
         UPDATE wells
         SET deleted_at = @deletedAt
         WHERE id = @wellId
@@ -366,7 +356,7 @@ export class SqlServerWellRepository implements IWellRepository {
         lease: row.lease,
         createdAt: row.created_at,
       },
-      row.id
+      row.id,
     );
   }
 }
@@ -406,7 +396,7 @@ export class RepositoryFactory {
         return this.mysqlWellRepo;
 
       case 'ORACLE':
-        // return this.oracleWellRepo; // Future
+      // return this.oracleWellRepo; // Future
 
       default:
         throw new Error(`Unsupported database type: ${tenant.databaseType}`);
@@ -442,12 +432,14 @@ export class GetWellByIdHandler implements IQueryHandler<GetWellByIdQuery> {
 ```
 
 **Advantages**:
+
 - ✅ Native performance (direct database queries)
 - ✅ Client keeps their preferred database
 - ✅ No data duplication
 - ✅ Real-time data access
 
 **Disadvantages**:
+
 - ❌ High complexity (4+ implementations per repository)
 - ❌ Limited to SQL databases with similar schemas
 - ❌ SQL syntax differences (migrations challenging)
@@ -501,16 +493,16 @@ export class GetWellByIdHandler implements IQueryHandler<GetWellByIdQuery> {
 export const tenants = pgTable('tenants', {
   // ... existing fields
   databaseType: varchar('database_type', { length: 50 }).notNull(),
-    // "POSTGRESQL" | "SQL_SERVER" | "MYSQL" | "ORACLE" | "ETL_SYNCED"
+  // "POSTGRESQL" | "SQL_SERVER" | "MYSQL" | "ORACLE" | "ETL_SYNCED"
 
   etlConfig: jsonb('etl_config'), // Only for ETL_SYNCED tenants
-    // {
-    //   sourceType: "SQL_SERVER" | "ORACLE" | "MYSQL" | "CUSTOM",
-    //   sourceConnection: "connection string",
-    //   syncInterval: 15, // minutes
-    //   schemaMapping: { ... }, // How to map client schema to WellPulse schema
-    //   lastSyncedAt: "2025-10-23T14:30:00Z"
-    // }
+  // {
+  //   sourceType: "SQL_SERVER" | "ORACLE" | "MYSQL" | "CUSTOM",
+  //   sourceConnection: "connection string",
+  //   syncInterval: 15, // minutes
+  //   schemaMapping: { ... }, // How to map client schema to WellPulse schema
+  //   lastSyncedAt: "2025-10-23T14:30:00Z"
+  // }
 });
 ```
 
@@ -597,7 +589,11 @@ export class EtlSyncService {
 
       // Sync each entity
       await this.syncWells(sourceDb, targetDb, tenant.etlConfig.schemaMapping.wells);
-      await this.syncProductionData(sourceDb, targetDb, tenant.etlConfig.schemaMapping.production_data);
+      await this.syncProductionData(
+        sourceDb,
+        targetDb,
+        tenant.etlConfig.schemaMapping.production_data,
+      );
       await this.syncEquipment(sourceDb, targetDb, tenant.etlConfig.schemaMapping.equipment);
 
       // Update last synced timestamp
@@ -616,9 +612,9 @@ export class EtlSyncService {
       case 'SQL_SERVER':
         return await mssql.connect(etlConfig.sourceConnection);
       case 'MYSQL':
-        // return await mysql.createConnection(etlConfig.sourceConnection);
+      // return await mysql.createConnection(etlConfig.sourceConnection);
       case 'ORACLE':
-        // return await oracledb.getConnection(etlConfig.sourceConnection);
+      // return await oracledb.getConnection(etlConfig.sourceConnection);
       default:
         throw new Error(`Unsupported source type: ${etlConfig.sourceType}`);
     }
@@ -644,13 +640,10 @@ export class EtlSyncService {
 
     // Load into WellPulse PostgreSQL (upsert)
     for (const well of transformedWells) {
-      await targetDb
-        .insert(wellsTable)
-        .values(well)
-        .onConflictDoUpdate({
-          target: wellsTable.id,
-          set: well,
-        });
+      await targetDb.insert(wellsTable).values(well).onConflictDoUpdate({
+        target: wellsTable.id,
+        set: well,
+      });
     }
 
     this.logger.log(`Synced ${transformedWells.length} wells`);
@@ -725,12 +718,14 @@ export class EtlSyncScheduler {
 ```
 
 **Advantages**:
+
 - ✅ Works with **any** database (even proprietary systems)
 - ✅ WellPulse still uses PostgreSQL only (simple codebase)
 - ✅ No client migration required
 - ✅ Can sync from multiple source systems simultaneously
 
 **Disadvantages**:
+
 - ❌ Data lag (15-60 minutes depending on sync interval)
 - ❌ ETL configuration complexity (schema mapping)
 - ❌ Potential conflicts if client modifies data directly
@@ -746,15 +741,15 @@ Beyond databases, oil & gas operators use various specialized software systems t
 
 ### Common O&G Software Systems
 
-| System Type | Examples | Integration Strategy |
-|-------------|----------|---------------------|
-| **SCADA** (Supervisory Control and Data Acquisition) | Emerson DeltaV, Schneider Electric, Rockwell Automation | ETL sync (read sensor data every 5 min) |
-| **Production Accounting** | PHDWin, OGsys, Quorum | ETL sync (read production allocations daily) |
-| **Land Management** | Quorum LandWorks, P2 BOLO, TrakTech | ETL sync (well ownership, leases) |
-| **GIS (Geographic Information Systems)** | Esri ArcGIS, MapInfo | API integration (geocoding, mapping) |
-| **LIMS (Laboratory Information Management)** | LabWare, Thermo Fisher | ETL sync (oil/gas/water analysis results) |
-| **ERP** (Enterprise Resource Planning) | SAP, Oracle, Microsoft Dynamics | ETL sync (cost data, invoices) |
-| **Regulatory Reporting** | Texas RRC, New Mexico OCD | API integration (submit compliance reports) |
+| System Type                                          | Examples                                                | Integration Strategy                         |
+| ---------------------------------------------------- | ------------------------------------------------------- | -------------------------------------------- |
+| **SCADA** (Supervisory Control and Data Acquisition) | Emerson DeltaV, Schneider Electric, Rockwell Automation | ETL sync (read sensor data every 5 min)      |
+| **Production Accounting**                            | PHDWin, OGsys, Quorum                                   | ETL sync (read production allocations daily) |
+| **Land Management**                                  | Quorum LandWorks, P2 BOLO, TrakTech                     | ETL sync (well ownership, leases)            |
+| **GIS (Geographic Information Systems)**             | Esri ArcGIS, MapInfo                                    | API integration (geocoding, mapping)         |
+| **LIMS (Laboratory Information Management)**         | LabWare, Thermo Fisher                                  | ETL sync (oil/gas/water analysis results)    |
+| **ERP** (Enterprise Resource Planning)               | SAP, Oracle, Microsoft Dynamics                         | ETL sync (cost data, invoices)               |
+| **Regulatory Reporting**                             | Texas RRC, New Mexico OCD                               | API integration (submit compliance reports)  |
 
 ### Integration Pattern for External Systems
 
@@ -837,30 +832,33 @@ export class EmersonScadaAdapter implements IIntegrationAdapter {
 
 ## Decision Matrix: Which Strategy to Use?
 
-| Client Scenario | Recommended Strategy | Reason |
-|----------------|---------------------|---------|
-| New client, no existing database | **Tier 1: PostgreSQL** | Simplest, fastest, cheapest |
-| Has SQL Server, willing to migrate | **Tier 1: PostgreSQL** + migration assistance | Long-term simplicity |
-| Has SQL Server, refuses to migrate, similar schema | **Tier 2: Adapter** | Native performance, real-time |
-| Has Oracle/MySQL, similar schema | **Tier 2: Adapter** | Native performance, real-time |
-| Has proprietary/incompatible database | **Tier 3: ETL Sync** | Only option for custom schemas |
-| Uses SCADA/production accounting software | **Tier 3: ETL Sync** | Read-only external system integration |
-| Legacy system must stay operational | **Tier 3: ETL Sync** | No disruption to existing system |
+| Client Scenario                                    | Recommended Strategy                          | Reason                                |
+| -------------------------------------------------- | --------------------------------------------- | ------------------------------------- |
+| New client, no existing database                   | **Tier 1: PostgreSQL**                        | Simplest, fastest, cheapest           |
+| Has SQL Server, willing to migrate                 | **Tier 1: PostgreSQL** + migration assistance | Long-term simplicity                  |
+| Has SQL Server, refuses to migrate, similar schema | **Tier 2: Adapter**                           | Native performance, real-time         |
+| Has Oracle/MySQL, similar schema                   | **Tier 2: Adapter**                           | Native performance, real-time         |
+| Has proprietary/incompatible database              | **Tier 3: ETL Sync**                          | Only option for custom schemas        |
+| Uses SCADA/production accounting software          | **Tier 3: ETL Sync**                          | Read-only external system integration |
+| Legacy system must stay operational                | **Tier 3: ETL Sync**                          | No disruption to existing system      |
 
 ---
 
 ## Implementation Roadmap
 
 ### Phase 1: MVP (Months 1-3)
+
 - ✅ Tier 1: PostgreSQL support only (80% of clients)
 - ✅ Offer PostgreSQL provisioning as part of onboarding
 
 ### Phase 2: Enterprise Features (Months 4-6)
+
 - ✅ Tier 2: SQL Server adapter (most common request)
 - ✅ Tier 3: ETL sync framework (generic)
 - ✅ SCADA integration (high value for clients)
 
 ### Phase 3: Full Multi-Database (Months 7-12)
+
 - ✅ Tier 2: MySQL, Oracle adapters
 - ✅ Tier 3: Pre-built adapters for PHDWin, OGsys, Quorum
 - ✅ Tier 3: GIS integration (ArcGIS, MapInfo)
@@ -870,17 +868,20 @@ export class EmersonScadaAdapter implements IIntegrationAdapter {
 ## Testing Strategy
 
 ### Unit Tests
+
 - Mock database adapters
 - Test schema mapping transformations
 - Test ETL sync logic with sample data
 
 ### Integration Tests
+
 - Test PostgreSQL adapter (primary)
 - Test SQL Server adapter with real SQL Server (Docker)
 - Test MySQL adapter with real MySQL (Docker)
 - Test ETL sync with sample source database
 
 ### E2E Tests
+
 - Create test tenant for each database type
 - Run full application workflows (auth, production entry, sync)
 - Verify data consistency across adapters
@@ -889,12 +890,12 @@ export class EmersonScadaAdapter implements IIntegrationAdapter {
 
 ## Pricing Recommendations
 
-| Tier | Database Support | Price/Month |
-|------|-----------------|-------------|
-| **Starter** | WellPulse-managed PostgreSQL (Azure) | $99 |
-| **Professional** | Client-managed PostgreSQL (Azure/AWS/on-prem) | $299 |
-| **Enterprise** | SQL Server, MySQL via Adapter | $999 |
-| **Enterprise Plus** | ETL sync from any database + external systems | $1,999 |
+| Tier                | Database Support                              | Price/Month |
+| ------------------- | --------------------------------------------- | ----------- |
+| **Starter**         | WellPulse-managed PostgreSQL (Azure)          | $99         |
+| **Professional**    | Client-managed PostgreSQL (Azure/AWS/on-prem) | $299        |
+| **Enterprise**      | SQL Server, MySQL via Adapter                 | $999        |
+| **Enterprise Plus** | ETL sync from any database + external systems | $1,999      |
 
 **Custom Integrations**: $5,000-$25,000 one-time setup fee for proprietary systems
 

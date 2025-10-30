@@ -40,6 +40,8 @@ export class User {
     private _passwordResetToken: string | null,
     private _passwordResetExpires: Date | null,
     private _lastLoginAt: Date | null,
+    private _azureObjectId: string | null,
+    private _ssoProvider: string | null,
     private readonly _createdAt: Date,
     private _updatedAt: Date,
   ) {}
@@ -74,6 +76,8 @@ export class User {
       null,
       null,
       null,
+      null, // azureObjectId
+      null, // ssoProvider
       new Date(),
       new Date(),
     );
@@ -95,6 +99,8 @@ export class User {
     passwordResetToken: string | null;
     passwordResetExpires: Date | null;
     lastLoginAt: Date | null;
+    azureObjectId?: string | null;
+    ssoProvider?: string | null;
     createdAt: Date;
     updatedAt: Date;
   }): User {
@@ -111,6 +117,8 @@ export class User {
       data.passwordResetToken,
       data.passwordResetExpires,
       data.lastLoginAt,
+      data.azureObjectId ?? null,
+      data.ssoProvider ?? null,
       data.createdAt,
       data.updatedAt,
     );
@@ -167,6 +175,14 @@ export class User {
 
   get updatedAt(): Date {
     return this._updatedAt;
+  }
+
+  get azureObjectId(): string | null {
+    return this._azureObjectId;
+  }
+
+  get ssoProvider(): string | null {
+    return this._ssoProvider;
   }
 
   // Business Logic Methods
@@ -318,6 +334,33 @@ export class User {
    */
   changeRole(newRole: UserRole): void {
     this._role = newRole;
+    this._updatedAt = new Date();
+  }
+
+  /**
+   * Update user role (used by SSO login to sync Azure AD groups)
+   */
+  updateRole(newRole: UserRole): void {
+    this._role = newRole;
+    this._updatedAt = new Date();
+  }
+
+  /**
+   * Set Azure AD integration fields
+   */
+  setAzureAd(azureObjectId: string): void {
+    this._azureObjectId = azureObjectId;
+    this._ssoProvider = 'azure-ad';
+    this._updatedAt = new Date();
+  }
+
+  /**
+   * Mark email as verified (for SSO users)
+   */
+  markEmailAsVerified(): void {
+    this._emailVerified = true;
+    this._emailVerificationCode = null;
+    this._emailVerificationExpires = null;
     this._updatedAt = new Date();
   }
 

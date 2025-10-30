@@ -9,6 +9,7 @@ import { Injectable, UnauthorizedException, Inject } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { JwtService } from '@nestjs/jwt';
 import { IUserRepository } from '../../../domain/repositories/user.repository.interface';
+import { ITenantRepository } from '../../../domain/repositories/tenant.repository.interface';
 
 /**
  * Login Command
@@ -19,6 +20,7 @@ export class LoginCommand {
     public readonly email: string,
     public readonly password: string,
     public readonly databaseName?: string,
+    public readonly isMobileOrDesktop?: boolean, // Flag to indicate mobile/desktop app login
   ) {}
 }
 
@@ -34,6 +36,7 @@ export interface LoginResult {
     name: string;
     role: string;
   };
+  tenantSecret?: string; // Only returned for first-time mobile/desktop login (when lastLoginAt is null)
 }
 
 /**
@@ -74,6 +77,8 @@ export class LoginHandler
   constructor(
     @Inject('IUserRepository')
     private readonly userRepository: IUserRepository,
+    @Inject('ITenantRepository')
+    private readonly tenantRepository: ITenantRepository,
     private readonly jwtService: JwtService,
   ) {}
 
@@ -115,7 +120,10 @@ export class LoginHandler
 
     const refreshToken = this.generateRefreshToken(user.id);
 
-    // 6. Update last login timestamp
+    // 6. Check if this is first login (for mobile/desktop secret generation)
+    const isFirstLogin = user.lastLoginAt === null;
+
+    // 7. Update last login timestamp
     user.updateLastLogin();
     await this.userRepository.update(
       command.tenantId,
@@ -123,7 +131,26 @@ export class LoginHandler
       command.databaseName,
     );
 
-    // 7. Return result
+    // 8. Generate tenant secret ONLY for first-time mobile/desktop login
+    let tenantSecret: string | undefined;
+    if (command.isMobileOrDesktop && isFirstLogin) {
+      // Retrieve tenant to rotate secret
+      const tenant = await this.tenantRepository.findById(command.tenantId);
+      if (tenant) {
+        // For mobile/desktop apps, return the tenant secret on FIRST login only
+        // This is the ONLY time the plaintext secret is sent to the client
+        // The client must securely store it in iOS Keychain or Android EncryptedSharedPreferences
+        //
+        // Security: Secret rotation only happens on first login to prevent invalidating
+        // existing mobile installations. If a user needs a new secret (lost device),
+        // they should use a dedicated "rotate secret" endpoint.
+        const { newSecret, tenant: updatedTenant } = tenant.rotateSecretKey();
+        await this.tenantRepository.update(updatedTenant);
+        tenantSecret = newSecret;
+      }
+    }
+
+    // 9. Return result
     return {
       accessToken,
       refreshToken,
@@ -133,6 +160,7 @@ export class LoginHandler
         name: user.name,
         role: user.role,
       },
+      tenantSecret, // Only populated for mobile/desktop first-time login
     };
   }
 

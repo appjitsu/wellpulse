@@ -14,8 +14,20 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import postgres from 'postgres';
+import * as postgresImport from 'postgres';
+import type { Sql } from 'postgres';
 import { Tenant } from '../../domain/tenants/tenant.entity';
+
+// Handle ESM/CommonJS compatibility
+// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
+const postgresDefault = (postgresImport as any).default;
+const postgres: (url: string, options?: { max?: number }) => Sql =
+  typeof postgresImport === 'function'
+    ? (postgresImport as unknown as (
+        url: string,
+        options?: { max?: number },
+      ) => Sql)
+    : (postgresDefault as (url: string, options?: { max?: number }) => Sql);
 
 export interface TenantProvisioningResult {
   databaseName: string;
@@ -99,16 +111,15 @@ export class TenantProvisioningService {
         `CREATE DATABASE ${this.sanitizeDatabaseName(databaseName)}`,
       );
       this.logger.log(`Created database: ${databaseName}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       // PostgreSQL error code 42P04 = database already exists
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      if (error.code === '42P04') {
+      const pgError = error as { code?: string; message?: string };
+      if (pgError.code === '42P04') {
         this.logger.warn(`Database already exists: ${databaseName}`);
         // This is OK - database creation is idempotent
       } else {
         throw new Error(
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          `Failed to create database ${databaseName}: ${error.message}`,
+          `Failed to create database ${databaseName}: ${pgError.message || 'Unknown error'}`,
         );
       }
     } finally {

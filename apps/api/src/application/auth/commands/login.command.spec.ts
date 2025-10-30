@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 /**
  * LoginHandler Tests
  *
@@ -20,16 +21,18 @@ import { User } from '../../../domain/users/user.entity';
 
 describe('LoginHandler', () => {
   let handler: LoginHandler;
-  let mockRepository: jest.Mocked<IUserRepository>;
+  let mockUserRepository: jest.Mocked<IUserRepository>;
+  let mockTenantRepository: jest.Mocked<any>;
   let mockJwtService: jest.Mocked<JwtService>;
 
   const validPassword = 'Test123!@#';
   const tenantId = 'tenant-123';
 
   beforeEach(() => {
-    // Create mock repository
-    mockRepository = {
+    // Create mock user repository
+    mockUserRepository = {
       findByEmail: jest.fn(),
+      findByAzureObjectId: jest.fn(),
       update: jest.fn(),
       findById: jest.fn(),
       findAll: jest.fn(),
@@ -39,6 +42,22 @@ describe('LoginHandler', () => {
       existsByEmail: jest.fn(),
     } as jest.Mocked<IUserRepository>;
 
+    // Create mock tenant repository
+    mockTenantRepository = {
+      findById: jest.fn(),
+      findBySlug: jest.fn(),
+      findBySubdomain: jest.fn(),
+      findByTenantId: jest.fn(),
+      findAll: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      slugExists: jest.fn(),
+      subdomainExists: jest.fn(),
+      countByStatus: jest.fn(),
+      findExpiredTrials: jest.fn(),
+    };
+
     // Create mock JWT service
     mockJwtService = {
       sign: jest.fn(),
@@ -46,7 +65,11 @@ describe('LoginHandler', () => {
     } as unknown as jest.Mocked<JwtService>;
 
     // Initialize handler with mocks
-    handler = new LoginHandler(mockRepository, mockJwtService);
+    handler = new LoginHandler(
+      mockUserRepository,
+      mockTenantRepository,
+      mockJwtService,
+    );
   });
 
   afterEach(() => {
@@ -73,8 +96,8 @@ describe('LoginHandler', () => {
           validPassword,
         );
 
-        mockRepository.findByEmail.mockResolvedValue(user);
-        mockRepository.update.mockResolvedValue(undefined);
+        mockUserRepository.findByEmail.mockResolvedValue(user);
+        mockUserRepository.update.mockResolvedValue(undefined);
         mockJwtService.sign
           .mockReturnValueOnce('mock-access-token')
           .mockReturnValueOnce('mock-refresh-token');
@@ -111,8 +134,8 @@ describe('LoginHandler', () => {
           validPassword,
         );
 
-        mockRepository.findByEmail.mockResolvedValue(user);
-        mockRepository.update.mockResolvedValue(undefined);
+        mockUserRepository.findByEmail.mockResolvedValue(user);
+        mockUserRepository.update.mockResolvedValue(undefined);
         mockJwtService.sign.mockReturnValue('token');
 
         // Act
@@ -147,8 +170,8 @@ describe('LoginHandler', () => {
           validPassword,
         );
 
-        mockRepository.findByEmail.mockResolvedValue(user);
-        mockRepository.update.mockResolvedValue(undefined);
+        mockUserRepository.findByEmail.mockResolvedValue(user);
+        mockUserRepository.update.mockResolvedValue(undefined);
         mockJwtService.sign.mockReturnValue('token');
 
         // Act
@@ -183,8 +206,8 @@ describe('LoginHandler', () => {
           validPassword,
         );
 
-        mockRepository.findByEmail.mockResolvedValue(user);
-        mockRepository.update.mockResolvedValue(undefined);
+        mockUserRepository.findByEmail.mockResolvedValue(user);
+        mockUserRepository.update.mockResolvedValue(undefined);
         mockJwtService.sign.mockReturnValue('token');
 
         // Act
@@ -193,7 +216,7 @@ describe('LoginHandler', () => {
         // Assert
         expect(user.lastLoginAt).not.toBe(beforeLogin);
         expect(user.lastLoginAt).toBeInstanceOf(Date);
-        expect(mockRepository.update).toHaveBeenCalledWith(
+        expect(mockUserRepository.update).toHaveBeenCalledWith(
           tenantId,
           user,
           undefined,
@@ -218,20 +241,20 @@ describe('LoginHandler', () => {
           databaseName,
         );
 
-        mockRepository.findByEmail.mockResolvedValue(user);
-        mockRepository.update.mockResolvedValue(undefined);
+        mockUserRepository.findByEmail.mockResolvedValue(user);
+        mockUserRepository.update.mockResolvedValue(undefined);
         mockJwtService.sign.mockReturnValue('token');
 
         // Act
         await handler.execute(command);
 
         // Assert
-        expect(mockRepository.findByEmail).toHaveBeenCalledWith(
+        expect(mockUserRepository.findByEmail).toHaveBeenCalledWith(
           tenantId,
           'user@acme.com',
           databaseName,
         );
-        expect(mockRepository.update).toHaveBeenCalledWith(
+        expect(mockUserRepository.update).toHaveBeenCalledWith(
           tenantId,
           user,
           databaseName,
@@ -248,7 +271,7 @@ describe('LoginHandler', () => {
           validPassword,
         );
 
-        mockRepository.findByEmail.mockResolvedValue(null);
+        mockUserRepository.findByEmail.mockResolvedValue(null);
 
         // Act & Assert
         await expect(handler.execute(command)).rejects.toThrow(
@@ -260,7 +283,7 @@ describe('LoginHandler', () => {
 
         // Verify no tokens were generated
         expect(mockJwtService.sign).not.toHaveBeenCalled();
-        expect(mockRepository.update).not.toHaveBeenCalled();
+        expect(mockUserRepository.update).not.toHaveBeenCalled();
       });
 
       it('should throw UnauthorizedException when password is incorrect', async () => {
@@ -279,7 +302,7 @@ describe('LoginHandler', () => {
           'WrongPassword123!',
         );
 
-        mockRepository.findByEmail.mockResolvedValue(user);
+        mockUserRepository.findByEmail.mockResolvedValue(user);
 
         // Act & Assert
         await expect(handler.execute(command)).rejects.toThrow(
@@ -300,7 +323,7 @@ describe('LoginHandler', () => {
           'nonexistent@acme.com',
           validPassword,
         );
-        mockRepository.findByEmail.mockResolvedValue(null);
+        mockUserRepository.findByEmail.mockResolvedValue(null);
 
         // Act & Assert
         const error1 = handler.execute(command1);
@@ -319,7 +342,7 @@ describe('LoginHandler', () => {
           'user@acme.com',
           'WrongPassword123!',
         );
-        mockRepository.findByEmail.mockResolvedValue(user);
+        mockUserRepository.findByEmail.mockResolvedValue(user);
 
         // Act & Assert - same error message
         const error2 = handler.execute(command2);
@@ -345,7 +368,7 @@ describe('LoginHandler', () => {
           validPassword,
         );
 
-        mockRepository.findByEmail.mockResolvedValue(user);
+        mockUserRepository.findByEmail.mockResolvedValue(user);
 
         // Act & Assert
         await expect(handler.execute(command)).rejects.toThrow(
@@ -375,7 +398,7 @@ describe('LoginHandler', () => {
           validPassword,
         );
 
-        mockRepository.findByEmail.mockResolvedValue(user);
+        mockUserRepository.findByEmail.mockResolvedValue(user);
 
         // Act & Assert
         await expect(handler.execute(command)).rejects.toThrow(
@@ -406,7 +429,7 @@ describe('LoginHandler', () => {
           'WrongPassword123!', // Wrong password
         );
 
-        mockRepository.findByEmail.mockResolvedValue(user);
+        mockUserRepository.findByEmail.mockResolvedValue(user);
 
         // Act & Assert - should fail on suspension, not password
         await expect(handler.execute(command)).rejects.toThrow(
@@ -430,7 +453,7 @@ describe('LoginHandler', () => {
           validPassword,
         );
 
-        mockRepository.findByEmail.mockResolvedValue(user);
+        mockUserRepository.findByEmail.mockResolvedValue(user);
 
         // Act & Assert
         await expect(handler.execute(command)).rejects.toThrow(
@@ -457,8 +480,8 @@ describe('LoginHandler', () => {
           validPassword,
         );
 
-        mockRepository.findByEmail.mockResolvedValue(user);
-        mockRepository.update.mockResolvedValue(undefined);
+        mockUserRepository.findByEmail.mockResolvedValue(user);
+        mockUserRepository.update.mockResolvedValue(undefined);
         mockJwtService.sign.mockReturnValue('token');
 
         // Act
@@ -488,8 +511,8 @@ describe('LoginHandler', () => {
           validPassword,
         );
 
-        mockRepository.findByEmail.mockResolvedValue(user);
-        mockRepository.update.mockResolvedValue(undefined);
+        mockUserRepository.findByEmail.mockResolvedValue(user);
+        mockUserRepository.update.mockResolvedValue(undefined);
         mockJwtService.sign.mockReturnValue('token');
 
         // Act
@@ -511,7 +534,7 @@ describe('LoginHandler', () => {
           validPassword,
         );
 
-        mockRepository.findByEmail.mockRejectedValue(
+        mockUserRepository.findByEmail.mockRejectedValue(
           new Error('Database connection failed'),
         );
 
@@ -537,9 +560,9 @@ describe('LoginHandler', () => {
           validPassword,
         );
 
-        mockRepository.findByEmail.mockResolvedValue(user);
+        mockUserRepository.findByEmail.mockResolvedValue(user);
         mockJwtService.sign.mockReturnValue('token');
-        mockRepository.update.mockRejectedValue(new Error('Update failed'));
+        mockUserRepository.update.mockRejectedValue(new Error('Update failed'));
 
         // Act & Assert
         await expect(handler.execute(command)).rejects.toThrow('Update failed');

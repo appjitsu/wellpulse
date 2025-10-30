@@ -23,6 +23,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { AuthController } from './auth.controller';
 import { EmailService } from '../../infrastructure/services/email.service';
 import { UserRepository } from '../../infrastructure/database/repositories/user.repository';
+import { TenantRepository } from '../../infrastructure/database/repositories/tenant.repository';
 import { TenantDatabaseService } from '../../infrastructure/database/tenant-database.service';
 import { RegisterUserHandler } from '../../application/auth/commands/register-user.command';
 import { VerifyEmailHandler } from '../../application/auth/commands/verify-email.command';
@@ -30,7 +31,11 @@ import { LoginHandler } from '../../application/auth/commands/login.command';
 import { RefreshTokenHandler } from '../../application/auth/commands/refresh-token.command';
 import { ForgotPasswordHandler } from '../../application/auth/commands/forgot-password.command';
 import { ResetPasswordHandler } from '../../application/auth/commands/reset-password.command';
+import { LoginAzureAdHandler } from '../../application/auth/commands/login-azure-ad.command';
 import { JwtStrategy } from '../../infrastructure/auth/strategies/jwt.strategy';
+import { AzureAdStrategy } from '../../infrastructure/auth/strategies/azure-ad.strategy';
+import { AzureAdRoleMapping } from '../../infrastructure/auth/azure-ad-role-mapping';
+import { TokenBlacklistService } from '../../infrastructure/services/token-blacklist.service';
 
 // Command handlers
 const CommandHandlers = [
@@ -40,6 +45,7 @@ const CommandHandlers = [
   RefreshTokenHandler,
   ForgotPasswordHandler,
   ResetPasswordHandler,
+  LoginAzureAdHandler,
 ];
 
 @Module({
@@ -76,6 +82,8 @@ const CommandHandlers = [
     // Services
     EmailService,
     TenantDatabaseService,
+    AzureAdRoleMapping,
+    TokenBlacklistService,
 
     // Repositories
     UserRepository,
@@ -83,13 +91,25 @@ const CommandHandlers = [
       provide: 'IUserRepository',
       useExisting: UserRepository,
     },
+    TenantRepository,
+    {
+      provide: 'ITenantRepository',
+      useExisting: TenantRepository,
+    },
 
     // Strategies
     JwtStrategy,
+    AzureAdStrategy,
 
     // Command handlers
     ...CommandHandlers,
   ],
-  exports: [UserRepository, 'IUserRepository', JwtModule, EmailService],
+  exports: [
+    UserRepository,
+    'IUserRepository',
+    JwtModule,
+    EmailService,
+    TokenBlacklistService,
+  ],
 })
 export class AuthModule {}

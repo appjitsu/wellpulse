@@ -8,13 +8,20 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, Plus, Mail, Edit, Trash2, MoreHorizontal } from 'lucide-react';
-import { useState } from 'react';
+import { Users, Plus, Mail, Edit, Trash2, MoreHorizontal, Filter } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { DataTable } from '@/components/ui/data-table';
 import { ColumnDef } from '@tanstack/react-table';
 import { Badge } from '@/components/ui/badge';
 import { DataTableColumnHeader } from '@/components/ui/data-table';
 import { UserDialog } from '@/components/users/user-dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,89 +30,53 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-
-// Mock user data
-interface User {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  tenantId: string;
-  tenantName: string;
-  role: string;
-  status: string;
-  lastActive: string;
-}
-
-const mockUsers: User[] = [
-  {
-    id: '1',
-    email: 'john@acme.com',
-    firstName: 'John',
-    lastName: 'Doe',
-    tenantId: 'acme-id',
-    tenantName: 'ACME Oil & Gas',
-    role: 'ADMIN',
-    status: 'ACTIVE',
-    lastActive: '2 min ago',
-  },
-  {
-    id: '2',
-    email: 'jane@acme.com',
-    firstName: 'Jane',
-    lastName: 'Smith',
-    tenantId: 'acme-id',
-    tenantName: 'ACME Oil & Gas',
-    role: 'MANAGER',
-    status: 'ACTIVE',
-    lastActive: '5 min ago',
-  },
-  {
-    id: '3',
-    email: 'bob@demo.com',
-    firstName: 'Bob',
-    lastName: 'Johnson',
-    tenantId: 'demo-id',
-    tenantName: 'Demo Corporation',
-    role: 'USER',
-    status: 'ACTIVE',
-    lastActive: '1 hour ago',
-  },
-  {
-    id: '4',
-    email: 'alice@demo.com',
-    firstName: 'Alice',
-    lastName: 'Williams',
-    tenantId: 'demo-id',
-    tenantName: 'Demo Corporation',
-    role: 'ADMIN',
-    status: 'ACTIVE',
-    lastActive: '3 hours ago',
-  },
-  {
-    id: '5',
-    email: 'charlie@internal.com',
-    firstName: 'Charlie',
-    lastName: 'Brown',
-    tenantId: 'internal-id',
-    tenantName: 'WellPulse Internal',
-    role: 'SUPER_ADMIN',
-    status: 'ACTIVE',
-    lastActive: 'Just now',
-  },
-];
+import * as adminApi from '@/lib/api/admin';
 
 export default function UsersPage() {
   const [userDialogOpen, setUserDialogOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedUser, setSelectedUser] = useState<adminApi.User | null>(null);
+  const [users, setUsers] = useState<adminApi.User[]>([]);
+  const [tenants, setTenants] = useState<adminApi.Tenant[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedTenantId, setSelectedTenantId] = useState<string>('all');
+  const [total, setTotal] = useState(0);
 
-  const tenants = [
-    { id: 'acme-id', name: 'ACME Oil & Gas' },
-    { id: 'demo-id', name: 'Demo Corporation' },
-    { id: 'internal-id', name: 'WellPulse Internal' },
-  ];
+  // Fetch tenants for the filter dropdown
+  useEffect(() => {
+    const fetchTenants = async () => {
+      try {
+        const response = await adminApi.getAllTenants({ limit: 1000 });
+        setTenants(response.tenants);
+      } catch (error) {
+        console.error('Failed to fetch tenants:', error);
+      }
+    };
+    fetchTenants();
+  }, []);
 
-  const columns: ColumnDef<User>[] = [
+  // Fetch users when tenant filter changes
+  useEffect(() => {
+    const fetchUsers = async () => {
+      setLoading(true);
+      try {
+        const response = await adminApi.getAllUsers({
+          limit: 100,
+          tenantId: selectedTenantId === 'all' ? undefined : selectedTenantId,
+        });
+        setUsers(response.users);
+        setTotal(response.total);
+      } catch (error) {
+        console.error('Failed to fetch users:', error);
+        setUsers([]);
+        setTotal(0);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUsers();
+  }, [selectedTenantId]);
+
+  const columns: ColumnDef<adminApi.User>[] = [
     {
       accessorKey: 'email',
       header: ({ column }) => <DataTableColumnHeader column={column} title="Email" />,
@@ -141,11 +112,16 @@ export default function UsersPage() {
       },
     },
     {
-      accessorKey: 'lastActive',
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Last Active" />,
-      cell: ({ row }) => (
-        <div className="text-sm text-muted-foreground">{row.getValue('lastActive')}</div>
-      ),
+      accessorKey: 'lastLoginAt',
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Last Login" />,
+      cell: ({ row }) => {
+        const lastLogin = row.getValue('lastLoginAt') as Date | null;
+        return (
+          <div className="text-sm text-muted-foreground">
+            {lastLogin ? new Date(lastLogin).toLocaleString() : 'Never'}
+          </div>
+        );
+      },
     },
     {
       id: 'actions',
@@ -187,7 +163,7 @@ export default function UsersPage() {
     setUserDialogOpen(true);
   };
 
-  const handleEditUser = (user: User) => {
+  const handleEditUser = (user: adminApi.User) => {
     setSelectedUser(user);
     setUserDialogOpen(true);
   };
@@ -201,7 +177,7 @@ export default function UsersPage() {
   const handleSendPasswordReset = async (userId: string) => {
     console.log('Send password reset:', userId);
     // TODO: Implement API call
-    alert('Password reset email sent!');
+    // Note: Using console.log for now until backend endpoint is implemented
   };
 
   const handleUserSubmit = async (values: unknown) => {
@@ -215,12 +191,34 @@ export default function UsersPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
-          <p className="text-muted-foreground">Manage all users across all tenants</p>
+          <p className="text-muted-foreground">
+            {selectedTenantId === 'all'
+              ? 'Manage all users across all tenants'
+              : `Manage users for ${tenants.find((t) => t.id === selectedTenantId)?.name || 'selected tenant'}`}
+          </p>
         </div>
-        <Button onClick={handleCreateUser}>
-          <Plus className="mr-2 h-4 w-4" />
-          Create User
-        </Button>
+        <div className="flex gap-4">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Select value={selectedTenantId} onValueChange={setSelectedTenantId}>
+              <SelectTrigger className="w-[250px]">
+                <SelectValue placeholder="Select tenant" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Tenants</SelectItem>
+                {tenants.map((tenant) => (
+                  <SelectItem key={tenant.id} value={tenant.id}>
+                    {tenant.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button onClick={handleCreateUser}>
+            <Plus className="mr-2 h-4 w-4" />
+            Create User
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -231,7 +229,7 @@ export default function UsersPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockUsers.length}</div>
+            <div className="text-2xl font-bold">{loading ? '...' : total}</div>
           </CardContent>
         </Card>
 
@@ -241,11 +239,13 @@ export default function UsersPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {
-                mockUsers.filter(
-                  (u) => u.lastActive.includes('min') || u.lastActive.includes('now'),
-                ).length
-              }
+              {loading
+                ? '...'
+                : users.filter((u) => {
+                    if (!u.lastLoginAt) return false;
+                    const minutesAgo = (Date.now() - new Date(u.lastLoginAt).getTime()) / 1000 / 60;
+                    return minutesAgo < 30;
+                  }).length}
             </div>
           </CardContent>
         </Card>
@@ -256,7 +256,7 @@ export default function UsersPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-purple-600">
-              {mockUsers.filter((u) => u.role.includes('ADMIN')).length}
+              {loading ? '...' : users.filter((u) => u.role.includes('ADMIN')).length}
             </div>
           </CardContent>
         </Card>
@@ -278,12 +278,18 @@ export default function UsersPage() {
           <CardDescription>View and manage all users across all tenants</CardDescription>
         </CardHeader>
         <CardContent>
-          <DataTable
-            columns={columns}
-            data={mockUsers}
-            searchKey="email"
-            searchPlaceholder="Search by email..."
-          />
+          {loading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="text-muted-foreground">Loading users...</div>
+            </div>
+          ) : (
+            <DataTable
+              columns={columns}
+              data={users}
+              searchKey="email"
+              searchPlaceholder="Search by email..."
+            />
+          )}
         </CardContent>
       </Card>
 
@@ -303,7 +309,7 @@ export default function UsersPage() {
               }
             : null
         }
-        tenants={tenants}
+        tenants={tenants.map((t) => ({ id: t.id, name: t.name }))}
         onSubmit={handleUserSubmit}
       />
     </div>

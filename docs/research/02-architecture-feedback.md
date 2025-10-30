@@ -1,47 +1,49 @@
- ▐▛███▜▌   Claude Code v2.0.19
-▝▜█████▛▘  Sonnet 4.5 · Claude Max
-  ▘▘ ▝▝    /Users/jason/projects/wellpulse
+▐▛███▜▌ Claude Code v2.0.19
+▝▜█████▛▘ Sonnet 4.5 · Claude Max
+▘▘ ▝▝ /Users/jason/projects/wellpulse
 
 > review the docs/research
 
 ⏺ I'll review the documentation in the docs/research directory to understand what research materials are available.
 
-⏺ Bash(find docs/research -type f -name "*.md" -o -name "*.txt" -o -name "*.pdf" 2>/dev/null | head -20)
-  ⎿  docs/research/01-permian-basin-market-research.md
+⏺ Bash(find docs/research -type f -name "_.md" -o -name "_.txt" -o -name "\*.pdf" 2>/dev/null | head -20)
+⎿  docs/research/01-permian-basin-market-research.md
 
 ⏺ Bash(ls -la docs/research 2>/dev/null || echo "docs/research directory does not exist")
-  ⎿  total 48
-     drwxr-xr-x   4 jason  staff    128 Oct 23 00:29 .
-     drwxr-xr-x  11 jason  staff    352 Oct 23 00:29 ..
-     … +2 lines (ctrl+o to expand)
+⎿  total 48
+drwxr-xr-x 4 jason staff 128 Oct 23 00:29 .
+drwxr-xr-x 11 jason staff 352 Oct 23 00:29 ..
+… +2 lines (ctrl+o to expand)
 
 ⏺ Read(docs/research/01-permian-basin-market-research.md)
-  ⎿  Read 452 lines
+⎿  Read 452 lines
 
 ⏺ Research Review: Permian Basin Market Analysis
 
-  I've reviewed the market research document for WellPulse. This is excellent foundational research that provides deep insights
-  into the Permian Basin oil & gas market. Let me break down the key findings:
+I've reviewed the market research document for WellPulse. This is excellent foundational research that provides deep insights
+into the Permian Basin oil & gas market. Let me break down the key findings:
 
-  ---
-  ★ Insight ─────────────────────────────────────
+---
 
-  1. Market Positioning Strategy: The research reveals a classic "enterprise gap" opportunity - 80% of Permian Basin operators are
+★ Insight ─────────────────────────────────────
+
+1. Market Positioning Strategy: The research reveals a classic "enterprise gap" opportunity - 80% of Permian Basin operators are
    small/medium independents who need enterprise-grade capabilities but can't afford $50K-$500K platforms. This positions
-  WellPulse perfectly for a "democratization" play.
+   WellPulse perfectly for a "democratization" play.
 
-  2. Pain Point Hierarchy: The research prioritizes opportunities by immediacy: (1) Production data consolidation → easiest to
-  understand, gateway project; (2) Predictive maintenance → clear ROI with cost savings; (3) ESG compliance → regulatory urgency
-  creates built-in demand.
+2. Pain Point Hierarchy: The research prioritizes opportunities by immediacy: (1) Production data consolidation → easiest to
+   understand, gateway project; (2) Predictive maintenance → clear ROI with cost savings; (3) ESG compliance → regulatory urgency
+   creates built-in demand.
 
-  3. Cultural Positioning: The financial discipline emphasis ("more math before green-lighting") and preference for fixed-price
-  contracts suggests messaging should focus on risk mitigation and guaranteed outcomes rather than innovation or transformation.
-  ─────────────────────────────────────────────────
+3. Cultural Positioning: The financial discipline emphasis ("more math before green-lighting") and preference for fixed-price
+   contracts suggests messaging should focus on risk mitigation and guaranteed outcomes rather than innovation or transformation.
+   ─────────────────────────────────────────────────
 
-  ---
-  Key Strategic Findings
+---
 
-  🎯 Market Opportunity
+Key Strategic Findings
+
+🎯 Market Opportunity
 
 - 6.6M barrels/day production volume
 - 80% controlled by small/medium independents (not majors)
@@ -57,22 +59,17 @@
 - Enterprise ($100K+): Advanced ML, ESG automation, ongoing support
 
   🔥 Top 3 Pain Points (Ranked)
-
   1. Data Management Chaos ⭐ HUGE OPPORTUNITY
 
 - Production data scattered across "dozens of disparate datasets"
 - Manual Excel tracking with no real-time visibility
 - No standardized templates for basin-by-basin tracking
-- Solution: Cloud-based data warehouses + ETL pipelines + custom dashboards
-
-  2. Predictive Maintenance ⭐ MASSIVE OPPORTUNITY
+- Solution: Cloud-based data warehouses + ETL pipelines + custom dashboards 2. Predictive Maintenance ⭐ MASSIVE OPPORTUNITY
 
 - Equipment failures = costly unplanned downtime (thousands per incident)
 - Reactive maintenance vs. proactive strategies
 - Labor shortage makes manual monitoring harder
-- Solution: ML models for early warning signs (vibration, temperature, pressure) + automated scheduling
-
-  3. ESG/Emissions Compliance ⭐ GROWING URGENCY
+- Solution: ML models for early warning signs (vibration, temperature, pressure) + automated scheduling 3. ESG/Emissions Compliance ⭐ GROWING URGENCY
 
 - ESG becoming mandatory, not optional
 - Complex infrastructure makes tracking difficult
@@ -86,7 +83,8 @@
 - Broadband gaps in outlying areas
 - Implication: Need offline-capable, edge computing solutions
 
-  ---
+  ***
+
   Competitive Positioning
 
   Direct Competitors (Enterprise Platforms)
@@ -96,14 +94,14 @@
 - Solomon (operational efficiency benchmarking)
 
   WellPulse's Competitive Advantages
-
   1. Price: 1/10th the cost of enterprise platforms
   2. Local Presence: Based in Midland - understands regional needs
   3. Faster Implementation: Agile delivery vs. slow enterprise rollouts
   4. Flexibility: Tailored solutions vs. one-size-fits-all
   5. Small Operator Focus: Built for 50-500 well operations
 
-  ---
+  ***
+
   Messaging That Will Resonate
 
   ✅ DO Say:
@@ -120,9 +118,9 @@
 - "Comprehensive platform" (they want specific solutions)
 - "Long-term transformation" (they want quick wins)
 
-  ---
-  Recommended Immediate Actions
+  ***
 
+  Recommended Immediate Actions
   1. Lead Generation Strategy
 
   Target Profile:
@@ -133,12 +131,11 @@
 - Currently using spreadsheets and disconnected tools
 
   Entry Point Offers:
-
   1. "Excel to Cloud in 90 Days" - Data consolidation starter package
   2. "Reduce Downtime by 20-30%" - Predictive maintenance MVP
   3. "ESG Compliance at $X/month" - Automated emissions reporting
 
-  2. Service Package Development
+  4. Service Package Development
 
   The research suggests building three specific packages:
 
@@ -151,9 +148,7 @@
 - Fixed pricing ranges
 - Clear deliverables
 - Timeline commitments
-- ROI projections
-
-  3. Case Study Framework
+- ROI projections 3. Case Study Framework
 
   Prepare templates for future clients:
 
@@ -161,13 +156,13 @@
 - Reactive → Predictive: Downtime reduced, cost avoidance
 - Manual → Automated: Compliance achieved, fines avoided
 
-  ---
+  ***
+
   Technical Implications for Platform Development
 
   Based on this research, WellPulse should prioritize:
 
   Core Capabilities
-
   1. Data Integration Layer: ETL pipelines for disparate data sources
   2. Real-Time Dashboards: Production monitoring with custom KPIs
   3. ML/Predictive Models: Equipment failure prediction
@@ -180,14 +175,14 @@
 - Mobile-First: Dashboard access in remote locations
 - API-First: Legacy system integration is critical
 
-  ---
+  ***
+
   Questions & Next Steps
 
   For You to Consider:
-
   1. Is WellPulse pivoting to be an O&G-focused PSA platform, or is this research for a different product/market?
   2. Current platform capabilities: Does WellPulse already have data integration, dashboards, or predictive analytics modules that
-   could be adapted for this market?
+     could be adapted for this market?
   3. Go-to-market timeline: When are you planning to launch these service packages?
 
   The research is comprehensive and actionable. The next logical step would be to:
@@ -199,117 +194,118 @@
   Would you like me to help with any of these implementation steps, or do you have specific questions about the research findings?
 
 > some of the files were copied from another project with is a PSA, so anything that mentions PSA will need to be removed to be
-inline with the research. this is a brand new project. there are no apps and has not been deployed and no git history.
+> inline with the research. this is a brand new project. there are no apps and has not been deployed and no git history.
 
 also i was thinking we should provide an electron app for field data entry on laptops, along with the react-native app for mobile
 devices. the api will be nest.js, the web app will be nex.js and react, database will be postgres. each client will need their own
- db which could be on-premises (hybrid cloud) or in the cloud completely. most like the api and web apps will be hosted on
+db which could be on-premises (hybrid cloud) or in the cloud completely. most like the api and web apps will be hosted on
 railway. the rest will be hosted in Azure or AWS clouds
 
 please see all of the software dev patterns in docs/patterns
 
 ⏺ Explore(Review software patterns catalog)
-  ⎿  Done (9 tool uses · 0 tokens · 1m 22s)
+⎿  Done (9 tool uses · 0 tokens · 1m 22s)
 
-⏺ Bash(ls -1 docs/patterns/*.md | wc -l)
-  ⎿  68
+⏺ Bash(ls -1 docs/patterns/\*.md | wc -l)
+⎿  68
 
-⏺ Bash(ls -1 docs/patterns/*.md | head -30)
-  ⎿  docs/patterns/01-RBAC-CASL-Pattern.md
-     docs/patterns/02-SOLID-Principles.md
-     docs/patterns/03-Hexagonal-Architecture.md
-     … +27 lines (ctrl+o to expand)
+⏺ Bash(ls -1 docs/patterns/\*.md | head -30)
+⎿  docs/patterns/01-RBAC-CASL-Pattern.md
+docs/patterns/02-SOLID-Principles.md
+docs/patterns/03-Hexagonal-Architecture.md
+… +27 lines (ctrl+o to expand)
 
 ⏺ Read(docs/patterns/README.md)
-  ⎿  Read 332 lines
+⎿  Read 332 lines
 
 ⏺ Now let me check which patterns are most relevant for your architecture and identify PSA-specific content that needs updating:
 
 ⏺ Read(docs/patterns/17-Multi-Tenancy-Pattern.md)
-  ⎿  Read 827 lines
+⎿  Read 827 lines
 
 ⏺ Read(docs/patterns/54-PSA-Patterns-And-Best-Practices.md)
-  ⎿  Read 1752 lines
+⎿  Read 1752 lines
 
-⏺ Bash(grep -l "PSA\|Professional Services" docs/patterns/*.md | head -10)
-  ⎿  docs/patterns/05-CQRS-Pattern.md
-     docs/patterns/41-Database-Constraint-Race-Condition-Pattern.md
-     docs/patterns/44-File-Upload-Download-Patterns.md
-     … +7 lines (ctrl+o to expand)
+⏺ Bash(grep -l "PSA\|Professional Services" docs/patterns/\*.md | head -10)
+⎿  docs/patterns/05-CQRS-Pattern.md
+docs/patterns/41-Database-Constraint-Race-Condition-Pattern.md
+docs/patterns/44-File-Upload-Download-Patterns.md
+… +7 lines (ctrl+o to expand)
 
 ⏺ Perfect! Now I have a clear understanding. Let me create a comprehensive analysis and action plan for your WellPulse oil & gas
-  field data management platform.
+field data management platform.
 
 ⏺ WellPulse Architecture Analysis
 
-  Perfect! I've reviewed everything. Here's my comprehensive analysis:
+Perfect! I've reviewed everything. Here's my comprehensive analysis:
 
-  ---
-  ★ Insight ─────────────────────────────────────
+---
 
-  1. Hybrid Cloud Multi-Tenancy Challenge: Your architecture needs to support BOTH on-premises databases (for clients with data
-  sovereignty requirements) AND full cloud deployments. This is more complex than standard multi-tenancy since you can't rely on a
+★ Insight ─────────────────────────────────────
+
+1. Hybrid Cloud Multi-Tenancy Challenge: Your architecture needs to support BOTH on-premises databases (for clients with data
+   sovereignty requirements) AND full cloud deployments. This is more complex than standard multi-tenancy since you can't rely on a
    shared database with row-level security. Each client needs database-per-tenant isolation.
 
-  2. Offline-First Field Operations: The Electron (laptops) and React Native (mobile) apps for field data entry must work without
-  connectivity. This requires sophisticated sync logic, conflict resolution, and local storage patterns - the patterns catalog has
+2. Offline-First Field Operations: The Electron (laptops) and React Native (mobile) apps for field data entry must work without
+   connectivity. This requires sophisticated sync logic, conflict resolution, and local storage patterns - the patterns catalog has
    excellent foundations for this (Event Sourcing + CQRS + Local-First State).
 
-  3. PSA → O&G Domain Translation: The patterns are solid but language needs updating. "PSA" becomes "Field Data Management
-  Platform", "Clients" becomes "Operators" or "Well Sites", "Time Entries" becomes "Field Data Records", "Invoices" becomes
-  irrelevant (unless you're building billing for WellPulse as a service).
-  ─────────────────────────────────────────────────
+3. PSA → O&G Domain Translation: The patterns are solid but language needs updating. "PSA" becomes "Field Data Management
+   Platform", "Clients" becomes "Operators" or "Well Sites", "Time Entries" becomes "Field Data Records", "Invoices" becomes
+   irrelevant (unless you're building billing for WellPulse as a service).
+   ─────────────────────────────────────────────────
 
-  ---
-  Architecture Recommendations
+---
 
-  1. Multi-Tenant Database Strategy
+Architecture Recommendations
 
-  Based on your requirements (on-prem hybrid + cloud), you need Database-Per-Tenant rather than shared database:
+1. Multi-Tenant Database Strategy
 
-  Tenant Type 1: Full Cloud (hosted on Azure/AWS)
-  ├── Tenant DB: wellpulse_client_acme (PostgreSQL in cloud)
-  ├── API: Shared NestJS API on Railway
-  └── Web: Shared Next.js on Railway
+Based on your requirements (on-prem hybrid + cloud), you need Database-Per-Tenant rather than shared database:
 
-  Tenant Type 2: Hybrid (on-premises DB)
-  ├── Tenant DB: Local PostgreSQL on client's network
-  ├── API: Shared NestJS API on Railway (secure VPN connection)
-  └── Web: Shared Next.js on Railway
+Tenant Type 1: Full Cloud (hosted on Azure/AWS)
+├── Tenant DB: wellpulse_client_acme (PostgreSQL in cloud)
+├── API: Shared NestJS API on Railway
+└── Web: Shared Next.js on Railway
 
-  Tenant Type 3: Fully On-Prem (air-gapped)
-  ├── Tenant DB: Local PostgreSQL
-  ├── API: Self-hosted NestJS API (Docker container on client infrastructure)
-  └── Web: Self-hosted Next.js (Docker container on client infrastructure)
+Tenant Type 2: Hybrid (on-premises DB)
+├── Tenant DB: Local PostgreSQL on client's network
+├── API: Shared NestJS API on Railway (secure VPN connection)
+└── Web: Shared Next.js on Railway
 
-  Relevant Patterns:
+Tenant Type 3: Fully On-Prem (air-gapped)
+├── Tenant DB: Local PostgreSQL
+├── API: Self-hosted NestJS API (Docker container on client infrastructure)
+└── Web: Self-hosted Next.js (Docker container on client infrastructure)
+
+Relevant Patterns:
 
 - Pattern 17 - Multi-Tenancy (needs major updates for database-per-tenant)
 - Pattern 9 - Unit of Work (managing transactions across tenant-specific databases)
 - Pattern 14 - Anti-Corruption Layer (for hybrid deployments with VPN connections)
 
-  ---
-
+  ***
   2. Offline-First Field Data Entry
 
   Your Electron + React Native apps need to work in remote oil fields with spotty connectivity:
 
   // Local-first architecture for field devices
   Interface FieldDataApp {
-    // Local Storage Layer
-    LocalDatabase: SQLite or IndexedDB
+  // Local Storage Layer
+  LocalDatabase: SQLite or IndexedDB
 
-    // Sync Engine
-    ConflictResolver: Last-Write-Wins | Custom Business Rules
-    SyncQueue: Pending operations waiting for connectivity
+  // Sync Engine
+  ConflictResolver: Last-Write-Wins | Custom Business Rules
+  SyncQueue: Pending operations waiting for connectivity
 
-    // Data Layer
-    LocalRepository: CRUD against local DB
-    SyncRepository: Push/pull from cloud when online
+  // Data Layer
+  LocalRepository: CRUD against local DB
+  SyncRepository: Push/pull from cloud when online
 
-    // State Management
-    OfflineState: Track connectivity status
-    SyncState: Track sync progress
+  // State Management
+  OfflineState: Track connectivity status
+  SyncState: Track sync progress
   }
 
   Relevant Patterns:
@@ -319,56 +315,53 @@ please see all of the software dev patterns in docs/patterns
 - Pattern 46 - Caching Strategy (local caching for offline reads)
 - Pattern 43 - WebSocket RealTime (for live sync when connectivity returns)
 
-  ---
-
+  ***
   3. Tech Stack Mapping
 
-  | Component          | Technology                             | Hosting                             | Purpose
-                  |
+  | Component | Technology | Hosting | Purpose
+  |
   |--------------------|----------------------------------------|-------------------------------------|---------------------------
   ----------------|
-  | API                | NestJS + Hexagonal Architecture        | Railway (cloud) or Docker (on-prem) | Core business logic,
+  | API | NestJS + Hexagonal Architecture | Railway (cloud) or Docker (on-prem) | Core business logic,
   multi-tenant routing |
-  | Web Dashboard      | Next.js 15 + React 19 + Tailwind CSS 4 | Railway (cloud) or Docker (on-prem) | Office/management
-  interface               |
-  | Field App (Laptop) | Electron + React                       | Installed on field laptops          | Offline-capable data entry
-                  |
-  | Field App (Mobile) | React Native + Expo                    | iOS/Android native                  | Mobile data entry
-                  |
-  | Database           | PostgreSQL (per-tenant)                | Azure/AWS (cloud) or on-premises    | Data storage
-                  |
-  | File Storage       | Azure Blob / AWS S3                    | Cloud or on-prem MinIO              | PDFs, photos, attachments
-                  |
-  | Caching            | Redis                                  | Railway or self-hosted              | Session management, API
-  caching           |
-  | Queue              | Bull/BullMQ + Redis                    | Railway or self-hosted              | Background jobs, sync
-  queues              |
+  | Web Dashboard | Next.js 15 + React 19 + Tailwind CSS 4 | Railway (cloud) or Docker (on-prem) | Office/management
+  interface |
+  | Field App (Laptop) | Electron + React | Installed on field laptops | Offline-capable data entry
+  |
+  | Field App (Mobile) | React Native + Expo | iOS/Android native | Mobile data entry
+  |
+  | Database | PostgreSQL (per-tenant) | Azure/AWS (cloud) or on-premises | Data storage
+  |
+  | File Storage | Azure Blob / AWS S3 | Cloud or on-prem MinIO | PDFs, photos, attachments
+  |
+  | Caching | Redis | Railway or self-hosted | Session management, API
+  caching |
+  | Queue | Bull/BullMQ + Redis | Railway or self-hosted | Background jobs, sync
+  queues |
 
-  ---
-
+  ***
   4. PSA References to Remove/Update
 
   Based on my analysis, here are files with PSA-specific content:
 
-  | File                                                | PSA References
-     | Recommended Changes                                                                  |
+  | File | PSA References
+  | Recommended Changes |
 
-  |-----------------------------------------------------|-------------------------------------------------------------------------
-  ---|--------------------------------------------------------------------------------------|
-  | docs/patterns/README.md                             | Line 1: "WellPulse Pattern Library", Line 3: "WellPulse PSA platform"
+  | ----------------------------------------------------- | ------------------------------------------------------------------------- |
+  | ----------------------------------------------------- | ------------------------------------------------------------------------- |
+  | docs/patterns/README.md                               | Line 1: "WellPulse Pattern Library", Line 3: "WellPulse PSA platform"     |
 
-     | Change to "WellPulse Pattern Library" and "WellPulse Field Data Management Platform" |
+  | Change to "WellPulse Pattern Library" and "WellPulse Field Data Management Platform" |
   | docs/patterns/54-PSA-Patterns-And-Best-Practices.md | Entire file focused on PSA domain (clients, invoices, time tracking)
-     | Rename to "54-Oil-Gas-Field-Data-Patterns.md" and rewrite for O&G domain             |
-  | docs/patterns/17-Multi-Tenancy-Pattern.md           | Lines 11, 35: "WellPulse uses Row-Level Security"
-     | Update to "WellPulse uses Database-Per-Tenant"                                       |
-  | docs/patterns/05-CQRS-Pattern.md                    | Likely has PSA examples
-     | Update examples to use Field Data Records, Equipment, Well Sites                     |
-  | CLAUDE.md                                           | Lines 8-9: "WellPulse - a Professional Services Automation (PSA)
-  platform" | Update to "WellPulse - an Oil & Gas Field Data Management Platform"                  |
+  | Rename to "54-Oil-Gas-Field-Data-Patterns.md" and rewrite for O&G domain |
+  | docs/patterns/17-Multi-Tenancy-Pattern.md | Lines 11, 35: "WellPulse uses Row-Level Security"
+  | Update to "WellPulse uses Database-Per-Tenant" |
+  | docs/patterns/05-CQRS-Pattern.md | Likely has PSA examples
+  | Update examples to use Field Data Records, Equipment, Well Sites |
+  | CLAUDE.md | Lines 8-9: "WellPulse - a Professional Services Automation (PSA)
+  platform" | Update to "WellPulse - an Oil & Gas Field Data Management Platform" |
 
-  ---
-
+  ***
   5. Pattern Mapping to Oil & Gas Use Cases
 
   Based on the market research (docs/research/01-permian-basin-market-research.md), here's how patterns map to O&G needs:
@@ -385,13 +378,14 @@ please see all of the software dev patterns in docs/patterns
 - Pattern 53 - Database Performance Optimization: Indexes for time-series queries
 
   Architecture:
-  Data Sources (Legacy)          WellPulse ETL Layer          Unified Database
-  ├── Excel Spreadsheets    →   CSV Adapter           →
-  ├── SCADA System          →   SCADA ACL             →   PostgreSQL
-  ├── Legacy Database       →   SQL Adapter           →   (time-series optimized)
-  └── Manual Entry          →   Form Input            →
+  Data Sources (Legacy) WellPulse ETL Layer Unified Database
+  ├── Excel Spreadsheets → CSV Adapter →
+  ├── SCADA System → SCADA ACL → PostgreSQL
+  ├── Legacy Database → SQL Adapter → (time-series optimized)
+  └── Manual Entry → Form Input →
 
-  ---
+  ***
+
   Pain Point 2: Predictive Maintenance ⭐ MASSIVE OPPORTUNITY
 
   Use Case: ML models monitoring equipment sensors (vibration, temperature, pressure) to predict failures
@@ -404,13 +398,14 @@ please see all of the software dev patterns in docs/patterns
 - Pattern 13 - Circuit Breaker: Fail gracefully when sensor data unavailable
 
   Architecture:
-  Sensor Data Stream    →   ML Prediction Engine   →   Alert System
-  ├── Vibration sensors     Python/scikit-learn        Email/SMS
-  ├── Temperature           (via NestJS Worker)        Dashboard alerts
-  ├── Pressure              Redis queue                Mobile push notifications
-  └── Flow rate             Event-driven processing
+  Sensor Data Stream → ML Prediction Engine → Alert System
+  ├── Vibration sensors Python/scikit-learn Email/SMS
+  ├── Temperature (via NestJS Worker) Dashboard alerts
+  ├── Pressure Redis queue Mobile push notifications
+  └── Flow rate Event-driven processing
 
-  ---
+  ***
+
   Pain Point 3: ESG/Emissions Compliance ⭐ GROWING URGENCY
 
   Use Case: Automated emissions calculations from production data + regulatory reporting
@@ -423,13 +418,14 @@ please see all of the software dev patterns in docs/patterns
 - Pattern 52 - User-Friendly Error Handling: Translate compliance errors to actionable messages
 
   Architecture:
-  Production Data   →   Emissions Calculator   →   Compliance Reports
-  ├── Oil volume        Business rules             PDF generation
-  ├── Gas flaring       (Specification Pattern)    CSV exports
-  ├── Equipment hrs     Domain logic               EPA/state format
-  └── Fuel usage        Scheduled job              Dashboard KPIs
+  Production Data → Emissions Calculator → Compliance Reports
+  ├── Oil volume Business rules PDF generation
+  ├── Gas flaring (Specification Pattern) CSV exports
+  ├── Equipment hrs Domain logic EPA/state format
+  └── Fuel usage Scheduled job Dashboard KPIs
 
-  ---
+  ***
+
   Pain Point 4: Offline Field Data Entry
 
   Use Case: Field operators enter data on laptops/tablets at remote well sites without internet
@@ -442,18 +438,16 @@ please see all of the software dev patterns in docs/patterns
 - Pattern 25 - Frontend State Management: Zustand for offline state
 
   Architecture:
-  Field Device (Offline)           Cloud API (When Online)
-  ├── SQLite local database   →    Sync endpoint
-  ├── Event log (append-only)  →    Conflict resolution
-  ├── Queue pending changes    →    PostgreSQL persistence
-  └── Auto-sync when online    →    Real-time dashboard update
+  Field Device (Offline) Cloud API (When Online)
+  ├── SQLite local database → Sync endpoint
+  ├── Event log (append-only) → Conflict resolution
+  ├── Queue pending changes → PostgreSQL persistence
+  └── Auto-sync when online → Real-time dashboard update
 
-  ---
-
+  ***
   6. New Patterns Needed for WellPulse
 
   Based on O&G requirements, you'll need these NEW patterns not in the catalog:
-
   1. Time-Series Data Pattern: Production data is time-series heavy (well production over time, sensor readings)
   2. Geospatial Data Pattern: Well locations, lease boundaries, pipeline routes (PostGIS)
   3. Equipment Hierarchy Pattern: Wells → Wellheads → Pumps → Sensors (nested aggregates)
@@ -461,82 +455,83 @@ please see all of the software dev patterns in docs/patterns
   5. Photo/Document Attachment Pattern: Field operators attach photos of equipment, leak reports
   6. Offline Sync Conflict Resolution Pattern: Last-write-wins vs business-rule-based merging
 
-  ---
-
+  ***
   7. Immediate Next Steps
 
 ⏺ ---
-  Recommendations for Moving Forward
+Recommendations for Moving Forward
 
-  Option 1: Clean Slate Approach (Recommended)
+Option 1: Clean Slate Approach (Recommended)
 
-  Since this is a brand new project with no git history, I recommend:
+Since this is a brand new project with no git history, I recommend:
 
-  1. Update CLAUDE.md - Remove all PSA references, update for O&G domain
-  2. Rename Pattern 54 - PSA-Patterns-And-Best-Practices.md → Oil-Gas-Field-Data-Patterns.md
-  3. Update Pattern 17 - Change from Row-Level Security to Database-Per-Tenant model
-  4. Create 6 new patterns - For time-series data, geospatial, offline sync, etc.
-  5. Update README.md - Change branding from WellPulse to WellPulse
+1. Update CLAUDE.md - Remove all PSA references, update for O&G domain
+2. Rename Pattern 54 - PSA-Patterns-And-Best-Practices.md → Oil-Gas-Field-Data-Patterns.md
+3. Update Pattern 17 - Change from Row-Level Security to Database-Per-Tenant model
+4. Create 6 new patterns - For time-series data, geospatial, offline sync, etc.
+5. Update README.md - Change branding from WellPulse to WellPulse
 
-  Option 2: Gradual Migration
+Option 2: Gradual Migration
 
-  Keep PSA references for now, add O&G-specific patterns alongside, update incrementally as you build features.
+Keep PSA references for now, add O&G-specific patterns alongside, update incrementally as you build features.
 
-  ---
-  Key Architecture Decisions Needed
+---
 
-  Before starting implementation, clarify:
+Key Architecture Decisions Needed
 
-  1. Deployment Model Priority: Which deployment type ships first? (Cloud-only, hybrid, or air-gapped)
-  2. Sync Strategy: Real-time sync when online, or batch sync at end of shift?
-  3. Conflict Resolution: Last-write-wins, or custom business rules (e.g., newer sensor reading always wins)?
-  4. ML Integration: Will predictive maintenance ML models run in cloud, or on-device (edge ML)?
-  5. File Storage: Azure Blob preferred (per research) or AWS S3?
-  6. Authentication: Per-tenant users (each operator has separate logins) or federated (SSO via operator's Active Directory)?
+Before starting implementation, clarify:
 
-  ---
-  Questions for You
+1. Deployment Model Priority: Which deployment type ships first? (Cloud-only, hybrid, or air-gapped)
+2. Sync Strategy: Real-time sync when online, or batch sync at end of shift?
+3. Conflict Resolution: Last-write-wins, or custom business rules (e.g., newer sensor reading always wins)?
+4. ML Integration: Will predictive maintenance ML models run in cloud, or on-device (edge ML)?
+5. File Storage: Azure Blob preferred (per research) or AWS S3?
+6. Authentication: Per-tenant users (each operator has separate logins) or federated (SSO via operator's Active Directory)?
 
-  1. Do you want me to start updating the patterns now? (Remove PSA references, add O&G examples)
-  2. Should I create new pattern documents for the 6 O&G-specific patterns I identified?
-  3. Do you want me to scaffold the initial project structure? (apps/api, apps/web, apps/electron, apps/mobile directories)
-  4. Should I create an architecture decision record (ADR) documenting database-per-tenant vs shared database choice?
+---
 
-  Let me know which direction you'd like to go, and I'll help you build WellPulse the right way from the start! 🛢️
+Questions for You
+
+1. Do you want me to start updating the patterns now? (Remove PSA references, add O&G examples)
+2. Should I create new pattern documents for the 6 O&G-specific patterns I identified?
+3. Do you want me to scaffold the initial project structure? (apps/api, apps/web, apps/electron, apps/mobile directories)
+4. Should I create an architecture decision record (ADR) documenting database-per-tenant vs shared database choice?
+
+Let me know which direction you'd like to go, and I'll help you build WellPulse the right way from the start! 🛢️
 
 > 1. Deployment Model Priority: for now wellpulse is meant to be run in the cloud. i think we should handle client instances like
-slack does with a subdomain per client, but im not sure how complicated that is. i dont know if we should allow it to be run
-totally on-premises. the client can chose were they want their data hosted, the db just needs to be public in someway so the api
-can connect to i
+>    slack does with a subdomain per client, but im not sure how complicated that is. i dont know if we should allow it to be run
+>    totally on-premises. the client can chose were they want their data hosted, the db just needs to be public in someway so the api
+>    can connect to i
 
-  2. Sync Strategy: batch sync at end of shift i think makes the most sense
-  3. Conflict Resolution: whichever is best
-  4. ML Integration: yes, predictive maintenance runs in the cloud. what else can we do with the data in regards to ML
-  5. File Storage: its up to the client, by default probably Azure
-  6. Authentication: im looking for guidance
+2. Sync Strategy: batch sync at end of shift i think makes the most sense
+3. Conflict Resolution: whichever is best
+4. ML Integration: yes, predictive maintenance runs in the cloud. what else can we do with the data in regards to ML
+5. File Storage: its up to the client, by default probably Azure
+6. Authentication: im looking for guidance
 
 ⏺ Excellent clarifications! Let me address each point and provide architectural guidance:
 
 ⏺ 1. Subdomain-Per-Tenant Architecture (Slack Style)
 
-  ★ Insight ─────────────────────────────────────
-  Subdomain routing complexity: This is actually simpler than it sounds! Each tenant (operator) gets {tenant}.wellpulse.io. Your
-  API determines which database to connect to based on the subdomain. The key challenge is database connection pooling - you need
-  one connection pool per tenant database to avoid overwhelming PostgreSQL with connections.
+★ Insight ─────────────────────────────────────
+Subdomain routing complexity: This is actually simpler than it sounds! Each tenant (operator) gets {tenant}.wellpulse.io. Your
+API determines which database to connect to based on the subdomain. The key challenge is database connection pooling - you need
+one connection pool per tenant database to avoid overwhelming PostgreSQL with connections.
 
-  Why this works well for O&G: Oil operators are already familiar with this model (most SaaS tools they use work this way). It
-  also makes data sovereignty clear - "Your data is in acmeoil.wellpulse.io" gives operators confidence their data is isolated.
-  ─────────────────────────────────────────────────
+Why this works well for O&G: Oil operators are already familiar with this model (most SaaS tools they use work this way). It
+also makes data sovereignty clear - "Your data is in acmeoil.wellpulse.io" gives operators confidence their data is isolated.
+─────────────────────────────────────────────────
 
-  Architecture Design
+Architecture Design
 
-  // Tenant identification middleware
-  @Injectable()
-  export class TenantIdentificationMiddleware implements NestMiddleware {
-    async use(req: Request, res: Response, next: NextFunction) {
-      // Extract tenant from subdomain: acmeoil.wellpulse.io → "acmeoil"
-      const hostname = req.hostname; // e.g., "acmeoil.wellpulse.io"
-      const subdomain = hostname.split['.'](0);
+// Tenant identification middleware
+@Injectable()
+export class TenantIdentificationMiddleware implements NestMiddleware {
+async use(req: Request, res: Response, next: NextFunction) {
+// Extract tenant from subdomain: acmeoil.wellpulse.io → "acmeoil"
+const hostname = req.hostname; // e.g., "acmeoil.wellpulse.io"
+const subdomain = hostname.split['.'](0);
 
       // Handle special cases
       if (['www', 'api', 'app'].includes(subdomain)) {
@@ -561,12 +556,13 @@ can connect to i
 
       next();
     }
-  }
 
-  // Tenant database connection factory
-  @Injectable()
-  export class TenantDatabaseService {
-    private connectionPools: Map<string, NodePgDatabase> = new Map();
+}
+
+// Tenant database connection factory
+@Injectable()
+export class TenantDatabaseService {
+private connectionPools: Map<string, NodePgDatabase> = new Map();
 
     async getTenantDatabase(tenantId: string): Promise<NodePgDatabase> {
       // Return existing pool if available
@@ -591,12 +587,13 @@ can connect to i
 
       return db;
     }
-  }
 
-  // Usage in repositories
-  @Injectable()
-  export class WellRepository {
-    constructor(private readonly tenantDbService: TenantDatabaseService) {}
+}
+
+// Usage in repositories
+@Injectable()
+export class WellRepository {
+constructor(private readonly tenantDbService: TenantDatabaseService) {}
 
     async findById(tenantId: string, wellId: string): Promise<Well | null> {
       const db = await this.tenantDbService.getTenantDatabase(tenantId);
@@ -609,48 +606,49 @@ can connect to i
 
       return results[0] ? this.toDomain(results[0]) : null;
     }
-  }
 
-  Master Database for Tenant Registry
+}
 
-  You'll need ONE master database that stores tenant metadata:
+Master Database for Tenant Registry
 
-  // Master database schema (shared across all tenants)
-  export const tenants = pgTable('tenants', {
-    id: varchar('id', { length: 255 }).primaryKey(),
-    slug: varchar('slug', { length: 100 }).notNull().unique(), // "acmeoil"
-    name: varchar('name', { length: 255 }).notNull(), // "ACME Oil & Gas"
-    databaseUrl: text('database_url').notNull(), // Connection string
-    region: varchar('region', { length: 50 }).notNull(), // "azure-east-us"
-    tier: varchar('tier', { length: 50 }).notNull().default('FREE'), // FREE, STARTER, PRO, ENTERPRISE
-    status: varchar('status', { length: 50 }).notNull().default('ACTIVE'), // ACTIVE, SUSPENDED, TRIAL
-    features: jsonb('features').notNull().default({}), // Feature flags
-    createdAt: timestamp('created_at').notNull().defaultNow(),
-    updatedAt: timestamp('updated_at').notNull().defaultNow(),
-  });
+You'll need ONE master database that stores tenant metadata:
 
-  // Tenant users (stored in master DB for authentication)
-  export const tenantUsers = pgTable('tenant_users', {
-    id: varchar('id', { length: 255 }).primaryKey(),
-    tenantId: varchar('tenant_id', { length: 255 }).notNull().references(() => tenants.id),
-    email: varchar('email', { length: 255 }).notNull(),
-    passwordHash: text('password_hash').notNull(),
-    role: varchar('role', { length: 50 }).notNull(), // ADMIN, MANAGER, FIELD_OPERATOR
-    createdAt: timestamp('created_at').notNull().defaultNow(),
-  });
+// Master database schema (shared across all tenants)
+export const tenants = pgTable('tenants', {
+id: varchar('id', { length: 255 }).primaryKey(),
+slug: varchar('slug', { length: 100 }).notNull().unique(), // "acmeoil"
+name: varchar('name', { length: 255 }).notNull(), // "ACME Oil & Gas"
+databaseUrl: text('database_url').notNull(), // Connection string
+region: varchar('region', { length: 50 }).notNull(), // "azure-east-us"
+tier: varchar('tier', { length: 50 }).notNull().default('FREE'), // FREE, STARTER, PRO, ENTERPRISE
+status: varchar('status', { length: 50 }).notNull().default('ACTIVE'), // ACTIVE, SUSPENDED, TRIAL
+features: jsonb('features').notNull().default({}), // Feature flags
+createdAt: timestamp('created_at').notNull().defaultNow(),
+updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
 
-  // Composite unique index
-  export const tenantUsersEmailTenantIndex = index('tenant_users_email_tenant_idx')
-    .on(tenantUsers.email, tenantUsers.tenantId);
+// Tenant users (stored in master DB for authentication)
+export const tenantUsers = pgTable('tenant_users', {
+id: varchar('id', { length: 255 }).primaryKey(),
+tenantId: varchar('tenant_id', { length: 255 }).notNull().references(() => tenants.id),
+email: varchar('email', { length: 255 }).notNull(),
+passwordHash: text('password_hash').notNull(),
+role: varchar('role', { length: 50 }).notNull(), // ADMIN, MANAGER, FIELD_OPERATOR
+createdAt: timestamp('created_at').notNull().defaultNow(),
+});
 
-  Routing Configuration
+// Composite unique index
+export const tenantUsersEmailTenantIndex = index('tenant_users_email_tenant_idx')
+.on(tenantUsers.email, tenantUsers.tenantId);
 
-  // Next.js middleware for subdomain routing (apps/web/middleware.ts)
-  import { NextRequest, NextResponse } from 'next/server';
+Routing Configuration
 
-  export function middleware(request: NextRequest) {
-    const hostname = request.headers.get('host') || '';
-    const subdomain = hostname.split['.'](0);
+// Next.js middleware for subdomain routing (apps/web/middleware.ts)
+import { NextRequest, NextResponse } from 'next/server';
+
+export function middleware(request: NextRequest) {
+const hostname = request.headers.get('host') || '';
+const subdomain = hostname.split['.'](0);
 
     // Marketing site: www.wellpulse.io or wellpulse.io
     if (subdomain === 'www' || hostname === 'wellpulse.io') {
@@ -660,57 +658,58 @@ can connect to i
     // App: acmeoil.wellpulse.io
     // Rewrite to /app but keep subdomain visible
     return NextResponse.rewrite(new URL(`/app${request.nextUrl.pathname}`, request.url));
-  }
 
-  export const config = {
-    matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
-  };
+}
 
-  Railway Deployment
+export const config = {
+matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+};
 
-  Railway handles wildcard subdomains easily:
+Railway Deployment
+
+Railway handles wildcard subdomains easily:
 
 # railway.json
 
-  {
-    "domains": [
-      "wellpulse.io",      # Marketing site
-      "*.wellpulse.io"     # Wildcard for tenant subdomains
-    ]
-  }
+{
+"domains": [
+"wellpulse.io", # Marketing site
+"*.wellpulse.io" # Wildcard for tenant subdomains
+]
+}
 
-  Cost Implication: With Railway's Pro plan ($20/month), you get unlimited wildcard subdomains. Perfect for this architecture!
+Cost Implication: With Railway's Pro plan ($20/month), you get unlimited wildcard subdomains. Perfect for this architecture!
 
-  ---
+---
 
-  2. Batch Sync Strategy for Offline Field Apps
+2. Batch Sync Strategy for Offline Field Apps
 
-  ★ Insight ─────────────────────────────────────
-  End-of-shift batch sync: This is ideal for oil field operations because (1) field workers have a natural sync point (end of
-  shift), (2) batch operations are more efficient than real-time sync, (3) easier conflict resolution when you process all changes
-   together.
+★ Insight ─────────────────────────────────────
+End-of-shift batch sync: This is ideal for oil field operations because (1) field workers have a natural sync point (end of
+shift), (2) batch operations are more efficient than real-time sync, (3) easier conflict resolution when you process all changes
+together.
 
-  Event sourcing advantage: By storing field data changes as events locally, you get automatic audit trail + easy replay during
-  sync.
-  ─────────────────────────────────────────────────
+Event sourcing advantage: By storing field data changes as events locally, you get automatic audit trail + easy replay during
+sync.
+─────────────────────────────────────────────────
 
-  Offline Sync Architecture
+Offline Sync Architecture
 
-  // Electron/React Native local database
-  interface FieldDataEvent {
-    id: string;
-    type: 'WELL_READING_RECORDED' | 'EQUIPMENT_INSPECTED' | 'PRODUCTION_LOGGED';
-    payload: any;
-    timestamp: Date;
-    deviceId: string;
-    userId: string;
-    synced: boolean;
-    syncAttempts: number;
-  }
+// Electron/React Native local database
+interface FieldDataEvent {
+id: string;
+type: 'WELL_READING_RECORDED' | 'EQUIPMENT_INSPECTED' | 'PRODUCTION_LOGGED';
+payload: any;
+timestamp: Date;
+deviceId: string;
+userId: string;
+synced: boolean;
+syncAttempts: number;
+}
 
-  // Local event store (SQLite for Electron, AsyncStorage for React Native)
-  export class LocalEventStore {
-    private db: SQLiteDatabase;
+// Local event store (SQLite for Electron, AsyncStorage for React Native)
+export class LocalEventStore {
+private db: SQLiteDatabase;
 
     async appendEvent(event: FieldDataEvent): Promise<void> {
       await this.db.run(
@@ -728,13 +727,14 @@ can connect to i
       const placeholders = eventIds.map(() => '?').join(',');
       await this.db.run(`UPDATE events SET synced = true WHERE id IN (${placeholders})`, eventIds);
     }
-  }
 
-  // Sync service (runs at end of shift)
-  export class FieldDataSyncService {
-    async syncToCloud(tenantId: string, apiUrl: string, authToken: string): Promise<SyncResult> {
-      // 1. Get all unsynced events
-      const events = await this.localStore.getUnsyncedEvents();
+}
+
+// Sync service (runs at end of shift)
+export class FieldDataSyncService {
+async syncToCloud(tenantId: string, apiUrl: string, authToken: string): Promise<SyncResult> {
+// 1. Get all unsynced events
+const events = await this.localStore.getUnsyncedEvents();
 
       if (events.length === 0) {
         return { success: true, syncedCount: 0, errors: [] };
@@ -804,34 +804,36 @@ can connect to i
         }
       }, 5 * 60 * 1000);
     }
-  }
 
-  // Cloud API endpoint for batch sync
-  @Controller('field-data')
-  export class FieldDataSyncController {
-    @Post('sync')
-    @UseGuards(JwtAuthGuard)
-    async syncFieldData(
-      @Body() dto: SyncFieldDataDto,
-      @CurrentUser() user: User,
-    ): Promise<SyncResponseDto> {
-      const command = new SyncFieldDataCommand(
-        user.tenantId,
-        dto.events,
-        dto.deviceInfo,
-        user.id,
-      );
+}
+
+// Cloud API endpoint for batch sync
+@Controller('field-data')
+export class FieldDataSyncController {
+@Post('sync')
+@UseGuards(JwtAuthGuard)
+async syncFieldData(
+@Body() dto: SyncFieldDataDto,
+@CurrentUser() user: User,
+): Promise<SyncResponseDto> {
+const command = new SyncFieldDataCommand(
+user.tenantId,
+dto.events,
+dto.deviceInfo,
+user.id,
+);
 
       return this.commandBus.execute(command);
     }
-  }
 
-  @CommandHandler(SyncFieldDataCommand)
-  export class SyncFieldDataHandler {
-    async execute(command: SyncFieldDataCommand): Promise<SyncResponseDto> {
-      const syncedEventIds: string[] = [];
-      const conflicts: Conflict[] = [];
-      const errors: string[] = [];
+}
+
+@CommandHandler(SyncFieldDataCommand)
+export class SyncFieldDataHandler {
+async execute(command: SyncFieldDataCommand): Promise<SyncResponseDto> {
+const syncedEventIds: string[] = [];
+const conflicts: Conflict[] = [];
+const errors: string[] = [];
 
       // Get tenant database
       const db = await this.tenantDbService.getTenantDatabase(command.tenantId);
@@ -862,14 +864,15 @@ can connect to i
         errors,
       };
     }
-  }
 
-  Sync UI (End of Shift)
+}
 
-  // Electron/React Native component
-  export function EndOfShiftSyncScreen() {
-    const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
-    const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
+Sync UI (End of Shift)
+
+// Electron/React Native component
+export function EndOfShiftSyncScreen() {
+const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
+const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
 
     const handleSync = async () => {
       setSyncStatus('syncing');
@@ -935,19 +938,20 @@ can connect to i
         )}
       </div>
     );
-  }
 
-  ---
+}
 
-  3. Conflict Resolution Strategy
+---
 
-  For oil & gas field data, here's my recommended approach:
+3. Conflict Resolution Strategy
 
-  Conflict Resolution Rules (Priority Order)
+For oil & gas field data, here's my recommended approach:
 
-  export enum ConflictResolutionStrategy {
-    // 1. NEWEST_WINS - For sensor readings (latest data is most accurate)
-    NEWEST_WINS = 'NEWEST_WINS',
+Conflict Resolution Rules (Priority Order)
+
+export enum ConflictResolutionStrategy {
+// 1. NEWEST_WINS - For sensor readings (latest data is most accurate)
+NEWEST_WINS = 'NEWEST_WINS',
 
     // 2. HIGHEST_VALUE - For production volumes (never underreport production)
     HIGHEST_VALUE = 'HIGHEST_VALUE',
@@ -957,15 +961,16 @@ can connect to i
 
     // 4. MERGE - For notes/comments (append both)
     MERGE = 'MERGE',
-  }
 
-  export class ConflictResolver {
-    resolveConflict(
-      localEvent: FieldDataEvent,
-      cloudEvent: FieldDataEvent,
-    ): ConflictResolution {
-      // Determine strategy based on event type
-      const strategy = this.getStrategyForEventType(localEvent.type);
+}
+
+export class ConflictResolver {
+resolveConflict(
+localEvent: FieldDataEvent,
+cloudEvent: FieldDataEvent,
+): ConflictResolution {
+// Determine strategy based on event type
+const strategy = this.getStrategyForEventType(localEvent.type);
 
       switch (strategy) {
         case ConflictResolutionStrategy.NEWEST_WINS:
@@ -1004,45 +1009,46 @@ can connect to i
 
       return strategyMap[eventType] || ConflictResolutionStrategy.MANUAL_REVIEW;
     }
-  }
 
-  Best practice: For oil & gas, bias toward safety and compliance. When in doubt, flag for manual review rather than auto-resolve.
+}
 
-  ---
+Best practice: For oil & gas, bias toward safety and compliance. When in doubt, flag for manual review rather than auto-resolve.
 
-  4. ML Opportunities Beyond Predictive Maintenance
+---
+
+4. ML Opportunities Beyond Predictive Maintenance
 
 ⏺ ML Use Cases for Oil & Gas Data
 
-  Based on the market research, here are ML opportunities ranked by business value:
+Based on the market research, here are ML opportunities ranked by business value:
 
-  | ML Use Case                    | Business Value                          | Complexity | Data Requirements
-           |
-  |--------------------------------|-----------------------------------------|------------|---------------------------------------
-  ---------|
-  | 1. Predictive Maintenance      | 🟢 Very High (prevents costly downtime) | Medium     | Sensor time-series (vibration, temp,
-  pressure) |
-  | 2. Production Optimization     | 🟢 Very High (increases revenue)        | Medium     | Historical production data, well
-  parameters    |
-  | 3. Anomaly Detection           | 🟢 High (early warning system)          | Low-Medium | Any time-series data (production,
-  sensors)     |
-  | 4. Decline Curve Analysis      | 🟡 High (forecasting)                   | Medium     | Historical production volumes
-           |
-  | 5. Emissions Prediction        | 🟡 High (ESG compliance)                | Medium     | Production volumes, equipment usage
-           |
-  | 6. Water Cut Prediction        | 🟡 Medium (operational efficiency)      | Medium     | Production data (oil, gas, water
-  volumes)      |
-  | 7. Well Performance Comparison | 🟡 Medium (benchmarking)                | Low        | Production data across wells
-           |
-  | 8. Drilling Time Prediction    | 🔵 Medium (planning)                    | High       | Drilling logs, geology data
-           |
+| ML Use Case | Business Value | Complexity | Data Requirements
+|
+|--------------------------------|-----------------------------------------|------------|---------------------------------------
+---------|
+| 1. Predictive Maintenance | 🟢 Very High (prevents costly downtime) | Medium | Sensor time-series (vibration, temp,
+pressure) |
+| 2. Production Optimization | 🟢 Very High (increases revenue) | Medium | Historical production data, well
+parameters |
+| 3. Anomaly Detection | 🟢 High (early warning system) | Low-Medium | Any time-series data (production,
+sensors) |
+| 4. Decline Curve Analysis | 🟡 High (forecasting) | Medium | Historical production volumes
+|
+| 5. Emissions Prediction | 🟡 High (ESG compliance) | Medium | Production volumes, equipment usage
+|
+| 6. Water Cut Prediction | 🟡 Medium (operational efficiency) | Medium | Production data (oil, gas, water
+volumes) |
+| 7. Well Performance Comparison | 🟡 Medium (benchmarking) | Low | Production data across wells
+|
+| 8. Drilling Time Prediction | 🔵 Medium (planning) | High | Drilling logs, geology data
+|
 
-  ML Architecture
+ML Architecture
 
-  // ML Prediction Service (runs in cloud)
-  @Injectable()
-  export class ProductionMLService {
-    private readonly pythonMLEndpoint = process.env.ML_SERVICE_URL; // Separate Python service
+// ML Prediction Service (runs in cloud)
+@Injectable()
+export class ProductionMLService {
+private readonly pythonMLEndpoint = process.env.ML_SERVICE_URL; // Separate Python service
 
     // 1. Production Optimization: Recommend optimal production rates
     async optimizeProduction(wellId: string, tenantId: string): Promise<OptimizationRecommendation> {
@@ -1180,14 +1186,15 @@ can connect to i
         confidence: emissions.confidence,
       };
     }
-  }
 
-  // Background job to run ML predictions nightly
-  @Injectable()
-  export class MLPredictionJobs {
-    @Cron('0 2 ** *') // Run at 2 AM daily
-    async runDailyPredictions(): Promise<void> {
-      this.logger.log('Starting daily ML predictions...');
+}
+
+// Background job to run ML predictions nightly
+@Injectable()
+export class MLPredictionJobs {
+@Cron('0 2 \*\* \*') // Run at 2 AM daily
+async runDailyPredictions(): Promise<void> {
+this.logger.log('Starting daily ML predictions...');
 
       // Get all active tenants
       const tenants = await this.tenantConfigService.getActiveTenants();
@@ -1215,31 +1222,31 @@ can connect to i
 
       this.logger.log('Daily ML predictions completed');
     }
-  }
 
-  Python ML Service (Separate Microservice)
+}
+
+Python ML Service (Separate Microservice)
 
 # Python FastAPI service for ML models
 
-  from fastapi import FastAPI
-  from pydantic import BaseModel
-  import numpy as np
-  from sklearn.ensemble import IsolationForest, RandomForestRegressor
-  import pandas as pd
+from fastapi import FastAPI
+from pydantic import BaseModel
+import numpy as np
+from sklearn.ensemble import IsolationForest, RandomForestRegressor
+import pandas as pd
 
-  app = FastAPI()
+app = FastAPI()
 
-  class AnomalyDetectionRequest(BaseModel):
-      sensorData: list[dict]
+class AnomalyDetectionRequest(BaseModel):
+sensorData: list[dict]
 
-  class OptimizationRequest(BaseModel):
-      wellId: str
-      historicalData: list[dict]
+class OptimizationRequest(BaseModel):
+wellId: str
+historicalData: list[dict]
 
-  @app.post("/detect-anomalies")
-  async def detect_anomalies(request: AnomalyDetectionRequest):
-      # Convert to DataFrame
-      df = pd.DataFrame(request.sensorData)
+@app.post("/detect-anomalies")
+async def detect_anomalies(request: AnomalyDetectionRequest): # Convert to DataFrame
+df = pd.DataFrame(request.sensorData)
 
       # Extract features
       features = df[['pressure', 'temperature', 'vibration', 'flow_rate']].values
@@ -1261,9 +1268,9 @@ can connect to i
 
       return {'anomalies': anomalies}
 
-  @app.post("/optimize-production")
-  async def optimize_production(request: OptimizationRequest):
-      df = pd.DataFrame(request.historicalData)
+@app.post("/optimize-production")
+async def optimize_production(request: OptimizationRequest):
+df = pd.DataFrame(request.historicalData)
 
       # Extract features for production optimization
       X = df[['pressure', 'temperature', 'choke_size', 'runtime_hours']].values
@@ -1289,10 +1296,10 @@ can connect to i
           'recommendation': f'Adjust choke size to {optimal_choke[2]:.2f} inches',
       }
 
-  @app.post("/forecast-production")
-  async def forecast_production(request: dict):
-      df = pd.DataFrame(request['historicalData'])
-      months = request['forecastMonths']
+@app.post("/forecast-production")
+async def forecast_production(request: dict):
+df = pd.DataFrame(request['historicalData'])
+months = request['forecastMonths']
 
       # Fit decline curve (exponential decline model)
       X = np.arange(len(df)).reshape(-1, 1)
@@ -1320,26 +1327,26 @@ can connect to i
           'eur': float(np.sum(predictions)),  # Estimated Ultimate Recovery
       }
 
-  Deployment: Host Python ML service as separate Railway service or AWS Lambda. NestJS API calls it via HTTP.
+Deployment: Host Python ML service as separate Railway service or AWS Lambda. NestJS API calls it via HTTP.
 
-  ---
+---
 
-  5. File Storage Architecture
+5. File Storage Architecture
 
-  Since you said "client's choice, default Azure":
+Since you said "client's choice, default Azure":
 
-  // File storage abstraction (Strategy Pattern)
-  export interface FileStorageProvider {
-    upload(file: Buffer, path: string, metadata?: any): Promise<string>; // Returns URL
-    download(path: string): Promise<Buffer>;
-    delete(path: string): Promise<void>;
-    getSignedUrl(path: string, expiresIn: number): Promise<string>;
-  }
+// File storage abstraction (Strategy Pattern)
+export interface FileStorageProvider {
+upload(file: Buffer, path: string, metadata?: any): Promise<string>; // Returns URL
+download(path: string): Promise<Buffer>;
+delete(path: string): Promise<void>;
+getSignedUrl(path: string, expiresIn: number): Promise<string>;
+}
 
-  // Azure Blob Storage implementation
-  @Injectable()
-  export class AzureBlobStorageProvider implements FileStorageProvider {
-    private containerClient: ContainerClient;
+// Azure Blob Storage implementation
+@Injectable()
+export class AzureBlobStorageProvider implements FileStorageProvider {
+private containerClient: ContainerClient;
 
     constructor(private readonly configService: ConfigService) {
       const connectionString = configService.get('AZURE_STORAGE_CONNECTION_STRING');
@@ -1369,13 +1376,14 @@ can connect to i
       });
       return sasUrl;
     }
-  }
 
-  // AWS S3 implementation
-  @Injectable()
-  export class S3StorageProvider implements FileStorageProvider {
-    private s3Client: S3Client;
-    private bucketName: string;
+}
+
+// AWS S3 implementation
+@Injectable()
+export class S3StorageProvider implements FileStorageProvider {
+private s3Client: S3Client;
+private bucketName: string;
 
     constructor(private readonly configService: ConfigService) {
       this.s3Client = new S3Client({
@@ -1400,15 +1408,16 @@ can connect to i
     }
 
     // ... similar implementations for download, delete, getSignedUrl
-  }
 
-  // Factory to select provider based on tenant config
-  @Injectable()
-  export class FileStorageFactory {
-    constructor(
-      private readonly azureProvider: AzureBlobStorageProvider,
-      private readonly s3Provider: S3StorageProvider,
-    ) {}
+}
+
+// Factory to select provider based on tenant config
+@Injectable()
+export class FileStorageFactory {
+constructor(
+private readonly azureProvider: AzureBlobStorageProvider,
+private readonly s3Provider: S3StorageProvider,
+) {}
 
     getProvider(tenant: Tenant): FileStorageProvider {
       switch (tenant.fileStorageProvider) {
@@ -1420,19 +1429,20 @@ can connect to i
           return this.azureProvider; // Default to Azure
       }
     }
-  }
 
-  // Usage
-  @Injectable()
-  export class FieldPhotoService {
-    async uploadFieldPhoto(
-      tenantId: string,
-      wellId: string,
-      photo: Buffer,
-      metadata: { uploadedBy: string; description: string },
-    ): Promise<string> {
-      const tenant = await this.tenantService.getTenant(tenantId);
-      const storageProvider = this.fileStorageFactory.getProvider(tenant);
+}
+
+// Usage
+@Injectable()
+export class FieldPhotoService {
+async uploadFieldPhoto(
+tenantId: string,
+wellId: string,
+photo: Buffer,
+metadata: { uploadedBy: string; description: string },
+): Promise<string> {
+const tenant = await this.tenantService.getTenant(tenantId);
+const storageProvider = this.fileStorageFactory.getProvider(tenant);
 
       const path = `tenants/${tenantId}/wells/${wellId}/photos/${uuidv4()}.jpg`;
       const url = await storageProvider.upload(photo, path, metadata);
@@ -1450,72 +1460,73 @@ can connect to i
 
       return url;
     }
-  }
 
-  ---
+}
 
-  6. Authentication Architecture
+---
+
+6. Authentication Architecture
 
 ⏺ ★ Insight ─────────────────────────────────────
-  Authentication trade-off: For oil & gas operators, you have two paths: (1) Simple email/password - easy to implement, works
-  everywhere, but operators manage another set of credentials, or (2) SSO integration (Active Directory/SAML) - more complex, but
-  operators prefer it because field workers can use their company credentials.
+Authentication trade-off: For oil & gas operators, you have two paths: (1) Simple email/password - easy to implement, works
+everywhere, but operators manage another set of credentials, or (2) SSO integration (Active Directory/SAML) - more complex, but
+operators prefer it because field workers can use their company credentials.
 
-  My recommendation: Start with email/password + magic links for MVP (fast to market), then add SSO as a paid feature for larger
-  operators. Field workers often don't have corporate email, so magic links (passwordless) work better than traditional passwords.
-  ─────────────────────────────────────────────────
+My recommendation: Start with email/password + magic links for MVP (fast to market), then add SSO as a paid feature for larger
+operators. Field workers often don't have corporate email, so magic links (passwordless) work better than traditional passwords.
+─────────────────────────────────────────────────
 
-  Recommended Authentication Architecture
+Recommended Authentication Architecture
 
-  // Phase 1: Email/Password + Magic Links (MVP)
-  // Phase 2: SSO/SAML (Enterprise feature)
+// Phase 1: Email/Password + Magic Links (MVP)
+// Phase 2: SSO/SAML (Enterprise feature)
 
-  // Master database: User authentication
-  export const tenantUsers = pgTable('tenant_users', {
-    id: varchar('id', { length: 255 }).primaryKey(),
-    tenantId: varchar('tenant_id', { length: 255 }).notNull().references(() => tenants.id),
-    email: varchar('email', { length: 255 }).notNull(),
-    passwordHash: text('password_hash'), // Nullable (for magic link only users)
-    role: varchar('role', { length: 50 }).notNull(), // ADMIN, MANAGER, FIELD_OPERATOR
-    firstName: varchar('first_name', { length: 255 }).notNull(),
-    lastName: varchar('last_name', { length: 255 }).notNull(),
-    phoneNumber: varchar('phone_number', { length: 50 }), // For SMS alerts
-    status: varchar('status', { length: 50 }).notNull().default('ACTIVE'), // ACTIVE, SUSPENDED, INVITED
-    lastLoginAt: timestamp('last_login_at'),
-    createdAt: timestamp('created_at').notNull().defaultNow(),
-    updatedAt: timestamp('updated_at').notNull().defaultNow(),
-  });
+// Master database: User authentication
+export const tenantUsers = pgTable('tenant_users', {
+id: varchar('id', { length: 255 }).primaryKey(),
+tenantId: varchar('tenant_id', { length: 255 }).notNull().references(() => tenants.id),
+email: varchar('email', { length: 255 }).notNull(),
+passwordHash: text('password_hash'), // Nullable (for magic link only users)
+role: varchar('role', { length: 50 }).notNull(), // ADMIN, MANAGER, FIELD_OPERATOR
+firstName: varchar('first_name', { length: 255 }).notNull(),
+lastName: varchar('last_name', { length: 255 }).notNull(),
+phoneNumber: varchar('phone_number', { length: 50 }), // For SMS alerts
+status: varchar('status', { length: 50 }).notNull().default('ACTIVE'), // ACTIVE, SUSPENDED, INVITED
+lastLoginAt: timestamp('last_login_at'),
+createdAt: timestamp('created_at').notNull().defaultNow(),
+updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
 
-  // Magic link tokens for passwordless login
-  export const magicLinkTokens = pgTable('magic_link_tokens', {
-    id: varchar('id', { length: 255 }).primaryKey(),
-    userId: varchar('user_id', { length: 255 }).notNull().references(() => tenantUsers.id),
-    token: varchar('token', { length: 255 }).notNull().unique(),
-    expiresAt: timestamp('expires_at').notNull(),
-    usedAt: timestamp('used_at'),
-    createdAt: timestamp('created_at').notNull().defaultNow(),
-  });
+// Magic link tokens for passwordless login
+export const magicLinkTokens = pgTable('magic_link_tokens', {
+id: varchar('id', { length: 255 }).primaryKey(),
+userId: varchar('user_id', { length: 255 }).notNull().references(() => tenantUsers.id),
+token: varchar('token', { length: 255 }).notNull().unique(),
+expiresAt: timestamp('expires_at').notNull(),
+usedAt: timestamp('used_at'),
+createdAt: timestamp('created_at').notNull().defaultNow(),
+});
 
-  // SSO configuration (for Enterprise tenants)
-  export const ssoConfigurations = pgTable('sso_configurations', {
-    id: varchar('id', { length: 255 }).primaryKey(),
-    tenantId: varchar('tenant_id', { length: 255 }).notNull().references(() => tenants.id).unique(),
-    provider: varchar('provider', { length: 50 }).notNull(), // 'SAML', 'OIDC', 'AZURE_AD'
-    entityId: text('entity_id'),
-    ssoUrl: text('sso_url'),
-    certificate: text('certificate'),
-    enabled: boolean('enabled').notNull().default(false),
-    createdAt: timestamp('created_at').notNull().defaultNow(),
-  });
+// SSO configuration (for Enterprise tenants)
+export const ssoConfigurations = pgTable('sso_configurations', {
+id: varchar('id', { length: 255 }).primaryKey(),
+tenantId: varchar('tenant_id', { length: 255 }).notNull().references(() => tenants.id).unique(),
+provider: varchar('provider', { length: 50 }).notNull(), // 'SAML', 'OIDC', 'AZURE_AD'
+entityId: text('entity_id'),
+ssoUrl: text('sso_url'),
+certificate: text('certificate'),
+enabled: boolean('enabled').notNull().default(false),
+createdAt: timestamp('created_at').notNull().defaultNow(),
+});
 
-  // Authentication service
-  @Injectable()
-  export class AuthService {
-    constructor(
-      private readonly jwtService: JwtService,
-      private readonly userRepository: IUserRepository,
-      private readonly emailService: EmailService,
-    ) {}
+// Authentication service
+@Injectable()
+export class AuthService {
+constructor(
+private readonly jwtService: JwtService,
+private readonly userRepository: IUserRepository,
+private readonly emailService: EmailService,
+) {}
 
     // 1. Email/Password login
     async login(email: string, password: string, subdomain: string): Promise<AuthResponse> {
@@ -1721,17 +1732,18 @@ can connect to i
         expiresIn: '30d', // Long-lived refresh token
       });
     }
-  }
 
-  // Login flow for Electron/React Native apps
-  export class OfflineAuthService {
-    // Store credentials securely
-    async login(email: string, password: string, subdomain: string): Promise<void> {
-      // Call cloud API
-      const response = await fetch(`https://${subdomain}.wellpulse.io/api/auth/login`, {
-        method: 'POST',
-        body: JSON.stringify({ email, password }),
-      });
+}
+
+// Login flow for Electron/React Native apps
+export class OfflineAuthService {
+// Store credentials securely
+async login(email: string, password: string, subdomain: string): Promise<void> {
+// Call cloud API
+const response = await fetch(`https://${subdomain}.wellpulse.io/api/auth/login`, {
+method: 'POST',
+body: JSON.stringify({ email, password }),
+});
 
       const { accessToken, refreshToken, user } = await response.json();
 
@@ -1760,50 +1772,51 @@ can connect to i
 
       return true;
     }
-  }
 
-  Role-Based Access Control (RBAC)
+}
 
-  // Roles for oil & gas operators
-  export enum UserRole {
-    ADMIN = 'ADMIN',           // Full access, billing, user management
-    MANAGER = 'MANAGER',       // View all data, run reports, manage wells
-    FIELD_OPERATOR = 'FIELD_OPERATOR',  // Enter field data, view assigned wells
-    VIEWER = 'VIEWER',         // Read-only access (for contractors, consultants)
-  }
+Role-Based Access Control (RBAC)
 
-  // Permissions by role
-  const ROLE_PERMISSIONS = {
-    [UserRole.ADMIN]: [
-      'wells:read', 'wells:write', 'wells:delete',
-      'users:read', 'users:write', 'users:delete',
-      'reports:read', 'reports:export',
-      'settings:read', 'settings:write',
-    ],
-    [UserRole.MANAGER]: [
-      'wells:read', 'wells:write',
-      'users:read',
-      'reports:read', 'reports:export',
-      'settings:read',
-    ],
-    [UserRole.FIELD_OPERATOR]: [
-      'wells:read', 'wells:write', // Only assigned wells
-      'field-data:write',
-      'reports:read', // Only own reports
-    ],
-    [UserRole.VIEWER]: [
-      'wells:read',
-      'reports:read',
-    ],
-  };
+// Roles for oil & gas operators
+export enum UserRole {
+ADMIN = 'ADMIN', // Full access, billing, user management
+MANAGER = 'MANAGER', // View all data, run reports, manage wells
+FIELD_OPERATOR = 'FIELD_OPERATOR', // Enter field data, view assigned wells
+VIEWER = 'VIEWER', // Read-only access (for contractors, consultants)
+}
 
-  // CASL-based permissions guard
-  @Injectable()
-  export class PermissionsGuard implements CanActivate {
-    canActivate(context: ExecutionContext): boolean {
-      const request = context.switchToHttp().getRequest();
-      const user = request.user;
-      const requiredPermission = this.getRequiredPermission(context);
+// Permissions by role
+const ROLE_PERMISSIONS = {
+[UserRole.ADMIN]: [
+'wells:read', 'wells:write', 'wells:delete',
+'users:read', 'users:write', 'users:delete',
+'reports:read', 'reports:export',
+'settings:read', 'settings:write',
+],
+[UserRole.MANAGER]: [
+'wells:read', 'wells:write',
+'users:read',
+'reports:read', 'reports:export',
+'settings:read',
+],
+[UserRole.FIELD_OPERATOR]: [
+'wells:read', 'wells:write', // Only assigned wells
+'field-data:write',
+'reports:read', // Only own reports
+],
+[UserRole.VIEWER]: [
+'wells:read',
+'reports:read',
+],
+};
+
+// CASL-based permissions guard
+@Injectable()
+export class PermissionsGuard implements CanActivate {
+canActivate(context: ExecutionContext): boolean {
+const request = context.switchToHttp().getRequest();
+const user = request.user;
+const requiredPermission = this.getRequiredPermission(context);
 
       const userPermissions = ROLE_PERMISSIONS[user.role];
 
@@ -1813,54 +1826,58 @@ can connect to i
 
       return true;
     }
-  }
 
-  ---
-  Summary & Next Steps
+}
+
+---
+
+Summary & Next Steps
 
 ⏺ Architecture Decisions Summary
 
-  | Decision            | Chosen Approach                                            | Rationale
-                                                     |
-  |---------------------|------------------------------------------------------------|--------------------------------------------
-  ---------------------------------------------------|
-  | Deployment          | Cloud-first (Railway), subdomain-per-tenant                | Simpler ops, Slack-style UX, client chooses
-   DB location                                       |
-  | Database            | PostgreSQL per tenant (client-controlled location)         | Data sovereignty, compliance, scalability
-                                                     |
-  | Sync                | Batch sync at end of shift                                 | Natural sync point, efficient, matches
-  field workflows                                        |
-  | Conflict Resolution | Smart rules (newest wins, highest value, manual review)    | Safety-first for O&G, automated where safe
-                                                     |
-  | ML                  | Cloud-based Python microservice                            | 8 use cases (predictive maintenance,
-  production optimization, anomaly detection, forecasting) |
-  | File Storage        | Pluggable (Azure default, AWS optional)                    | Client choice, Strategy Pattern
-                                                     |
-  | Authentication      | Email/password + magic links (MVP) → SSO/SAML (Enterprise) | Fast to market, upgrade path for large
-  operators                                              |
+| Decision | Chosen Approach | Rationale
+|
+|---------------------|------------------------------------------------------------|--------------------------------------------
+---------------------------------------------------|
+| Deployment | Cloud-first (Railway), subdomain-per-tenant | Simpler ops, Slack-style UX, client chooses
+DB location |
+| Database | PostgreSQL per tenant (client-controlled location) | Data sovereignty, compliance, scalability
+|
+| Sync | Batch sync at end of shift | Natural sync point, efficient, matches
+field workflows |
+| Conflict Resolution | Smart rules (newest wins, highest value, manual review) | Safety-first for O&G, automated where safe
+|
+| ML | Cloud-based Python microservice | 8 use cases (predictive maintenance,
+production optimization, anomaly detection, forecasting) |
+| File Storage | Pluggable (Azure default, AWS optional) | Client choice, Strategy Pattern
+|
+| Authentication | Email/password + magic links (MVP) → SSO/SAML (Enterprise) | Fast to market, upgrade path for large
+operators |
 
-  ---
-  Ready to Build?
+---
 
-  I've designed the complete architecture. Would you like me to:
+Ready to Build?
 
-  1. Update CLAUDE.md and patterns to remove PSA references and add O&G domain language?
-  2. Create new pattern documents for Database-Per-Tenant, Offline Sync, Conflict Resolution?
-  3. Scaffold the monorepo structure (apps/api, apps/web, apps/electron, apps/mobile)?
-  4. Start building the core infrastructure (tenant middleware, database connection pooling, auth system)?
+I've designed the complete architecture. Would you like me to:
 
-  Let me know which direction you'd like to go! 🚀
+1. Update CLAUDE.md and patterns to remove PSA references and add O&G domain language?
+2. Create new pattern documents for Database-Per-Tenant, Offline Sync, Conflict Resolution?
+3. Scaffold the monorepo structure (apps/api, apps/web, apps/electron, apps/mobile)?
+4. Start building the core infrastructure (tenant middleware, database connection pooling, auth system)?
 
-  Todos
-  ☒ Design subdomain-per-tenant architecture (Slack-style)
-  ☒ Document batch sync strategy for offline field apps
-  ☒ Create conflict resolution pattern for field data
-  ☒ Research ML opportunities for oil & gas production data
-  ☒ Design authentication architecture for multi-tenant O&G platform
-  ☐ Update CLAUDE.md to remove PSA references
-  ☐ Create new pattern: Database-Per-Tenant Multi-Tenancy Pattern
+Let me know which direction you'd like to go! 🚀
+
+Todos
+☒ Design subdomain-per-tenant architecture (Slack-style)
+☒ Document batch sync strategy for offline field apps
+☒ Create conflict resolution pattern for field data
+☒ Research ML opportunities for oil & gas production data
+☒ Design authentication architecture for multi-tenant O&G platform
+☐ Update CLAUDE.md to remove PSA references
+☐ Create new pattern: Database-Per-Tenant Multi-Tenancy Pattern
 
 ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
->  
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-  ? for shortcuts
+
+>  
+> ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+> ? for shortcuts

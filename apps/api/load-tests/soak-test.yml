@@ -1,0 +1,96 @@
+config:
+  target: "http://localhost:4000"
+  phases:
+    # Warm-up
+    - duration: 300
+      arrivalRate: 5
+      rampTo: 15
+      name: "Warm-up (5 minutes)"
+
+    # Sustained moderate load for 1 hour (soak test)
+    - duration: 3600
+      arrivalRate: 15
+      name: "Soak test (1 hour at 15 users/sec)"
+
+    # Cool-down
+    - duration: 300
+      arrivalRate: 15
+      rampTo: 1
+      name: "Cool-down (5 minutes)"
+
+  ensure:
+    maxErrorRate: 1  # Very low error tolerance for endurance
+    p95: 800
+    p99: 2000
+
+  processor: "./load-tests/processor.js"
+
+scenarios:
+  # Simulate realistic long-running user sessions
+  - name: "Typical Daily Operations"
+    flow:
+      # Login once per session
+      - post:
+          url: "/auth/login"
+          json:
+            email: "loadtest@wellpulse.io"
+            password: "LoadTest123!@#"
+          capture:
+            - json: "$.accessToken"
+              as: "token"
+            - json: "$.refreshToken"
+              as: "refreshToken"
+
+      # Simulate 15 minutes of activity
+      - loop:
+          # Check dashboard (every ~5 minutes)
+          - get:
+              url: "/dashboard/metrics"
+              headers:
+                Authorization: "Bearer {{ token }}"
+
+          - function: "customThink"
+
+          # Browse wells
+          - get:
+              url: "/wells?page={{ $randomNumber(1, 3) }}"
+              headers:
+                Authorization: "Bearer {{ token }}"
+
+          - function: "customThink"
+
+          # Check a specific well
+          - get:
+              url: "/wells/{{ $randomString() }}"
+              headers:
+                Authorization: "Bearer {{ token }}"
+
+          - function: "customThink"
+
+          # Check alerts
+          - get:
+              url: "/alerts?page=1&limit=10"
+              headers:
+                Authorization: "Bearer {{ token }}"
+
+          - function: "customThink"
+
+          # View production stats
+          - get:
+              url: "/production/stats?startDate=2024-01-01&endDate=2024-12-31"
+              headers:
+                Authorization: "Bearer {{ token }}"
+
+          - function: "customThink"
+
+          # Occasionally refresh token (every 10th loop iteration)
+          - post:
+              url: "/auth/refresh"
+              json:
+                refreshToken: "{{ refreshToken }}"
+              capture:
+                - json: "$.accessToken"
+                  as: "token"
+              ifTrue: "{{ $randomNumber(1, 10) === 1 }}"
+
+        count: 3  # Repeat 3 times (~ 15 minutes of activity)

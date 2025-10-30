@@ -24,9 +24,27 @@ import { Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { AdminUsersController } from './admin-users.controller';
 import { AdminTenantsController } from './admin-tenants.controller';
+import { GetAllUsersHandler } from '../../application/admin/queries/get-all-users/get-all-users.handler';
+import { UserRepository } from '../../infrastructure/database/repositories/user.repository';
+import { TenantRepository } from '../../infrastructure/database/repositories/tenant.repository';
+import { DatabaseModule } from '../../infrastructure/database/database.module';
+import { TenantsModule } from '../tenants/tenants.module';
+
+const QueryHandlers = [GetAllUsersHandler];
 
 @Module({
-  imports: [CqrsModule],
+  imports: [CqrsModule, DatabaseModule, TenantsModule],
   controllers: [AdminUsersController, AdminTenantsController],
+  providers: [
+    ...QueryHandlers,
+    {
+      provide: 'IUserRepository',
+      useClass: UserRepository,
+    },
+    {
+      provide: 'ITenantRepository',
+      useClass: TenantRepository,
+    },
+  ],
 })
 export class AdminModule {}

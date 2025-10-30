@@ -44,7 +44,7 @@ WellPulse provides independent oil & gas operators with:
 **Ports**:
 
 - API (Tenant-facing): `http://localhost:4000`
-- Web (Client Dashboard): `http://localhost:3000`
+- Web (Client Dashboard): `http://localhost:4001`
 - Admin (Internal Portal): `http://localhost:4002`
 - ML Service: `http://localhost:8000`
 - Mailpit: `http://localhost:8025`

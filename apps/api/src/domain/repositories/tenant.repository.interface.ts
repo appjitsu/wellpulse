@@ -29,6 +29,12 @@ export interface ITenantRepository {
   findBySubdomain(subdomain: string): Promise<Tenant | null>;
 
   /**
+   * Find tenant by tenant ID (for mobile/desktop app authentication)
+   * Format: COMPANY-XXXXXX (e.g., DEMO-A5L32W)
+   */
+  findByTenantId(tenantId: string): Promise<Tenant | null>;
+
+  /**
    * Find all tenants with pagination
    */
   findAll(options: {

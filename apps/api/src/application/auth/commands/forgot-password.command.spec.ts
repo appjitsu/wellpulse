@@ -31,6 +31,7 @@ describe('ForgotPasswordHandler', () => {
     // Create mock repository
     mockRepository = {
       findByEmail: jest.fn(),
+      findByAzureObjectId: jest.fn(),
       update: jest.fn(),
       findById: jest.fn(),
       findAll: jest.fn(),

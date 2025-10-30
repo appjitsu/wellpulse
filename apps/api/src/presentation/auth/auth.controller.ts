@@ -23,10 +23,12 @@ import {
   Res,
   Req,
   UnauthorizedException,
+  Get,
 } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { CommandBus } from '@nestjs/cqrs';
 import { Throttle, SkipThrottle } from '@nestjs/throttler';
+import { ConfigService } from '@nestjs/config';
 import { Public } from '../decorators/public.decorator';
 import { TenantId } from '../decorators/tenant-id.decorator';
 import {
@@ -38,12 +40,15 @@ import { VerifyEmailDto } from './dto/verify-email.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { AzureAdLoginDto } from './dto/azure-ad-login.dto';
 import { RegisterUserCommand } from '../../application/auth/commands/register-user.command';
 import { VerifyEmailCommand } from '../../application/auth/commands/verify-email.command';
 import { LoginCommand } from '../../application/auth/commands/login.command';
 import { RefreshTokenCommand } from '../../application/auth/commands/refresh-token.command';
 import { ForgotPasswordCommand } from '../../application/auth/commands/forgot-password.command';
 import { ResetPasswordCommand } from '../../application/auth/commands/reset-password.command';
+import { LoginAzureAdCommand } from '../../application/auth/commands/login-azure-ad.command';
+import { TokenBlacklistService } from '../../infrastructure/services/token-blacklist.service';
 
 @Controller('auth')
 export class AuthController {
@@ -51,7 +56,11 @@ export class AuthController {
   private readonly REFRESH_TOKEN_COOKIE = 'refreshToken';
   private readonly COOKIE_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 
-  constructor(private readonly commandBus: CommandBus) {}
+  constructor(
+    private readonly commandBus: CommandBus,
+    private readonly configService: ConfigService,
+    private readonly tokenBlacklistService: TokenBlacklistService,
+  ) {}
 
   /**
    * Register new user
@@ -134,37 +143,55 @@ export class AuthController {
    * POST /auth/login
    *
    * Authenticates user and returns access token.
-   * Sets refresh token as httpOnly cookie.
+   * Sets refresh token as httpOnly cookie (web apps only).
    *
-   * Rate limit: 5 requests per 15 minutes per IP (brute force protection)
+   * For mobile/desktop apps (detected by X-Tenant-ID header presence):
+   * - Returns tenantSecret on first login (must be securely stored in device keychain)
+   * - Does NOT set httpOnly cookie (mobile/desktop use local storage for refresh token)
+   *
+   * Rate limit: 100 requests per 15 minutes per IP in dev (generous for testing)
+   *             5 requests per 15 minutes per IP in prod (brute force protection)
    */
   @Public()
-  @Throttle({ default: { limit: 5, ttl: 900000 } }) // 5 requests per 15 minutes
+  @Throttle({
+    default: {
+      limit: process.env.NODE_ENV === 'production' ? 5 : 100,
+      ttl: 900000,
+    },
+  })
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(
     @TenantContext() tenant: TenantContextDto | undefined,
     @Body() dto: LoginDto,
+    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ): Promise<{
     message: string;
     accessToken: string;
+    refreshToken?: string; // Only for mobile/desktop (web uses httpOnly cookie)
     user: {
       id: string;
       email: string;
       name: string;
       role: string;
     };
+    tenantId?: string; // Returned for mobile/desktop apps
+    tenantSecret?: string; // Returned ONCE for mobile/desktop first-time login
   }> {
     if (!tenant) {
       throw new UnauthorizedException('Tenant context is required');
     }
+
+    // Detect mobile/desktop app by presence of X-Tenant-ID header
+    const isMobileOrDesktop = !!req.headers['x-tenant-id'];
 
     const command = new LoginCommand(
       tenant.id,
       dto.email,
       dto.password,
       tenant.databaseName,
+      isMobileOrDesktop,
     );
 
     const result = await this.commandBus.execute<
@@ -178,16 +205,23 @@ export class AuthController {
           name: string;
           role: string;
         };
+        tenantSecret?: string;
       }
     >(command);
 
-    // Set refresh token as httpOnly cookie
-    this.setRefreshTokenCookie(res, result.refreshToken);
+    // For web apps: Set refresh token as httpOnly cookie
+    // For mobile/desktop: Return refresh token in response (stored in secure storage)
+    if (!isMobileOrDesktop) {
+      this.setRefreshTokenCookie(res, result.refreshToken);
+    }
 
     return {
       message: 'Login successful',
       accessToken: result.accessToken,
+      refreshToken: isMobileOrDesktop ? result.refreshToken : undefined,
       user: result.user,
+      tenantId: isMobileOrDesktop ? tenant.subdomain : undefined, // Return subdomain as tenantId for display
+      tenantSecret: result.tenantSecret, // Only populated for mobile/desktop first-time login
     };
   }
 
@@ -195,7 +229,7 @@ export class AuthController {
    * Logout
    * POST /auth/logout
    *
-   * Clears refresh token cookie.
+   * Blacklists access and refresh tokens, clears refresh token cookie.
    *
    * No rate limit (safe operation)
    */
@@ -203,13 +237,53 @@ export class AuthController {
   @SkipThrottle() // Skip rate limiting for logout
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  logout(@Res({ passthrough: true }) res: Response): { message: string } {
-    // Clear refresh token cookie
-    this.clearRefreshTokenCookie(res);
+  async logout(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<{ message: string }> {
+    try {
+      // Extract access token from Authorization header
+      const accessToken = this.extractTokenFromHeader(req);
 
-    return {
-      message: 'Logout successful',
-    };
+      // Extract refresh token from cookie or request body
+      const refreshToken =
+        req.cookies?.[this.REFRESH_TOKEN_COOKIE] || req.body?.refreshToken;
+
+      // Get user ID from decoded token (if available)
+      const userId = (req as any).user?.id || 'unknown';
+
+      // Blacklist access token if present
+      if (accessToken) {
+        await this.tokenBlacklistService.blacklistToken(
+          accessToken,
+          userId,
+          3600, // 1 hour TTL (access tokens typically expire in 15-60 mins)
+        );
+      }
+
+      // Blacklist refresh token if present
+      if (refreshToken) {
+        await this.tokenBlacklistService.blacklistToken(
+          refreshToken,
+          userId,
+          604800, // 7 days TTL (refresh tokens expire in 7 days)
+        );
+      }
+
+      // Clear refresh token cookie
+      this.clearRefreshTokenCookie(res);
+
+      return {
+        message: 'Logout successful',
+      };
+    } catch (error) {
+      // Even if blacklisting fails, clear the cookie
+      this.clearRefreshTokenCookie(res);
+
+      return {
+        message: 'Logout successful',
+      };
+    }
   }
 
   /**
@@ -328,8 +402,20 @@ export class AuthController {
   private setRefreshTokenCookie(res: Response, refreshToken: string): void {
     res.cookie(this.REFRESH_TOKEN_COOKIE, refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      // Secure must be true when SameSite=None (required by browsers)
+      // localhost is treated as secure context, so this works in development
+      secure: true,
+      // Use 'lax' in development (same subdomain, different ports)
+      // Use 'strict' in production for better security
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+      // Don't set domain in development - cookies will be same-origin only
+      // This means the cookie will only work for the exact origin that set it
+      // In production, set domain for subdomain sharing
+      domain:
+        process.env.NODE_ENV === 'production'
+          ? process.env.COOKIE_DOMAIN
+          : undefined,
+      path: '/',
       maxAge: this.COOKIE_MAX_AGE,
     });
   }
@@ -340,8 +426,137 @@ export class AuthController {
   private clearRefreshTokenCookie(res: Response): void {
     res.clearCookie(this.REFRESH_TOKEN_COOKIE, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: true,
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+      domain:
+        process.env.NODE_ENV === 'production'
+          ? process.env.COOKIE_DOMAIN
+          : undefined,
+      path: '/',
     });
+  }
+
+  /**
+   * Extract JWT token from Authorization header
+   */
+  private extractTokenFromHeader(req: Request): string | null {
+    const authHeader = req.headers['authorization'] as string;
+
+    if (!authHeader) {
+      return null;
+    }
+
+    const [type, token] = authHeader.split(' ');
+
+    if (type !== 'Bearer' || !token) {
+      return null;
+    }
+
+    return token;
+  }
+
+  /**
+   * Azure AD Configuration
+   * GET /auth/azure-ad/config
+   *
+   * Returns Azure AD configuration for frontend MSAL initialization.
+   * Public endpoint - no authentication required.
+   *
+   * Rate limit: 10 requests per minute (default)
+   */
+  @Public()
+  @Get('azure-ad/config')
+  @HttpCode(HttpStatus.OK)
+  getAzureAdConfig(): {
+    clientId: string;
+    tenantId: string;
+    redirectUri: string;
+  } {
+    const clientId = this.configService.get<string>('AZURE_AD_CLIENT_ID');
+    const tenantId = this.configService.get<string>('AZURE_AD_TENANT_ID');
+    const redirectUri = this.configService.get<string>('AZURE_AD_REDIRECT_URI');
+
+    if (!clientId || !tenantId) {
+      throw new UnauthorizedException('Azure AD is not configured');
+    }
+
+    return {
+      clientId,
+      tenantId,
+      redirectUri: redirectUri || 'https://wellpulse.io/auth/callback',
+    };
+  }
+
+  /**
+   * Login with Azure AD
+   * POST /auth/azure-ad
+   *
+   * Authenticates user with Azure AD token and returns WellPulse JWT tokens.
+   * Sets refresh token as httpOnly cookie (web apps only).
+   *
+   * Flow:
+   * 1. Frontend obtains Azure AD token using MSAL library
+   * 2. Frontend sends token to this endpoint
+   * 3. Backend validates token, finds/creates user
+   * 4. Backend returns WellPulse JWT tokens
+   *
+   * Rate limit: 100 requests per 15 minutes per IP in dev (generous for testing)
+   *             10 requests per 15 minutes per IP in prod (prevent abuse)
+   */
+  @Public()
+  @Throttle({
+    default: {
+      limit: process.env.NODE_ENV === 'production' ? 10 : 100,
+      ttl: 900000,
+    },
+  })
+  @Post('azure-ad')
+  @HttpCode(HttpStatus.OK)
+  async loginWithAzureAd(
+    @TenantContext() tenant: TenantContextDto | undefined,
+    @Body() dto: AzureAdLoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<{
+    message: string;
+    accessToken: string;
+    user: {
+      id: string;
+      email: string;
+      name: string;
+      role: string;
+    };
+  }> {
+    if (!tenant) {
+      throw new UnauthorizedException('Tenant context is required');
+    }
+
+    const command = new LoginAzureAdCommand(
+      tenant.id,
+      dto.azureToken,
+      tenant.databaseName,
+    );
+
+    const result = await this.commandBus.execute<
+      LoginAzureAdCommand,
+      {
+        accessToken: string;
+        refreshToken: string;
+        user: {
+          id: string;
+          email: string;
+          name: string;
+          role: string;
+        };
+      }
+    >(command);
+
+    // Set refresh token as httpOnly cookie
+    this.setRefreshTokenCookie(res, result.refreshToken);
+
+    return {
+      message: 'Azure AD login successful',
+      accessToken: result.accessToken,
+      user: result.user,
+    };
   }
 }

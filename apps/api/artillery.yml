@@ -1,0 +1,209 @@
+config:
+  target: "http://localhost:4000"
+  phases:
+    # Warm-up phase: 5 users per second for 1 minute
+    - duration: 60
+      arrivalRate: 5
+      name: "Warm-up"
+
+    # Ramp-up phase: gradually increase to 20 users per second over 2 minutes
+    - duration: 120
+      arrivalRate: 5
+      rampTo: 20
+      name: "Ramp-up"
+
+    # Sustained load: 20 users per second for 3 minutes
+    - duration: 180
+      arrivalRate: 20
+      name: "Sustained load"
+
+    # Spike test: 50 users per second for 1 minute
+    - duration: 60
+      arrivalRate: 50
+      name: "Spike test"
+
+    # Cool-down: back to 5 users per second for 1 minute
+    - duration: 60
+      arrivalRate: 5
+      name: "Cool-down"
+
+  # Performance thresholds - tests will fail if exceeded
+  ensure:
+    p95: 1000  # 95th percentile response time < 1000ms
+    p99: 3000  # 99th percentile response time < 3000ms
+    maxErrorRate: 5  # Error rate < 5%
+
+  # HTTP defaults
+  http:
+    timeout: 10  # Request timeout in seconds
+
+  # Plugins for enhanced reporting
+  plugins:
+    expect: {}
+    metrics-by-endpoint:
+      stripQueryString: true
+      ignoreUnknownEndpoints: true
+
+  # Processor script for custom logic
+  processor: "./load-tests/processor.js"
+
+  # Variables available to all scenarios
+  variables:
+    apiVersion: "v1"
+
+scenarios:
+  # Scenario 1: Health check (lightweight)
+  - name: "Health Check"
+    weight: 10
+    flow:
+      - get:
+          url: "/health"
+          expect:
+            - statusCode: 200
+            - contentType: json
+            - hasProperty: status
+            - equals:
+                - "{{ status }}"
+                - "ok"
+
+  # Scenario 2: Authentication flow
+  - name: "Authentication Flow"
+    weight: 20
+    flow:
+      # Login
+      - post:
+          url: "/auth/login"
+          json:
+            email: "loadtest@wellpulse.io"
+            password: "LoadTest123!@#"
+          capture:
+            - json: "$.accessToken"
+              as: "accessToken"
+            - json: "$.refreshToken"
+              as: "refreshToken"
+          expect:
+            - statusCode: 200
+            - hasProperty: accessToken
+            - hasProperty: refreshToken
+
+      # Use access token to access protected endpoint
+      - get:
+          url: "/wells"
+          headers:
+            Authorization: "Bearer {{ accessToken }}"
+          expect:
+            - statusCode: 200
+
+      # Refresh token
+      - post:
+          url: "/auth/refresh"
+          json:
+            refreshToken: "{{ refreshToken }}"
+          expect:
+            - statusCode: 200
+
+  # Scenario 3: Wells CRUD operations
+  - name: "Wells CRUD"
+    weight: 30
+    flow:
+      # Login first
+      - post:
+          url: "/auth/login"
+          json:
+            email: "loadtest@wellpulse.io"
+            password: "LoadTest123!@#"
+          capture:
+            - json: "$.accessToken"
+              as: "token"
+
+      # List wells
+      - get:
+          url: "/wells?page=1&limit=20"
+          headers:
+            Authorization: "Bearer {{ token }}"
+          expect:
+            - statusCode: 200
+
+      # Get single well (if exists)
+      - get:
+          url: "/wells/{{ $randomString() }}"
+          headers:
+            Authorization: "Bearer {{ token }}"
+          expect:
+            # Either 200 (found) or 404 (not found) is acceptable
+            - statusCode: [200, 404]
+
+  # Scenario 4: Field data entry
+  - name: "Field Data Entry"
+    weight: 25
+    flow:
+      # Login
+      - post:
+          url: "/auth/login"
+          json:
+            email: "loadtest@wellpulse.io"
+            password: "LoadTest123!@#"
+          capture:
+            - json: "$.accessToken"
+              as: "token"
+
+      # List wells to get a well ID
+      - get:
+          url: "/wells?page=1&limit=1"
+          headers:
+            Authorization: "Bearer {{ token }}"
+          capture:
+            - json: "$.data[0].id"
+              as: "wellId"
+
+      # Create field entry
+      - post:
+          url: "/field-entries"
+          headers:
+            Authorization: "Bearer {{ token }}"
+          json:
+            wellId: "{{ wellId }}"
+            entryDate: "{{ $timestamp() }}"
+            productionVolume: "{{ $randomNumber(100, 1000) }}"
+            notes: "Load test entry"
+          expect:
+            # Either 201 (created) or 400 (validation error) is acceptable
+            - statusCode: [201, 400]
+
+  # Scenario 5: Dashboard metrics
+  - name: "Dashboard Metrics"
+    weight: 15
+    flow:
+      # Login
+      - post:
+          url: "/auth/login"
+          json:
+            email: "loadtest@wellpulse.io"
+            password: "LoadTest123!@#"
+          capture:
+            - json: "$.accessToken"
+              as: "token"
+
+      # Get dashboard metrics
+      - get:
+          url: "/dashboard/metrics"
+          headers:
+            Authorization: "Bearer {{ token }}"
+          expect:
+            - statusCode: 200
+
+      # Get production stats
+      - get:
+          url: "/production/stats?startDate=2024-01-01&endDate=2024-12-31"
+          headers:
+            Authorization: "Bearer {{ token }}"
+          expect:
+            - statusCode: 200
+
+      # Get alerts
+      - get:
+          url: "/alerts?page=1&limit=10"
+          headers:
+            Authorization: "Bearer {{ token }}"
+          expect:
+            - statusCode: 200

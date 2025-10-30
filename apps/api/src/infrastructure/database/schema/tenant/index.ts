@@ -8,3 +8,7 @@
 export * from './users.schema';
 export * from './wells.schema';
 export * from './wells-read-projection.schema';
+export * from './field-entries.schema';
+export * from './nominal-ranges.schema';
+export * from './alerts.schema';
+export * from './audit-logs.schema';

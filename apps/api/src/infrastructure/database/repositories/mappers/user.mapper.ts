@@ -32,6 +32,8 @@ export class UserMapper {
       passwordResetToken: record.passwordResetToken ?? null,
       passwordResetExpires: record.passwordResetExpires ?? null,
       lastLoginAt: record.lastLoginAt ?? null,
+      azureObjectId: record.azureObjectId ?? null,
+      ssoProvider: record.ssoProvider ?? null,
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
     });
@@ -57,6 +59,8 @@ export class UserMapper {
       passwordResetToken: user.passwordResetToken,
       passwordResetExpires: user.passwordResetExpires,
       lastLoginAt: user.lastLoginAt,
+      azureObjectId: user.azureObjectId,
+      ssoProvider: user.ssoProvider,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
       deletedAt: null, // Always null when saving (soft delete handled separately)

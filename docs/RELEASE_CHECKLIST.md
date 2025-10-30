@@ -447,9 +447,9 @@ watch -n 1 'curl -s http://localhost:4000/api/metrics | grep tenant_connection_p
 
 **Sign-off:**
 
-- [ ] **Technical Lead:** ********\_******** (Date: **\_\_**)
-- [ ] **QA Engineer:** ********\_******** (Date: **\_\_**) _(if applicable)_
-- [ ] **DevOps:** ********\_******** (Date: **\_\_**) _(if applicable)_
+- [ ] **Technical Lead:** **\*\*\*\***\_**\*\*\*\*** (Date: **\_\_**)
+- [ ] **QA Engineer:** **\*\*\*\***\_**\*\*\*\*** (Date: **\_\_**) _(if applicable)_
+- [ ] **DevOps:** **\*\*\*\***\_**\*\*\*\*** (Date: **\_\_**) _(if applicable)_
 
 **Performance Test Results:**
 

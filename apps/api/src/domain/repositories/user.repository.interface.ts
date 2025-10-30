@@ -77,4 +77,13 @@ export interface IUserRepository {
     email: string,
     databaseName?: string,
   ): Promise<boolean>;
+
+  /**
+   * Find user by Azure AD object ID within tenant
+   */
+  findByAzureObjectId(
+    tenantId: string,
+    azureObjectId: string,
+    databaseName?: string,
+  ): Promise<User | null>;
 }

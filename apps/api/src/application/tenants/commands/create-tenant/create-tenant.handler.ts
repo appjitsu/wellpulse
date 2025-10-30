@@ -11,6 +11,7 @@ import {
   InternalServerErrorException,
   Inject,
 } from '@nestjs/common';
+import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { CreateTenantCommand } from './create-tenant.command';
 import { ITenantRepository } from '../../../../domain/repositories/tenant.repository.interface';
 import { Tenant } from '../../../../domain/tenants/tenant.entity';
@@ -18,13 +19,18 @@ import { TenantStatus } from '../../../../domain/tenants/value-objects/tenant-st
 import { SubscriptionTier } from '../../../../domain/tenants/value-objects/subscription-tier.vo';
 import { DatabaseConfig } from '../../../../domain/tenants/value-objects/database-config.vo';
 import { TenantProvisioningService } from '../../../../infrastructure/services/tenant-provisioning.service';
+import { SlackNotificationService } from '../../../../infrastructure/services/slack-notification.service';
 
 @Injectable()
-export class CreateTenantHandler {
+@CommandHandler(CreateTenantCommand)
+export class CreateTenantHandler
+  implements ICommandHandler<CreateTenantCommand, Tenant>
+{
   constructor(
     @Inject('ITenantRepository')
     private readonly tenantRepository: ITenantRepository,
     private readonly provisioningService: TenantProvisioningService,
+    private readonly slackNotificationService: SlackNotificationService,
   ) {}
 
   async execute(command: CreateTenantCommand): Promise<Tenant> {
@@ -50,10 +56,16 @@ export class CreateTenantHandler {
     // Create database configuration
     const databaseConfig = this.createDatabaseConfig(command);
 
+    // Generate tenant ID and secret key for triple-credential authentication
+    const tenantId = Tenant.generateTenantId(command.name);
+    const { secret, hash: secretKeyHash } = Tenant.generateSecretKey();
+
     // Create tenant entity
     const tenant = Tenant.create({
       slug: command.slug,
       subdomain: command.subdomain,
+      tenantId,
+      secretKeyHash,
       name: command.name,
       databaseConfig,
       subscriptionTier,
@@ -94,6 +106,8 @@ export class CreateTenantHandler {
     const provisionedTenant = Tenant.create({
       slug: tenant.slug,
       subdomain: tenant.subdomain,
+      tenantId: tenant.tenantId,
+      secretKeyHash: tenant.secretKeyHash,
       name: tenant.name,
       databaseConfig: updatedDatabaseConfig,
       subscriptionTier: tenant.subscriptionTier,
@@ -111,6 +125,28 @@ export class CreateTenantHandler {
 
     // Persist tenant (database now exists and is ready)
     const createdTenant = await this.tenantRepository.create(provisionedTenant);
+
+    // Send Slack notification with tenant credentials
+    // This is the ONLY time the secret is transmitted in plaintext
+    await this.slackNotificationService.notifyTenantCreated({
+      tenantId: createdTenant.tenantId,
+      tenantName: createdTenant.name,
+      subdomain: createdTenant.subdomain,
+      tenantSecret: secret,
+      contactEmail: createdTenant.contactEmail,
+      subscriptionTier: createdTenant.subscriptionTier.toString(),
+      createdBy: createdTenant.createdBy,
+    });
+
+    // Also log to console as fallback (if Slack is disabled)
+    if (!this.slackNotificationService.isEnabled()) {
+      console.log('🔐 Tenant Created Successfully!');
+      console.log(`   Tenant ID: ${createdTenant.tenantId}`);
+      console.log(`   Tenant Secret: ${secret}`);
+      console.log(
+        '   ⚠️  IMPORTANT: Store this secret securely - it will never be shown again!',
+      );
+    }
 
     return createdTenant;
   }
@@ -162,7 +198,7 @@ export class CreateTenantHandler {
 
     return DatabaseConfig.create({
       type: command.databaseType.toUpperCase() as never,
-      url: databaseUrl, // TODO: Encrypt before storage
+      url: databaseUrl, // Will be encrypted by TenantRepository before storage
       name: databaseName,
       host,
       port,

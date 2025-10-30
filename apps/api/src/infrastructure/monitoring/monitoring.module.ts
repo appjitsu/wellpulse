@@ -1,18 +1,26 @@
 /**
  * Monitoring Module
  *
- * Provides comprehensive Prometheus metrics and monitoring capabilities.
- * Exposes /metrics endpoint for Prometheus scraping.
+ * Provides comprehensive monitoring via:
+ * - Prometheus metrics (for /metrics endpoint)
+ * - Azure Application Insights (for production monitoring)
+ * - Structured logging via Winston
+ * - Performance monitoring with percentiles and thresholds
  *
  * Features:
  * - HTTP request metrics (rate, duration, status codes)
+ * - Performance metrics (p50, p95, p99 response times)
  * - Connection pool metrics per tenant
  * - Active users tracking (5-minute window)
- * - Database query metrics
+ * - Database query metrics with slow query detection
+ * - Memory and CPU usage monitoring
+ * - Request throughput and error rate tracking
+ * - Performance threshold alerting
  * - Tenant status metrics
+ * - Custom business metrics (alerts, violations, sync operations)
  * - Default Node.js metrics (CPU, memory, GC, event loop)
  *
- * Real-time updates: All metrics refresh every 10 seconds
+ * Real-time updates: All metrics refresh every 10 seconds (basic), 60 seconds (performance)
  */
 
 import { Module } from '@nestjs/common';
@@ -26,6 +34,10 @@ import {
 import { ConnectionPoolMetricsService } from './connection-pool-metrics.service';
 import { ActiveUsersMetricsService } from './active-users-metrics.service';
 import { HttpMetricsInterceptor } from './http-metrics.interceptor';
+import { ApplicationInsightsService } from './application-insights.service';
+import { MetricsService } from './metrics.service';
+import { PerformanceMonitoringService } from './performance-monitoring.service';
+import { PerformanceInterceptor } from './performance.interceptor';
 import { TenantsModule } from '../../presentation/tenants/tenants.module';
 
 @Module({
@@ -47,7 +59,10 @@ import { TenantsModule } from '../../presentation/tenants/tenants.module';
     TenantsModule,
   ],
   providers: [
-    // Metrics collection services
+    // Core monitoring services
+    ApplicationInsightsService,
+    MetricsService,
+    PerformanceMonitoringService,
     ConnectionPoolMetricsService,
     ActiveUsersMetricsService,
 
@@ -85,12 +100,20 @@ import { TenantsModule } from '../../presentation/tenants/tenants.module';
       provide: APP_INTERCEPTOR,
       useClass: HttpMetricsInterceptor,
     },
+    // Register Performance interceptor globally for detailed performance tracking
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: PerformanceInterceptor,
+    },
   ],
   exports: [
+    ApplicationInsightsService,
+    MetricsService,
+    PerformanceMonitoringService,
     ConnectionPoolMetricsService,
     ActiveUsersMetricsService,
     PrometheusModule,
-    // Note: HttpMetricsInterceptor is registered as APP_INTERCEPTOR and doesn't need to be exported
+    // Note: HttpMetricsInterceptor and PerformanceInterceptor are registered as APP_INTERCEPTOR and don't need to be exported
   ],
 })
 export class MonitoringModule {}

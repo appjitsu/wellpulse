@@ -15,56 +15,32 @@ import { ColumnDef } from '@tanstack/react-table';
 import { Badge } from '@/components/ui/badge';
 import { DataTableColumnHeader } from '@/components/ui/data-table';
 import { TenantDialog } from '@/components/tenants/tenant-dialog';
-
-// Mock tenant data
-interface Tenant {
-  id: string;
-  name: string;
-  subdomain: string;
-  contactEmail: string;
-  status: string;
-  subscriptionTier: string;
-  userCount: number;
-  createdAt: string;
-}
-
-const mockTenants: Tenant[] = [
-  {
-    id: '1',
-    name: 'ACME Oil & Gas',
-    subdomain: 'acmeoil',
-    contactEmail: 'admin@acme.com',
-    status: 'ACTIVE',
-    subscriptionTier: 'PROFESSIONAL',
-    userCount: 25,
-    createdAt: '2024-10-15',
-  },
-  {
-    id: '2',
-    name: 'Demo Corporation',
-    subdomain: 'demooil',
-    contactEmail: 'admin@demo.com',
-    status: 'ACTIVE',
-    subscriptionTier: 'ENTERPRISE',
-    userCount: 50,
-    createdAt: '2024-10-10',
-  },
-  {
-    id: '3',
-    name: 'WellPulse Internal',
-    subdomain: 'internal',
-    contactEmail: 'internal@wellpulse.app',
-    status: 'TRIAL',
-    subscriptionTier: 'STARTER',
-    userCount: 5,
-    createdAt: '2024-10-20',
-  },
-];
+import { TenantSuccessDialog } from '@/components/tenants/tenant-success-dialog';
+import { useToast } from '@/hooks/use-toast';
+import { useTenants, useCreateTenant } from '@/hooks/useTenants';
+import { TenantsLoading } from '@/components/tenants/tenants-loading';
+import { TenantsError } from '@/components/tenants/tenants-error';
+import { TenantsEmpty } from '@/components/tenants/tenants-empty';
+import type { Tenant } from '@/lib/api/admin';
 
 export default function TenantsPage() {
   const [tenantDialogOpen, setTenantDialogOpen] = useState(false);
+  const [successDialogOpen, setSuccessDialogOpen] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
+  const [selectedTenant, _setSelectedTenant] = useState<Tenant | null>(null);
+  const [createdTenant, setCreatedTenant] = useState<{
+    id: string;
+    tenantId: string;
+    subdomain: string;
+    message: string;
+  } | null>(null);
+  const { toast } = useToast();
+
+  // Fetch tenants with React Query
+  const { data, isLoading, error, refetch } = useTenants();
+  const createTenantMutation = useCreateTenant();
+
+  const tenants = data?.tenants || [];
 
   const columns: ColumnDef<Tenant>[] = [
     {
@@ -116,15 +92,81 @@ export default function TenantsPage() {
       accessorKey: 'createdAt',
       header: ({ column }) => <DataTableColumnHeader column={column} title="Created" />,
       cell: ({ row }) => {
-        return <div className="text-sm">{row.getValue('createdAt')}</div>;
+        const date = new Date(row.getValue('createdAt'));
+        return <div className="text-sm">{date.toLocaleDateString()}</div>;
       },
     },
   ];
 
-  const handleTenantSubmit = async (values: unknown) => {
-    console.log('Tenant submit:', values);
-    // TODO: Implement API call
+  const handleTenantSubmit = async (values: {
+    name: string;
+    slug: string;
+    subdomain: string;
+    contactEmail: string;
+    subscriptionTier: string;
+    trialDays?: number;
+  }) => {
+    try {
+      const result = await createTenantMutation.mutateAsync(values);
+      setCreatedTenant(
+        result as { id: string; tenantId: string; subdomain: string; message: string },
+      );
+      setSuccessDialogOpen(true);
+      setTenantDialogOpen(false);
+
+      toast({
+        title: 'Tenant created successfully',
+        description: `Tenant ID: ${(result as { tenantId?: string }).tenantId}`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Failed to create tenant',
+        description: error instanceof Error ? error.message : 'An error occurred',
+        variant: 'destructive',
+      });
+      throw error;
+    }
   };
+
+  // Show loading state
+  if (isLoading) {
+    return <TenantsLoading />;
+  }
+
+  // Show error state
+  if (error) {
+    return <TenantsError error={error} onRetry={() => refetch()} />;
+  }
+
+  // Show empty state
+  if (tenants.length === 0) {
+    return (
+      <div className="space-y-6 p-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Tenant Management</h1>
+            <p className="text-muted-foreground">Manage all tenant organizations</p>
+          </div>
+        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <TenantsEmpty onCreateClick={() => setTenantDialogOpen(true)} />
+          </CardContent>
+        </Card>
+        <TenantDialog
+          open={tenantDialogOpen}
+          onOpenChange={setTenantDialogOpen}
+          tenant={selectedTenant}
+          onSubmit={handleTenantSubmit}
+        />
+        <TenantSuccessDialog
+          open={successDialogOpen}
+          onOpenChange={setSuccessDialogOpen}
+          tenantData={createdTenant}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 p-8">
@@ -148,7 +190,7 @@ export default function TenantsPage() {
             <Building2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockTenants.length}</div>
+            <div className="text-2xl font-bold">{tenants.length}</div>
           </CardContent>
         </Card>
 
@@ -158,7 +200,7 @@ export default function TenantsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {mockTenants.filter((t) => t.status === 'ACTIVE').length}
+              {tenants.filter((t) => t.status === 'ACTIVE').length}
             </div>
           </CardContent>
         </Card>
@@ -169,7 +211,7 @@ export default function TenantsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-yellow-600">
-              {mockTenants.filter((t) => t.status === 'TRIAL').length}
+              {tenants.filter((t) => t.status === 'TRIAL').length}
             </div>
           </CardContent>
         </Card>
@@ -180,7 +222,7 @@ export default function TenantsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {mockTenants.reduce((sum, t) => sum + t.userCount, 0)}
+              {tenants.reduce((sum, t) => sum + t.userCount, 0)}
             </div>
           </CardContent>
         </Card>
@@ -195,7 +237,7 @@ export default function TenantsPage() {
         <CardContent>
           <DataTable
             columns={columns}
-            data={mockTenants}
+            data={tenants}
             searchKey="name"
             searchPlaceholder="Search tenants..."
           />
@@ -208,6 +250,13 @@ export default function TenantsPage() {
         onOpenChange={setTenantDialogOpen}
         tenant={selectedTenant}
         onSubmit={handleTenantSubmit}
+      />
+
+      {/* Success Dialog */}
+      <TenantSuccessDialog
+        open={successDialogOpen}
+        onOpenChange={setSuccessDialogOpen}
+        tenantData={createdTenant}
       />
     </div>
   );

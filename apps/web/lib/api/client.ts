@@ -38,7 +38,7 @@ const processQueue = (error: Error | null, token: string | null = null) => {
   failedQueue = [];
 };
 
-// Request interceptor - attach access token
+// Request interceptor - attach access token and tenant subdomain
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     // Get access token from auth store
@@ -49,12 +49,58 @@ apiClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
+    // Extract subdomain from hostname and include in request
+    // This is needed for multi-tenant subdomain routing
+    if (typeof window !== 'undefined' && config.headers) {
+      const hostname = window.location.hostname;
+      const subdomain = extractSubdomain(hostname);
+
+      if (subdomain) {
+        config.headers['X-Tenant-Subdomain'] = subdomain;
+      }
+    }
+
     return config;
   },
   (error) => {
     return Promise.reject(error);
   },
 );
+
+/**
+ * Extract subdomain from hostname
+ *
+ * Examples:
+ * - demo.localhost → "demo"
+ * - demo.wellpulse.app → "demo"
+ * - localhost → null
+ * - wellpulse.app → null
+ */
+function extractSubdomain(hostname: string): string | null {
+  // Remove port if present
+  const host = hostname.split(':')[0];
+
+  // Split by dots
+  const parts = host.split('.');
+
+  // No subdomain if single part (localhost)
+  if (parts.length === 1) {
+    return null;
+  }
+
+  // Two parts: check if it's localhost or base domain
+  if (parts.length === 2) {
+    if (parts[1] === 'localhost' || host === 'wellpulse.app') {
+      // First part is the subdomain (demo.localhost → "demo")
+      return parts[0];
+    }
+    return null;
+  }
+
+  // Three or more parts: first part is subdomain
+  // demo.wellpulse.app → "demo"
+  return parts[0];
+}
 
 // Response interceptor - handle 401 and refresh token
 apiClient.interceptors.response.use(
@@ -114,11 +160,19 @@ apiClient.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError as Error, null);
 
-        // Clear auth state and redirect to login
+        // Clear auth state and redirect to login (skip in development if no token exists)
         if (typeof window !== 'undefined') {
+          const hasToken = localStorage.getItem('accessToken');
+          const isDevelopment = process.env.NODE_ENV !== 'production';
+
           localStorage.removeItem('accessToken');
           localStorage.removeItem('user');
-          window.location.href = '/login';
+
+          // Only redirect to login if we had a token before (actual logout scenario)
+          // In development, don't redirect if there was never a token (avoids redirect loops)
+          if (hasToken || !isDevelopment) {
+            window.location.href = '/login';
+          }
         }
 
         return Promise.reject(refreshError);

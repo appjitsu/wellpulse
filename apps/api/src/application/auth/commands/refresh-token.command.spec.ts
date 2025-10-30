@@ -35,6 +35,7 @@ describe('RefreshTokenHandler', () => {
     mockRepository = {
       findById: jest.fn(),
       findByEmail: jest.fn(),
+      findByAzureObjectId: jest.fn(),
       update: jest.fn(),
       findAll: jest.fn(),
       save: jest.fn(),

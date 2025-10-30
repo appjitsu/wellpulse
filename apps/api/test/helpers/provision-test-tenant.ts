@@ -75,10 +75,14 @@ export async function provisionTestTenant(
 
     if (existing.length === 0) {
       // Register tenant in master database
+      // Generate test tenantId (format: SLUG-RANDOM)
+      const tenantId = `${slug.toUpperCase().slice(0, 4)}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
       await masterDb.insert(tenants).values({
         slug,
         subdomain: `${subdomain}.wellpulse.local`,
         name: `Test Tenant ${slug}`,
+        tenantId,
+        secretKeyHash: 'test_secret_key_hash_for_e2e_testing', // Placeholder for tests
         databaseType: 'POSTGRESQL',
         databaseUrl: tenantDbUrl,
         databaseName,

@@ -7,10 +7,10 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { authApi } from '@/lib/api/auth.api';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -166,7 +166,7 @@ export default function AdminLoginPage() {
         <div className="text-center">
           <p className="text-xs text-slate-500 dark:text-slate-500">
             <a
-              href="http://localhost:3000"
+              href="http://localhost:4001"
               className="hover:text-slate-700 dark:hover:text-slate-300"
             >
               Client Portal

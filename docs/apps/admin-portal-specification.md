@@ -11,6 +11,7 @@
 The WellPulse Admin Portal is an internal-facing web application for WellPulse staff to manage all aspects of tenant onboarding, provisioning, monitoring, and support **without requiring direct access to Azure, AWS, or client infrastructure**.
 
 **Key Principle**: The admin portal is the **single source of truth** and **command center** for WellPulse operations. Admins should never need to:
+
 - Log into Azure Portal
 - Connect to databases via `psql`
 - SSH into servers
@@ -37,13 +38,13 @@ Authentication:
 
 ### Role-Based Access Control (RBAC)
 
-| Role | Permissions | Use Case |
-|------|-------------|----------|
-| **Super Admin** | Full access (create/edit/delete tenants, manage billing, view all data) | Founders, CTO |
-| **Operations Admin** | Tenant management, provisioning, monitoring | Operations team |
-| **Support Admin** | View-only access to tenant data, can create support tickets | Customer support team |
-| **Billing Admin** | View/edit billing, invoices, payment methods | Finance team |
-| **Read-Only** | View-only access to everything | Investors, advisors |
+| Role                 | Permissions                                                             | Use Case              |
+| -------------------- | ----------------------------------------------------------------------- | --------------------- |
+| **Super Admin**      | Full access (create/edit/delete tenants, manage billing, view all data) | Founders, CTO         |
+| **Operations Admin** | Tenant management, provisioning, monitoring                             | Operations team       |
+| **Support Admin**    | View-only access to tenant data, can create support tickets             | Customer support team |
+| **Billing Admin**    | View/edit billing, invoices, payment methods                            | Finance team          |
+| **Read-Only**        | View-only access to everything                                          | Investors, advisors   |
 
 ---
 
@@ -82,6 +83,7 @@ Deployment:
 **URL**: `https://admin.wellpulse.io/tenants`
 
 **Overview Screen**:
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │  WellPulse Admin Portal                          [Profile] [Logout]│
@@ -654,7 +656,6 @@ All admin endpoints require admin authentication token:
 @Controller('admin')
 @UseGuards(AdminAuthGuard) // Requires admin role
 export class AdminController {
-
   // Tenant Management
   @Get('tenants')
   async getAllTenants(): Promise<TenantDto[]> {}
@@ -674,7 +675,10 @@ export class AdminController {
   }
 
   @Patch('tenants/:tenantId')
-  async updateTenant(@Param('tenantId') tenantId: string, @Body() dto: UpdateTenantDto): Promise<TenantDto> {}
+  async updateTenant(
+    @Param('tenantId') tenantId: string,
+    @Body() dto: UpdateTenantDto,
+  ): Promise<TenantDto> {}
 
   @Post('tenants/:tenantId/suspend')
   async suspendTenant(@Param('tenantId') tenantId: string): Promise<void> {}
@@ -873,9 +877,9 @@ export const adminAuditLogsTable = pgTable('admin_audit_logs', {
   id: varchar('id', { length: 255 }).primaryKey(),
   adminUserId: varchar('admin_user_id', { length: 255 }).notNull(),
   action: varchar('action', { length: 100 }).notNull(),
-    // "CREATE_TENANT", "UPDATE_TENANT", "SUSPEND_TENANT", "RUN_MIGRATIONS", etc.
+  // "CREATE_TENANT", "UPDATE_TENANT", "SUSPEND_TENANT", "RUN_MIGRATIONS", etc.
   resource: varchar('resource', { length: 100 }).notNull(),
-    // "TENANT", "USER", "DATABASE", etc.
+  // "TENANT", "USER", "DATABASE", etc.
   resourceId: varchar('resource_id', { length: 255 }), // ID of affected resource
   details: jsonb('details'), // Additional context
   ipAddress: varchar('ip_address', { length: 50 }),
@@ -955,5 +959,6 @@ The **WellPulse Admin Portal** provides:
 ---
 
 **Related Documentation**:
+
 - [Azure Production Architecture](../deployment/azure-production-architecture.md)
 - [Database-Per-Tenant Multi-Tenancy Pattern](../patterns/69-Database-Per-Tenant-Multi-Tenancy-Pattern.md)

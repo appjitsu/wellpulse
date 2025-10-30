@@ -26,6 +26,25 @@ WellPulse uses **Drizzle Kit** for type-safe, migration-based database schema ma
 
 ## Quick Start
 
+### Automated Database Setup
+
+For a complete clean slate setup (recommended for local development):
+
+```bash
+# Drop all databases, create fresh ones, run migrations, and seed data
+./scripts/drop-dbs.sh && ./scripts/create-dbs.sh --seed
+
+# Or individually:
+./scripts/drop-dbs.sh          # Drop all WellPulse databases
+./scripts/create-dbs.sh --seed # Create, migrate, and seed
+./scripts/create-dbs.sh        # Create and migrate only (no seed data)
+```
+
+**What these scripts do**:
+- `drop-dbs.sh`: Safely drops all WellPulse databases (wellpulse_master, wellpulse_internal, demo_wellpulse)
+- `create-dbs.sh`: Creates databases, runs migrations, optionally seeds demo data
+- Both scripts provide color-coded output and error handling
+
 ### Development Workflow
 
 ```bash
@@ -422,6 +441,131 @@ pnpm --filter=api db:generate:tenant
 # Drizzle will detect drift and generate corrective migration
 # Review SQL carefully before applying
 ```
+
+---
+
+## Database Management Scripts
+
+WellPulse includes two Bash scripts for automated database lifecycle management in local development:
+
+### `scripts/create-dbs.sh`
+
+**Purpose**: Complete database provisioning from scratch
+
+**Features**:
+- Creates master database
+- Runs master migrations
+- Seeds master database (creates tenant records)
+- Dynamically discovers tenant databases from master
+- Creates all tenant databases
+- Runs tenant migrations
+- Optionally seeds demo tenant data
+
+**Usage**:
+
+```bash
+# Create databases with demo data
+./scripts/create-dbs.sh --seed
+
+# Create databases without demo data
+./scripts/create-dbs.sh
+```
+
+**What it does**:
+
+1. Creates `wellpulse_master` database
+2. Runs master migrations (`apps/api/src/infrastructure/database/scripts/migrate-master.ts`)
+3. Seeds master database (`apps/api/src/infrastructure/database/seeds/master.seed.ts`)
+   - Creates super admin user
+   - Creates 2 tenants (wellpulse, demo)
+4. Queries master database for tenant database names
+5. Creates tenant databases (`wellpulse_internal`, `demo_wellpulse`)
+6. Runs tenant migrations across all databases
+7. Optionally seeds demo tenant with realistic data (485 field entries, 15 wells, 4 users)
+
+**Output**:
+
+- Color-coded progress indicators (blue, green, red, yellow)
+- Summary table of tenants
+- Login credentials for master admin and demo users
+
+### `scripts/drop-dbs.sh`
+
+**Purpose**: Safely drop all WellPulse databases for clean slate testing
+
+**Features**:
+- Terminates active connections before dropping
+- Drops all WellPulse databases
+- Provides clear status feedback
+
+**Usage**:
+
+```bash
+./scripts/drop-dbs.sh
+```
+
+**What it does**:
+
+1. Terminates active connections to WellPulse databases
+2. Drops `wellpulse_master`
+3. Drops `wellpulse_internal`
+4. Drops `demo_wellpulse`
+
+**Safety**: Uses `DROP DATABASE IF EXISTS` to avoid errors if databases don't exist
+
+### Common Workflows with Scripts
+
+**Clean slate setup**:
+
+```bash
+./scripts/drop-dbs.sh && ./scripts/create-dbs.sh --seed
+```
+
+**Test migration without seed data**:
+
+```bash
+./scripts/drop-dbs.sh && ./scripts/create-dbs.sh
+```
+
+**Verify seed script changes**:
+
+```bash
+# Drop and recreate with fresh seed data
+./scripts/drop-dbs.sh
+./scripts/create-dbs.sh --seed
+```
+
+### Script Implementation Details
+
+**Dynamic Database Discovery**:
+
+The `create-dbs.sh` script queries the master database to discover which tenant databases need to be created:
+
+```bash
+TENANT_DBS=$(psql -h localhost -d wellpulse_master -t -c "SELECT database_name FROM tenants ORDER BY subdomain;")
+
+for db in $TENANT_DBS; do
+  psql -h localhost -d postgres -c "CREATE DATABASE $db OWNER wellpulse;"
+done
+```
+
+This ensures the script stays in sync with the tenant registry without hardcoding database names.
+
+**Connection Termination**:
+
+Before dropping databases, `drop-dbs.sh` terminates active connections to avoid "database is being accessed" errors:
+
+```bash
+psql -h localhost -d postgres -c "
+  SELECT pg_terminate_backend(pid)
+  FROM pg_stat_activity
+  WHERE datname = '$db' AND pid <> pg_backend_pid();
+"
+```
+
+**Error Handling**:
+
+Both scripts use `set -e` to exit immediately on any command failure, ensuring database consistency.
 
 ---
 
