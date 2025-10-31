@@ -1,0 +1,33 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environment": {
+      "value": "production"
+    },
+    "location": {
+      "value": "eastus"
+    },
+    "tenantSubdomain": {
+      "value": "demo"
+    },
+    "apiWebhookUrl": {
+      "value": "https://demo.wellpulse.io/api/webhooks/scada"
+    },
+    "iotHubSku": {
+      "value": "S1"
+    },
+    "iotHubCapacity": {
+      "value": 1
+    },
+    "tags": {
+      "value": {
+        "Project": "WellPulse",
+        "Tenant": "demo",
+        "Environment": "production",
+        "CostCenter": "IT",
+        "ManagedBy": "Bicep"
+      }
+    }
+  }
+}

@@ -1,0 +1,90 @@
+syntax = "proto3";
+
+package scada;
+
+// SCADA Ingestion Service
+// Provides query interface for NestJS API to retrieve readings
+service ScadaService {
+  // Query readings for a well within a time range
+  rpc QueryReadings(QueryReadingsRequest) returns (QueryReadingsResponse);
+
+  // Get aggregator statistics
+  rpc GetAggregatorStats(GetAggregatorStatsRequest) returns (GetAggregatorStatsResponse);
+
+  // Add a new SCADA connection dynamically
+  rpc AddConnection(AddConnectionRequest) returns (AddConnectionResponse);
+
+  // Remove a SCADA connection
+  rpc RemoveConnection(RemoveConnectionRequest) returns (RemoveConnectionResponse);
+
+  // Health check
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+message QueryReadingsRequest {
+  string tenant_id = 1;
+  string well_id = 2;
+  int64 start_time = 3; // Unix timestamp (seconds)
+  int64 end_time = 4;   // Unix timestamp (seconds)
+}
+
+message QueryReadingsResponse {
+  repeated Reading readings = 1;
+}
+
+message Reading {
+  string well_id = 1;
+  string tag_node_id = 2;
+  int64 timestamp = 3; // Unix timestamp (seconds)
+  double value = 4;
+  string quality = 5;
+}
+
+message GetAggregatorStatsRequest {
+  string tenant_id = 1;
+}
+
+message GetAggregatorStatsResponse {
+  string tenant_id = 1;
+  int32 buffer_size = 2;
+  int64 time_since_last_flush_ms = 3;
+}
+
+message AddConnectionRequest {
+  string connection_id = 1;
+  string tenant_id = 2;
+  string endpoint_url = 3;
+  string security_mode = 4;
+  string security_policy = 5;
+  optional string username = 6;
+  optional string password = 7;
+  repeated TagMapping tags = 8;
+}
+
+message TagMapping {
+  string tag_id = 1;
+  string well_id = 2;
+  string node_id = 3;
+  string data_type = 4;
+}
+
+message AddConnectionResponse {
+  bool success = 1;
+  optional string error = 2;
+}
+
+message RemoveConnectionRequest {
+  string connection_id = 1;
+}
+
+message RemoveConnectionResponse {
+  bool success = 1;
+}
+
+message HealthCheckRequest {}
+
+message HealthCheckResponse {
+  string status = 1;
+  int32 active_connections = 2;
+  int32 active_tenants = 3;
+}

@@ -1,0 +1,427 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.38.33.27573",
+      "templateHash": "17299579827575498160"
+    }
+  },
+  "parameters": {
+    "environment": {
+      "type": "string",
+      "metadata": {
+        "description": "Environment name (dev, staging, production)"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "eastus",
+      "metadata": {
+        "description": "Azure region for resources"
+      }
+    },
+    "tenantSubdomain": {
+      "type": "string",
+      "metadata": {
+        "description": "Tenant subdomain (e.g., acmeoil)"
+      }
+    },
+    "apiWebhookUrl": {
+      "type": "string",
+      "metadata": {
+        "description": "API webhook URL for Event Grid delivery"
+      }
+    },
+    "iotHubSku": {
+      "type": "string",
+      "defaultValue": "S1",
+      "allowedValues": [
+        "S1",
+        "S2",
+        "S3"
+      ],
+      "metadata": {
+        "description": "IoT Hub SKU (S1 recommended)"
+      }
+    },
+    "iotHubCapacity": {
+      "type": "int",
+      "defaultValue": 1,
+      "minValue": 1,
+      "maxValue": 10,
+      "metadata": {
+        "description": "IoT Hub capacity (scale units)"
+      }
+    },
+    "tags": {
+      "type": "object",
+      "defaultValue": {
+        "Project": "WellPulse",
+        "ManagedBy": "Bicep"
+      },
+      "metadata": {
+        "description": "Resource tags"
+      }
+    }
+  },
+  "variables": {
+    "resourceGroupName": "[format('rg-wellpulse-{0}-{1}', parameters('tenantSubdomain'), parameters('environment'))]",
+    "iotHubName": "[format('iothub-wellpulse-{0}-{1}', parameters('tenantSubdomain'), parameters('environment'))]",
+    "eventGridTopicName": "[format('evgt-wellpulse-scada-{0}-{1}', parameters('tenantSubdomain'), parameters('environment'))]",
+    "eventGridSubscriptionName": "webhook-to-api"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/resourceGroups",
+      "apiVersion": "2023-07-01",
+      "name": "[variables('resourceGroupName')]",
+      "location": "[parameters('location')]",
+      "tags": "[union(parameters('tags'), createObject('Tenant', parameters('tenantSubdomain'), 'Environment', parameters('environment')))]"
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "deploy-iot-hub",
+      "resourceGroup": "[variables('resourceGroupName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "name": {
+            "value": "[variables('iotHubName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "sku": {
+            "value": "[parameters('iotHubSku')]"
+          },
+          "capacity": {
+            "value": "[parameters('iotHubCapacity')]"
+          },
+          "tags": {
+            "value": "[union(parameters('tags'), createObject('Tenant', parameters('tenantSubdomain'), 'Environment', parameters('environment')))]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.38.33.27573",
+              "templateHash": "6157794360687760052"
+            }
+          },
+          "parameters": {
+            "name": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string"
+            },
+            "sku": {
+              "type": "string"
+            },
+            "capacity": {
+              "type": "int"
+            },
+            "tags": {
+              "type": "object"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Devices/IotHubs",
+              "apiVersion": "2023-06-30",
+              "name": "[parameters('name')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "sku": {
+                "name": "[parameters('sku')]",
+                "capacity": "[parameters('capacity')]"
+              },
+              "identity": {
+                "type": "SystemAssigned"
+              },
+              "properties": {
+                "eventHubEndpoints": {
+                  "events": {
+                    "retentionTimeInDays": 7,
+                    "partitionCount": 4
+                  }
+                },
+                "cloudToDevice": {
+                  "maxDeliveryCount": 10,
+                  "defaultTtlAsIso8601": "PT1H",
+                  "feedback": {
+                    "lockDurationAsIso8601": "PT1M",
+                    "ttlAsIso8601": "PT1H",
+                    "maxDeliveryCount": 10
+                  }
+                },
+                "messagingEndpoints": {
+                  "fileNotifications": {
+                    "lockDurationAsIso8601": "PT1M",
+                    "ttlAsIso8601": "PT1H",
+                    "maxDeliveryCount": 10
+                  }
+                },
+                "enableFileUploadNotifications": false,
+                "routing": {
+                  "endpoints": {
+                    "serviceBusQueues": [],
+                    "serviceBusTopics": [],
+                    "eventHubs": [],
+                    "storageContainers": []
+                  },
+                  "routes": [],
+                  "fallbackRoute": {
+                    "name": "$fallback",
+                    "source": "DeviceMessages",
+                    "condition": "true",
+                    "endpointNames": [
+                      "events"
+                    ],
+                    "isEnabled": true
+                  }
+                },
+                "minTlsVersion": "1.2",
+                "features": "None"
+              }
+            }
+          ],
+          "outputs": {
+            "hostname": {
+              "type": "string",
+              "metadata": {
+                "description": "IoT Hub hostname for managed identity authentication"
+              },
+              "value": "[reference(resourceId('Microsoft.Devices/IotHubs', parameters('name')), '2023-06-30').hostName]"
+            },
+            "resourceId": {
+              "type": "string",
+              "metadata": {
+                "description": "Resource ID for RBAC assignments and monitoring"
+              },
+              "value": "[resourceId('Microsoft.Devices/IotHubs', parameters('name'))]"
+            },
+            "principalId": {
+              "type": "string",
+              "metadata": {
+                "description": "Managed identity principal ID for role assignments"
+              },
+              "value": "[reference(resourceId('Microsoft.Devices/IotHubs', parameters('name')), '2023-06-30', 'full').identity.principalId]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', variables('resourceGroupName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "deploy-event-grid",
+      "resourceGroup": "[variables('resourceGroupName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "topicName": {
+            "value": "[variables('eventGridTopicName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "tags": {
+            "value": "[union(parameters('tags'), createObject('Tenant', parameters('tenantSubdomain'), 'Environment', parameters('environment')))]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.38.33.27573",
+              "templateHash": "5043364095704462141"
+            }
+          },
+          "parameters": {
+            "topicName": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string"
+            },
+            "tags": {
+              "type": "object"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.EventGrid/topics",
+              "apiVersion": "2023-12-15-preview",
+              "name": "[parameters('topicName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "inputSchema": "EventGridSchema",
+                "publicNetworkAccess": "Enabled"
+              }
+            }
+          ],
+          "outputs": {
+            "endpoint": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.EventGrid/topics', parameters('topicName')), '2023-12-15-preview').endpoint]"
+            },
+            "resourceId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.EventGrid/topics', parameters('topicName'))]"
+            },
+            "name": {
+              "type": "string",
+              "value": "[parameters('topicName')]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', variables('resourceGroupName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "deploy-event-subscription",
+      "resourceGroup": "[variables('resourceGroupName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "subscriptionName": {
+            "value": "[variables('eventGridSubscriptionName')]"
+          },
+          "topicName": {
+            "value": "[variables('eventGridTopicName')]"
+          },
+          "webhookUrl": {
+            "value": "[parameters('apiWebhookUrl')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.38.33.27573",
+              "templateHash": "8667653372620421795"
+            }
+          },
+          "parameters": {
+            "subscriptionName": {
+              "type": "string"
+            },
+            "topicName": {
+              "type": "string"
+            },
+            "webhookUrl": {
+              "type": "securestring",
+              "metadata": {
+                "description": "Webhook endpoint URL (may contain authentication tokens)"
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.EventGrid/eventSubscriptions",
+              "apiVersion": "2023-12-15-preview",
+              "scope": "[format('Microsoft.EventGrid/topics/{0}', parameters('topicName'))]",
+              "name": "[parameters('subscriptionName')]",
+              "properties": {
+                "destination": {
+                  "endpointType": "WebHook",
+                  "properties": {
+                    "endpointUrl": "[parameters('webhookUrl')]",
+                    "maxEventsPerBatch": 10,
+                    "preferredBatchSizeInKilobytes": 64
+                  }
+                },
+                "filter": {
+                  "includedEventTypes": [
+                    "Microsoft.Devices.DeviceTelemetry",
+                    "Microsoft.Devices.DeviceConnected",
+                    "Microsoft.Devices.DeviceDisconnected"
+                  ],
+                  "advancedFilters": []
+                },
+                "eventDeliverySchema": "EventGridSchema",
+                "retryPolicy": {
+                  "maxDeliveryAttempts": 30,
+                  "eventTimeToLiveInMinutes": 1440
+                }
+              }
+            }
+          ],
+          "outputs": {
+            "subscriptionId": {
+              "type": "string",
+              "value": "[extensionResourceId(resourceId('Microsoft.EventGrid/topics', parameters('topicName')), 'Microsoft.EventGrid/eventSubscriptions', parameters('subscriptionName'))]"
+            },
+            "subscriptionName": {
+              "type": "string",
+              "value": "[parameters('subscriptionName')]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'deploy-event-grid')]",
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'deploy-iot-hub')]",
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', variables('resourceGroupName'))]"
+      ]
+    }
+  ],
+  "outputs": {
+    "resourceGroupName": {
+      "type": "string",
+      "value": "[variables('resourceGroupName')]"
+    },
+    "iotHubName": {
+      "type": "string",
+      "value": "[variables('iotHubName')]"
+    },
+    "iotHubHostname": {
+      "type": "string",
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'deploy-iot-hub'), '2025-04-01').outputs.hostname.value]"
+    },
+    "iotHubResourceId": {
+      "type": "string",
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'deploy-iot-hub'), '2025-04-01').outputs.resourceId.value]"
+    },
+    "iotHubPrincipalId": {
+      "type": "string",
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'deploy-iot-hub'), '2025-04-01').outputs.principalId.value]"
+    },
+    "eventGridTopicName": {
+      "type": "string",
+      "value": "[variables('eventGridTopicName')]"
+    },
+    "eventGridTopicEndpoint": {
+      "type": "string",
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroupName')), 'Microsoft.Resources/deployments', 'deploy-event-grid'), '2025-04-01').outputs.endpoint.value]"
+    }
+  }
+}

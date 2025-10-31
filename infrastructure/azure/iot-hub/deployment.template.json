@@ -1,0 +1,144 @@
+{
+  "$schema-template": "4.0.0",
+  "modulesContent": {
+    "$edgeAgent": {
+      "properties.desired": {
+        "schemaVersion": "1.1",
+        "runtime": {
+          "type": "docker",
+          "settings": {
+            "minDockerVersion": "v1.25",
+            "loggingOptions": "",
+            "registryCredentials": {
+              "wellpulseacr": {
+                "username": "$CONTAINER_REGISTRY_USERNAME",
+                "password": "$CONTAINER_REGISTRY_PASSWORD",
+                "address": "wellpulse.azurecr.io"
+              }
+            }
+          }
+        },
+        "systemModules": {
+          "edgeAgent": {
+            "type": "docker",
+            "settings": {
+              "image": "mcr.microsoft.com/azureiotedge-agent:1.4",
+              "createOptions": {}
+            }
+          },
+          "edgeHub": {
+            "type": "docker",
+            "status": "running",
+            "restartPolicy": "always",
+            "startupOrder": 0,
+            "settings": {
+              "image": "mcr.microsoft.com/azureiotedge-hub:1.4",
+              "createOptions": {
+                "HostConfig": {
+                  "PortBindings": {
+                    "5671/tcp": [
+                      {
+                        "HostPort": "5671"
+                      }
+                    ],
+                    "8883/tcp": [
+                      {
+                        "HostPort": "8883"
+                      }
+                    ],
+                    "443/tcp": [
+                      {
+                        "HostPort": "443"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "modules": {
+          "scadaConnector": {
+            "version": "1.0",
+            "type": "docker",
+            "status": "running",
+            "restartPolicy": "always",
+            "startupOrder": 1,
+            "settings": {
+              "image": "wellpulse.azurecr.io/scada-connector:latest",
+              "createOptions": {
+                "HostConfig": {
+                  "NetworkMode": "host",
+                  "Binds": [
+                    "/var/scada/logs:/app/logs",
+                    "/var/scada/cache:/app/cache"
+                  ]
+                },
+                "Env": [
+                  "OPC_UA_ENDPOINT=$OPC_UA_ENDPOINT",
+                  "POLL_INTERVAL_MS=$POLL_INTERVAL_MS",
+                  "TENANT_ID=$TENANT_ID",
+                  "LOG_LEVEL=info"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "$edgeHub": {
+      "properties.desired": {
+        "schemaVersion": "1.2",
+        "routes": {
+          "scadaToIoTHub": "FROM /messages/modules/scadaConnector/* INTO $upstream",
+          "scadaToAlerts": "FROM /messages/modules/scadaConnector/outputs/alerts INTO $upstream"
+        },
+        "storeAndForwardConfiguration": {
+          "timeToLiveSecs": 86400
+        }
+      }
+    },
+    "scadaConnector": {
+      "properties.desired": {
+        "opcUaEndpoint": "$OPC_UA_ENDPOINT",
+        "securityMode": "SignAndEncrypt",
+        "securityPolicy": "Basic256Sha256",
+        "tags": [
+          {
+            "nodeId": "ns=2;s=Pressure",
+            "tagName": "casingPressure",
+            "unit": "psi",
+            "dataType": "Float"
+          },
+          {
+            "nodeId": "ns=2;s=Temperature",
+            "tagName": "temperature",
+            "unit": "F",
+            "dataType": "Float"
+          },
+          {
+            "nodeId": "ns=2;s=FlowRate",
+            "tagName": "flowRate",
+            "unit": "bbl/day",
+            "dataType": "Float"
+          },
+          {
+            "nodeId": "ns=2;s=TubingPressure",
+            "tagName": "tubingPressure",
+            "unit": "psi",
+            "dataType": "Float"
+          },
+          {
+            "nodeId": "ns=2;s=ChokePressure",
+            "tagName": "chokePressure",
+            "unit": "psi",
+            "dataType": "Float"
+          }
+        ],
+        "pollIntervalMs": 5000,
+        "batchSize": 10,
+        "aggregationWindowMinutes": 60
+      }
+    }
+  }
+}
