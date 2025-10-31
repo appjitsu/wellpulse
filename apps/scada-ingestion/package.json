@@ -1,0 +1,16 @@
+{
+  "name": "scada-ingestion",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "cargo run",
+    "build": "cargo build --release",
+    "check": "cargo check",
+    "test": "cargo test",
+    "format": "cargo fmt",
+    "format:check": "cargo fmt --check",
+    "type-check": "cargo check",
+    "lint": "cargo clippy -- -D warnings"
+  },
+  "description": "Rust-based SCADA data ingestion service for WellPulse"
+}

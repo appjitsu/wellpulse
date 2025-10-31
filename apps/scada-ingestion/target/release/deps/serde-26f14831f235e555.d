@@ -1,0 +1,14 @@
+/Users/jason/projects/wellpulse/apps/scada-ingestion/target/release/deps/serde-26f14831f235e555.d: /Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /Users/jason/projects/wellpulse/apps/scada-ingestion/target/release/build/serde-1ddcd32288d006bf/out/private.rs
+
+/Users/jason/projects/wellpulse/apps/scada-ingestion/target/release/deps/libserde-26f14831f235e555.rlib: /Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /Users/jason/projects/wellpulse/apps/scada-ingestion/target/release/build/serde-1ddcd32288d006bf/out/private.rs
+
+/Users/jason/projects/wellpulse/apps/scada-ingestion/target/release/deps/libserde-26f14831f235e555.rmeta: /Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /Users/jason/projects/wellpulse/apps/scada-ingestion/target/release/build/serde-1ddcd32288d006bf/out/private.rs
+
+/Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs:
+/Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs:
+/Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs:
+/Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs:
+/Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs:
+/Users/jason/projects/wellpulse/apps/scada-ingestion/target/release/build/serde-1ddcd32288d006bf/out/private.rs:
+
+# env-dep:OUT_DIR=/Users/jason/projects/wellpulse/apps/scada-ingestion/target/release/build/serde-1ddcd32288d006bf/out

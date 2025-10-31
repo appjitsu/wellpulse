@@ -1,0 +1,14 @@
+/Users/jason/projects/wellpulse/apps/scada-ingestion/target/release/deps/thiserror-bf0d4aed50b77f47.d: /Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/lib.rs /Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/aserror.rs /Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/display.rs /Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/var.rs /Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/private.rs /Users/jason/projects/wellpulse/apps/scada-ingestion/target/release/build/thiserror-98afccb9b7b35d3f/out/private.rs
+
+/Users/jason/projects/wellpulse/apps/scada-ingestion/target/release/deps/libthiserror-bf0d4aed50b77f47.rlib: /Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/lib.rs /Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/aserror.rs /Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/display.rs /Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/var.rs /Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/private.rs /Users/jason/projects/wellpulse/apps/scada-ingestion/target/release/build/thiserror-98afccb9b7b35d3f/out/private.rs
+
+/Users/jason/projects/wellpulse/apps/scada-ingestion/target/release/deps/libthiserror-bf0d4aed50b77f47.rmeta: /Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/lib.rs /Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/aserror.rs /Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/display.rs /Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/var.rs /Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/private.rs /Users/jason/projects/wellpulse/apps/scada-ingestion/target/release/build/thiserror-98afccb9b7b35d3f/out/private.rs
+
+/Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/lib.rs:
+/Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/aserror.rs:
+/Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/display.rs:
+/Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/var.rs:
+/Users/jason/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.17/src/private.rs:
+/Users/jason/projects/wellpulse/apps/scada-ingestion/target/release/build/thiserror-98afccb9b7b35d3f/out/private.rs:
+
+# env-dep:OUT_DIR=/Users/jason/projects/wellpulse/apps/scada-ingestion/target/release/build/thiserror-98afccb9b7b35d3f/out
